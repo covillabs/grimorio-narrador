@@ -24,7 +24,7 @@ export default function CoteriePage() {
 
   const updateTracker = useMutation({
     mutationFn: async ({ id, field, value }: { id: string; field: string; value: number }) => {
-      const { error } = await supabase.from("players").update({ [field]: value }).eq("id", id);
+      const { error } = await supabase.from("players").update({ [field]: value } as any).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["players"] }),
