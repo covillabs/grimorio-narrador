@@ -11,6 +11,7 @@ import ArsenalPage from "@/pages/ArsenalPage";
 import AtlasPage from "@/pages/AtlasPage";
 import OcultismoPage from "@/pages/OcultismoPage";
 import DiarioPage from "@/pages/DiarioPage";
+import EscudoPage from "@/pages/EscudoPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/atlas" element={<AtlasPage />} />
             <Route path="/ocultismo" element={<OcultismoPage />} />
             <Route path="/diario" element={<DiarioPage />} />
+            <Route path="/escudo" element={<EscudoPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

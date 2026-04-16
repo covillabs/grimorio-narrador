@@ -1,0 +1,94 @@
+# Grimório do Narrador - Arquitetura Técnica
+
+## 1. Arquitetura de Banco de Dados (Relacional - PostgreSQL)
+Dado que o sistema exige interligação profunda entre elementos (Coterie <-> NPCs <-> Itens <-> Locais), um banco relacional é ideal.
+
+### Entidades e Relacionamentos
+
+**Tabela: characters (Jogadores & NPCs)**
+- `id` (UUID, PK)
+- `type` (ENUM: 'player', 'npc')
+- `name` (VARCHAR)
+- `player_name` (VARCHAR, null for NPCs)
+- `clan` (VARCHAR)
+- `generation` (INT)
+- `sire` (VARCHAR)
+- `image_url` (TEXT)
+- `hunger` (INT, 0-5)
+- `humanity` (INT, 0-10)
+- `health_max / health_current` (INT)
+- `willpower_max / willpower_current` (INT)
+- `stats_physical / stats_social / stats_mental` (INT) - *Para NPCs (Paradas de Dados)*
+- `history` (TEXT)
+- `secrets` (TEXT) - *Apenas para o Mestre*
+- `status` (ENUM: 'active', 'torpor', 'final_death')
+
+**Tabela: items**
+- `id` (UUID, PK)
+- `name` (VARCHAR)
+- `category` (ENUM: 'weapon', 'tool', 'artifact', 'document')
+- `description` (TEXT)
+- `mechanics` (TEXT)
+- `image_url` (TEXT)
+- `owner_id` (UUID, FK -> characters.id, null if in location)
+- `location_id` (UUID, FK -> locations.id, null if with character)
+
+**Tabela: locations**
+- `id` (UUID, PK)
+- `name` (VARCHAR)
+- `type` (ENUM: 'haven', 'warzone', 'elysium', 'other')
+- `controller_id` (UUID, FK -> characters.id)
+- `description_public` (TEXT)
+- `description_private` (TEXT)
+- `image_url` (TEXT)
+
+**Tabela: myths (Arquivo de Mitos)**
+- `id` (UUID, PK)
+- `title` (VARCHAR)
+- `vision_mortal` (TEXT)
+- `vision_supernatural` (TEXT)
+- `vision_truth` (TEXT)
+
+**Tabela: sessions (Diário da Crônica)**
+- `id` (UUID, PK)
+- `date` (DATE)
+- `title` (VARCHAR)
+- `summary` (TEXT) - *Suporte a Markdown/Rich Text para @mentions*
+
+---
+
+## 2. Estrutura de Pastas (Front-end - React/Next.js)
+
+```text
+/src
+  /components
+    /ui          (Botões, Cards, Inputs - Tema Vermelho Sangue)
+    /layout      (Sidebar, Navbar Gótica)
+    /features    (CoterieCard, NpcAccordion, CombatMode)
+  /hooks         (useCharacters, useInventory, useUpload)
+  /services      (api.js, supabaseClient.js)
+  /styles        (globals.css, design-system.tokens)
+  /views
+    /dashboard   (A Coterie)
+    /codex       (Galeria de NPCs)
+    /atlas       (Locais)
+    /vault       (Itens e Ocultismo)
+```
+
+---
+
+## 3. Lógica de Upload e Exibição de Imagens
+- **Armazenamento:** Supabase Storage ou AWS S3.
+- **Fluxo:** 
+  1. O usuário seleciona um arquivo no componente `ImageUpload`.
+  2. O front-end faz o upload para o bucket `/portraits` ou `/items`.
+  3. O serviço retorna uma `publicURL`.
+  4. Essa URL é salva no campo `image_url` da tabela correspondente.
+- **Otimização:** Uso de bibliotecas como `react-dropzone` e compressão client-side antes do upload para economizar banda.
+
+---
+
+## 4. Funções CRUD Essenciais
+- `fetchCoterie()`: Retorna todos os caracteres do tipo 'player'.
+- `updateTracker(id, field, value)`: Atualiza Fome, Humanidade ou Vitalidade instantaneamente.
+- `tagEntityInSession(sessionId, entityType, entityId)`: Cria a relação de menção entre uma sessão e um NPC/Local/Item.

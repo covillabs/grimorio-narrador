@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>The Nocturnal Archive - Investigator Terminal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&amp;family=Inter:wght@400;600&amp;family=Space+Grotesk:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-low": "#1c1b1b",
+                        "on-primary": "#690000",
+                        "on-tertiary-container": "#9ea9ff",
+                        "on-background": "#e5e2e1",
+                        "primary-container": "#8b0000",
+                        "surface": "#131313",
+                        "on-primary-fixed": "#410000",
+                        "on-secondary": "#5d170f",
+                        "surface-container-highest": "#353535",
+                        "surface-bright": "#393939",
+                        "tertiary-fixed-dim": "#bcc3ff",
+                        "secondary-container": "#7b2d23",
+                        "error-container": "#93000a",
+                        "tertiary": "#bcc3ff",
+                        "on-primary-fixed-variant": "#920703",
+                        "surface-container-lowest": "#0e0e0e",
+                        "secondary": "#ffb4a8",
+                        "on-error-container": "#ffdad6",
+                        "error": "#ffb4ab",
+                        "on-surface": "#e5e2e1",
+                        "on-secondary-fixed-variant": "#7b2d23",
+                        "surface-tint": "#ffb4a8",
+                        "on-secondary-container": "#ff9a8a",
+                        "primary": "#ffb4a8",
+                        "on-tertiary": "#001a98",
+                        "on-surface-variant": "#e3beb8",
+                        "surface-container-high": "#2a2a2a",
+                        "inverse-surface": "#e5e2e1",
+                        "tertiary-container": "#0025c8",
+                        "surface-dim": "#131313",
+                        "primary-fixed-dim": "#ffb4a8",
+                        "primary-fixed": "#ffdad4",
+                        "secondary-fixed-dim": "#ffb4a8",
+                        "on-tertiary-fixed-variant": "#0d2ccc",
+                        "on-tertiary-fixed": "#000d60",
+                        "outline-variant": "#5a403c",
+                        "secondary-fixed": "#ffdad4",
+                        "on-secondary-fixed": "#400201",
+                        "on-primary-container": "#ff907f",
+                        "tertiary-fixed": "#dfe0ff",
+                        "inverse-on-surface": "#313030",
+                        "inverse-primary": "#b52619",
+                        "surface-container": "#20201f",
+                        "outline": "#aa8984",
+                        "on-error": "#690005",
+                        "surface-variant": "#353535",
+                        "background": "#131313"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0px",
+                        "lg": "0px",
+                        "xl": "0px",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Noto Serif"],
+                        "body": ["Inter"],
+                        "label": ["Space Grotesk"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .blood-splatter {
+            background-image: radial-gradient(circle at 20% 20%, #8b0000 0%, transparent 40%),
+                              radial-gradient(circle at 80% 70%, #410000 0%, transparent 30%);
+            opacity: 0.15;
+            pointer-events: none;
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #0e0e0e; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #8b0000; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body selection:bg-primary-container selection:text-white">
+<!-- TopAppBar Shell -->
+<header class="fixed top-0 w-full rounded-none bg-neutral-950/80 backdrop-blur-xl border-b border-red-900/15 shadow-[0px_20px_40px_rgba(0,0,0,0.6)] flex justify-between items-center px-6 py-4 w-full z-50">
+<div class="flex items-center gap-4">
+<span class="font-serif italic text-2xl text-red-700 uppercase tracking-widest">The Nocturnal Archive</span>
+</div>
+<div class="hidden md:flex gap-8 items-center">
+<nav class="flex gap-6 font-serif text-sm tracking-tighter uppercase">
+<a class="text-neutral-500 hover:text-red-400 transition-colors duration-300" href="#">Grimoire</a>
+<a class="text-neutral-500 hover:text-red-400 transition-colors duration-300" href="#">Coteries</a>
+<a class="text-red-500 font-bold hover:text-red-400 transition-colors duration-300" href="#">Archives</a>
+<a class="text-neutral-500 hover:text-red-400 transition-colors duration-300" href="#">Forensics</a>
+</nav>
+<div class="flex items-center gap-4 text-red-500">
+<span class="material-symbols-outlined cursor-pointer hover:text-red-400 transition-colors">history_edu</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-red-400 transition-colors">clinical_notes</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-red-400 transition-colors">settings</span>
+</div>
+</div>
+</header>
+<!-- SideNavBar Shell -->
+<aside class="hidden lg:flex flex-col h-screen fixed left-0 top-0 pt-24 pb-8 z-40 bg-neutral-900 w-64 bg-neutral-950 shadow-[inset_-2px_0_0_0_#353535] border-r border-red-900/10">
+<div class="px-6 mb-8">
+<p class="font-label uppercase text-[10px] tracking-[0.2em] text-neutral-500">Authenticated as</p>
+<h3 class="font-headline text-red-700 text-lg">Investigator</h3>
+<p class="font-label text-xs text-red-500/50">Terminal 09-X</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 text-neutral-500 px-6 py-3 hover:bg-neutral-800 hover:text-neutral-200 font-label uppercase text-xs tracking-widest transition-all duration-150" href="#">
+<span class="material-symbols-outlined text-lg">book_2</span> Grimoire
+            </a>
+<a class="flex items-center gap-3 text-neutral-500 px-6 py-3 hover:bg-neutral-800 hover:text-neutral-200 font-label uppercase text-xs tracking-widest transition-all duration-150" href="#">
+<span class="material-symbols-outlined text-lg">group_work</span> Coteries
+            </a>
+<a class="flex items-center gap-3 text-neutral-500 px-6 py-3 hover:bg-neutral-800 hover:text-neutral-200 font-label uppercase text-xs tracking-widest transition-all duration-150" href="#">
+<span class="material-symbols-outlined text-lg">castle</span> Sanctuaries
+            </a>
+<a class="flex items-center gap-3 bg-red-900/20 text-red-500 border-l-4 border-red-700 px-6 py-3 font-label uppercase text-xs tracking-widest transition-all duration-150" href="#">
+<span class="material-symbols-outlined text-lg">folder_managed</span> Archives
+            </a>
+<a class="flex items-center gap-3 text-neutral-500 px-6 py-3 hover:bg-neutral-800 hover:text-neutral-200 font-label uppercase text-xs tracking-widest transition-all duration-150" href="#">
+<span class="material-symbols-outlined text-lg">health_metrics</span> Forensics
+            </a>
+</nav>
+<div class="px-4 mt-auto">
+<button class="w-full py-3 bg-primary-container text-on-surface font-label uppercase text-xs tracking-widest hover:brightness-125 transition-all">
+                Save NPC
+            </button>
+</div>
+</aside>
+<!-- Main Canvas -->
+<main class="lg:pl-64 pt-24 min-h-screen bg-surface relative overflow-x-hidden">
+<!-- Background noise/splatter effects -->
+<div class="fixed inset-0 blood-splatter"></div>
+<div class="relative z-10 p-8 max-w-6xl mx-auto">
+<div class="mb-12 border-l-4 border-red-700 pl-6">
+<h1 class="font-headline text-5xl font-bold tracking-tighter text-on-background uppercase">New Subject Cataloging</h1>
+<p class="font-label text-sm text-red-500/70 tracking-widest mt-2 uppercase">Subject ID: [PENDING_REGISTRATION]</p>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+<!-- Left Column: Identity -->
+<div class="lg:col-span-5 space-y-8">
+<!-- Profile Portrait Upload -->
+<div class="relative group">
+<div class="absolute -inset-1 bg-red-900/20 blur-sm group-hover:bg-red-800/30 transition-all"></div>
+<div class="relative aspect-[3/4] bg-surface-container-lowest border border-outline-variant/30 overflow-hidden flex flex-col items-center justify-center cursor-pointer">
+<img class="absolute inset-0 w-full h-full object-cover opacity-40 grayscale group-hover:grayscale-0 group-hover:opacity-60 transition-all duration-700" data-alt="moody cinematic portrait of a mysterious figure in a high collar coat standing in dark foggy alleyway dramatic shadows" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA6nMTMpKpgx2LtnN1M_qB-PStNolIKYnkKn4-XVZbkytXurLSGN0E_z7cGhFy7koZ_ahf14ggP2WYhPjmjm0FchsTQ_ga7xRcFznY6wb9ft7feiioDrQkTP-y5vIAG-0vPhHf6X4DeI4sU8M6C8RdM8eMSv5GsULsvISla_8ehKsyxxikHsLWxNgPdFemJTOVZTtxxotyTUDxq75xWdkthBzKfMQonSHEeHXquYy7pbI0bgKmkyBvpeD18Oav8cqHmKHYWXm82Bfz8"/>
+<div class="z-20 text-center p-6 border-2 border-dashed border-red-900/40 group-hover:border-red-500 transition-colors">
+<span class="material-symbols-outlined text-4xl text-red-500 mb-2">add_a_photo</span>
+<p class="font-label text-[10px] tracking-widest text-on-surface-variant uppercase">Upload Entity Visage</p>
+</div>
+<!-- Aesthetic splatters -->
+<div class="absolute top-0 right-0 w-24 h-24 bg-red-950/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+</div>
+</div>
+<!-- Character Basics -->
+<div class="space-y-6">
+<div class="group">
+<label class="font-label text-[10px] uppercase tracking-[0.2em] text-red-500 mb-1 block">Subject Name</label>
+<input class="w-full bg-transparent border-0 border-b border-outline-variant/50 focus:border-primary focus:ring-0 text-2xl font-headline transition-all placeholder:text-surface-container-highest uppercase" placeholder="ENTER CODENAME..." type="text"/>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label class="font-label text-[10px] uppercase tracking-[0.2em] text-red-500 mb-1 block">Lineage / Clan</label>
+<select class="w-full bg-surface-container-low border-0 border-b border-outline-variant/50 focus:border-primary focus:ring-0 font-label text-xs tracking-widest uppercase py-3">
+<option>Ventrue</option>
+<option>Tremere</option>
+<option>Brujah</option>
+<option>Nosferatu</option>
+<option>Malkavian</option>
+</select>
+</div>
+<div>
+<label class="font-label text-[10px] uppercase tracking-[0.2em] text-red-500 mb-1 block">Allegiance / Faction</label>
+<select class="w-full bg-surface-container-low border-0 border-b border-outline-variant/50 focus:border-primary focus:ring-0 font-label text-xs tracking-widest uppercase py-3">
+<option>Camarilla</option>
+<option>Anarch</option>
+<option>Sabbat</option>
+<option>Independent</option>
+</select>
+</div>
+</div>
+<div>
+<label class="font-label text-[10px] uppercase tracking-[0.2em] text-red-500 mb-1 block">Vital Status</label>
+<div class="flex gap-4">
+<label class="flex items-center gap-2 cursor-pointer group">
+<input checked="" class="text-primary bg-surface-container-low border-outline ring-offset-surface focus:ring-primary" name="status" type="radio"/>
+<span class="font-label text-[10px] uppercase tracking-widest text-on-surface-variant group-hover:text-primary transition-colors">Active / Alive</span>
+</label>
+<label class="flex items-center gap-2 cursor-pointer group">
+<input class="text-primary bg-surface-container-low border-outline ring-offset-surface focus:ring-primary" name="status" type="radio"/>
+<span class="font-label text-[10px] uppercase tracking-widest text-on-surface-variant group-hover:text-primary transition-colors">Extinguished / Dead</span>
+</label>
+<label class="flex items-center gap-2 cursor-pointer group">
+<input class="text-primary bg-surface-container-low border-outline ring-offset-surface focus:ring-primary" name="status" type="radio"/>
+<span class="font-label text-[10px] uppercase tracking-widest text-on-surface-variant group-hover:text-primary transition-colors">Torpor</span>
+</label>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Lore & Stats -->
+<div class="lg:col-span-7 space-y-10">
+<!-- Narrative Lore -->
+<div class="space-y-6">
+<div class="relative">
+<label class="font-label text-[10px] uppercase tracking-[0.2em] text-red-500 mb-2 block">Observed Mannerisms</label>
+<textarea class="w-full bg-surface-container-lowest border border-outline-variant/10 focus:border-primary/40 focus:ring-0 font-body text-sm leading-relaxed p-4 custom-scrollbar italic" placeholder="Describe ticks, vocal patterns, or unique behaviors observed..." rows="3"></textarea>
+</div>
+<div class="relative">
+<label class="font-label text-[10px] uppercase tracking-[0.2em] text-red-500 mb-2 block">Dossier / Backstory</label>
+<textarea class="w-full bg-surface-container-lowest border border-outline-variant/10 focus:border-primary/40 focus:ring-0 font-body text-sm leading-relaxed p-4 custom-scrollbar" placeholder="Document the historical lineage and relevant past events..." rows="6"></textarea>
+</div>
+</div>
+<!-- Master's Secrets -->
+<div class="bg-red-950/10 border border-red-900/30 p-6 relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-4 text-red-900/40 select-none">
+<span class="material-symbols-outlined text-6xl" style="font-variation-settings: 'FILL' 1;">lock</span>
+</div>
+<div class="relative z-10">
+<div class="flex items-center gap-2 mb-4 text-red-500">
+<span class="material-symbols-outlined text-sm">security</span>
+<h4 class="font-label uppercase text-[10px] tracking-[0.3em] font-bold">Confidential: Master's Eyes Only</h4>
+</div>
+<textarea class="w-full bg-transparent border-0 border-b border-red-900/30 focus:border-red-500 focus:ring-0 font-body text-sm text-red-200 placeholder:text-red-900/60" placeholder="Hidden motivations, dark secrets, or mechanical weaknesses known only to the Narrator..." rows="4"></textarea>
+</div>
+</div>
+<!-- Combat Stats -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8 pt-6">
+<!-- Physical -->
+<div class="space-y-4">
+<div class="flex items-center justify-between border-b border-outline-variant/20 pb-2">
+<span class="font-label text-[10px] uppercase tracking-widest text-on-surface-variant">Physical</span>
+<span class="font-headline italic text-red-500">I</span>
+</div>
+<div class="flex flex-wrap gap-1.5">
+<!-- Pips 0-10 -->
+<button class="w-3 h-3 border border-red-700 bg-red-700"></button>
+<button class="w-3 h-3 border border-red-700 bg-red-700"></button>
+<button class="w-3 h-3 border border-red-700 bg-red-700"></button>
+<button class="w-3 h-3 border border-red-700/50"></button>
+<button class="w-3 h-3 border border-red-700/50"></button>
+<button class="w-3 h-3 border border-red-700/50"></button>
+<button class="w-3 h-3 border border-red-700/50"></button>
+<button class="w-3 h-3 border border-red-700/50"></button>
+<button class="w-3 h-3 border border-red-700/50"></button>
+<button class="w-3 h-3 border border-red-700/50"></button>
+</div>
+<p class="font-label text-[9px] text-neutral-600 uppercase">Current Capacity: 3/10</p>
+</div>
+<!-- Social -->
+<div class="space-y-4">
+<div class="flex items-center justify-between border-b border-outline-variant/20 pb-2">
+<span class="font-label text-[10px] uppercase tracking-widest text-on-surface-variant">Social</span>
+<span class="font-headline italic text-red-500">II</span>
+</div>
+<div class="flex flex-wrap gap-1.5">
+<button class="w-3 h-3 border border-red-700 bg-red-700"></button>
+<button class="w-3 h-3 border border-red-700 bg-red-700"></button>
+<button class="w-3 h-3 border border-red-700 bg-red-700"></button>
+<button class="w-3 h-3 border border-red-700 bg-red-700"></button>
+<button class="w-3 h-3 border border-red-700 bg-red-700"></button>
+<button class="w-3 h-3 border border-red-700/50"></button>
+<button class="w-3 h-3 border border-red-700/50"></button>
+<button class="w-3 h-3 border border-red-700/50"></button>
+<button class="w-3 h-3 border border-red-700/50"></button>
+<button class="w-3 h-3 border border-red-700/50"></button>
+</div>
+<p class="font-label text-[9px] text-neutral-600 uppercase">Current Capacity: 5/10</p>
+</div>
+<!-- Mental -->
+<div class="space-y-4">
+<div class="flex items-center justify-between border-b border-outline-variant/20 pb-2">
+<span class="font-label text-[10px] uppercase tracking-widest text-on-surface-variant">Mental</span>
+<span class="font-headline italic text-red-500">III</span>
+</div>
+<div class="flex flex-wrap gap-1.5">
+<button class="w-3 h-3 border border-red-700 bg-red-700"></button>
+<button class="w-3 h-3 border border-red-700 bg-red-700"></button>
+<button class="w-3 h-3 border border-red-700 bg-red-700"></button>
+<button class="w-3 h-3 border border-red-700 bg-red-700"></button>
+<button class="w-3 h-3 border border-red-700 bg-red-700"></button>
+<button class="w-3 h-3 border border-red-700 bg-red-700"></button>
+<button class="w-3 h-3 border border-red-700/50"></button>
+<button class="w-3 h-3 border border-red-700/50"></button>
+<button class="w-3 h-3 border border-red-700/50"></button>
+<button class="w-3 h-3 border border-red-700/50"></button>
+</div>
+<p class="font-label text-[9px] text-neutral-600 uppercase">Current Capacity: 6/10</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Actions -->
+<div class="mt-20 flex flex-col sm:flex-row gap-6 items-center justify-end border-t border-red-900/20 pt-12">
+<button class="font-label text-xs uppercase tracking-widest text-neutral-500 hover:text-on-surface transition-colors">
+                    Cancelar Investigation
+                </button>
+<button class="group relative px-10 py-4 bg-primary-container text-on-surface font-headline font-bold text-lg uppercase tracking-tighter border border-red-500/50 hover:bg-red-700 transition-all active:scale-95">
+<span class="relative z-10">Registar NPC</span>
+<!-- Silver/Gold styled decorative border elements -->
+<div class="absolute -top-1 -left-1 w-2 h-2 border-t border-l border-neutral-400"></div>
+<div class="absolute -top-1 -right-1 w-2 h-2 border-t border-r border-neutral-400"></div>
+<div class="absolute -bottom-1 -left-1 w-2 h-2 border-b border-l border-neutral-400"></div>
+<div class="absolute -bottom-1 -right-1 w-2 h-2 border-b border-r border-neutral-400"></div>
+</button>
+</div>
+</div>
+</main>
+<!-- Success Message Ghost Toast (Aesthetic only) -->
+<div class="fixed bottom-8 right-8 bg-surface-container-highest/90 backdrop-blur border border-red-500/20 px-6 py-3 flex items-center gap-3 animate-pulse pointer-events-none">
+<span class="material-symbols-outlined text-red-500 text-sm">wifi_tethering</span>
+<p class="font-label text-[10px] uppercase tracking-widest text-neutral-400">Syncing to Central Archive...</p>
+</div>
+</body></html>

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&amp;family=Inter:wght@400;700&amp;family=Space+Grotesk:wght@300;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary-fixed-variant": "#0d2ccc",
+                    "tertiary": "#bcc3ff",
+                    "surface-container-high": "#2a2a2a",
+                    "on-secondary-fixed-variant": "#7b2d23",
+                    "surface-tint": "#ffb4a8",
+                    "surface-variant": "#353535",
+                    "inverse-on-surface": "#313030",
+                    "secondary-fixed": "#ffdad4",
+                    "error": "#ffb4ab",
+                    "tertiary-fixed": "#dfe0ff",
+                    "on-tertiary-fixed": "#000d60",
+                    "outline": "#aa8984",
+                    "error-container": "#93000a",
+                    "surface-container-lowest": "#0e0e0e",
+                    "outline-variant": "#5a403c",
+                    "primary-fixed-dim": "#ffb4a8",
+                    "on-surface": "#e5e2e1",
+                    "inverse-surface": "#e5e2e1",
+                    "secondary-container": "#7b2d23",
+                    "background": "#131313",
+                    "on-error": "#690005",
+                    "primary-container": "#8b0000",
+                    "surface-container-highest": "#353535",
+                    "on-error-container": "#ffdad6",
+                    "primary-fixed": "#ffdad4",
+                    "tertiary-container": "#0025c8",
+                    "on-tertiary-container": "#9ea9ff",
+                    "tertiary-fixed-dim": "#bcc3ff",
+                    "secondary-fixed-dim": "#ffb4a8",
+                    "on-secondary-fixed": "#400201",
+                    "inverse-primary": "#b52619",
+                    "secondary": "#ffb4a8",
+                    "on-primary-container": "#ff907f",
+                    "on-surface-variant": "#e3beb8",
+                    "on-secondary-container": "#ff9a8a",
+                    "on-primary-fixed-variant": "#920703",
+                    "on-background": "#e5e2e1",
+                    "surface-bright": "#393939",
+                    "surface": "#131313",
+                    "primary": "#ffb4a8",
+                    "on-primary": "#690000",
+                    "surface-dim": "#131313",
+                    "on-tertiary": "#001a98",
+                    "on-secondary": "#5d170f",
+                    "on-primary-fixed": "#410000",
+                    "surface-container-low": "#1c1b1b",
+                    "surface-container": "#20201f"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0px",
+                    "lg": "0px",
+                    "xl": "0px",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Noto Serif"],
+                    "body": ["Inter"],
+                    "label": ["Space Grotesk"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .grain-overlay {
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.03;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body selection:bg-primary-container selection:text-primary min-h-screen flex">
+<div class="fixed inset-0 grain-overlay z-50"></div>
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full flex flex-col py-8 bg-[#0e0e0e] dark:bg-[#0e0e0e] w-64 z-40">
+<div class="text-[#ffb4a8] font-serif font-bold text-xl px-4 mb-2">Grimório</div>
+<div class="font-mono text-xs uppercase tracking-widest text-[#920703] px-4 mb-8 opacity-60">Investigative Terminal</div>
+<nav class="flex-1 space-y-1">
+<a class="text-[#920703] hover:text-[#ffb4a8] px-4 py-3 flex items-center gap-3 hover:bg-[#353535] transition-all duration-300 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-label text-xs uppercase tracking-widest">Coterie</span>
+</a>
+<a class="text-[#920703] hover:text-[#ffb4a8] px-4 py-3 flex items-center gap-3 hover:bg-[#353535] transition-all duration-300 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="person_search">person_search</span>
+<span class="font-label text-xs uppercase tracking-widest">NPCs</span>
+</a>
+<a class="text-[#920703] hover:text-[#ffb4a8] px-4 py-3 flex items-center gap-3 hover:bg-[#353535] transition-all duration-300 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span class="font-label text-xs uppercase tracking-widest">Itens</span>
+</a>
+<a class="text-[#920703] hover:text-[#ffb4a8] px-4 py-3 flex items-center gap-3 hover:bg-[#353535] transition-all duration-300 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="map">map</span>
+<span class="font-label text-xs uppercase tracking-widest">Atlas</span>
+</a>
+<a class="text-[#920703] hover:text-[#ffb4a8] px-4 py-3 flex items-center gap-3 hover:bg-[#353535] transition-all duration-300 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="auto_stories">auto_stories</span>
+<span class="font-label text-xs uppercase tracking-widest">Ocultismo</span>
+</a>
+<a class="text-[#ffb4a8] bg-[#8b0000] border-l-4 border-[#ffb4a8] px-4 py-3 flex items-center gap-3 transition-all duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="event_note">event_note</span>
+<span class="font-label text-xs uppercase tracking-widest">Sessões</span>
+</a>
+</nav>
+<div class="mt-auto px-4 pt-4 border-t border-outline-variant/10">
+<div class="flex items-center gap-3 py-2">
+<div class="w-8 h-8 bg-surface-container-highest flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-sm" data-icon="shield">shield</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label text-[10px] uppercase tracking-tighter text-on-surface-variant">System Status</span>
+<span class="font-label text-[10px] text-primary uppercase">Encrypted</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 ml-64 flex flex-col min-h-screen">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center px-6 h-16 w-full sticky top-0 bg-[#131313] dark:bg-[#131313] z-30 bg-gradient-to-b from-[#353535]/20 to-transparent shadow-[0px_20px_40px_rgba(0,0,0,0.6)]">
+<div class="flex items-center gap-4">
+<h1 class="font-serif text-2xl uppercase tracking-tighter text-[#ffb4a8] italic">Grimório do Narrador</h1>
+</div>
+<div class="flex items-center gap-6">
+<div class="hidden md:flex items-center bg-surface-container-low px-3 py-1 gap-2 group border-b border-outline-variant/20 focus-within:border-primary transition-all">
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm font-label text-on-surface placeholder:text-on-surface-variant/40 w-48" placeholder="Filtrar registros..." type="text"/>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-[#920703] hover:text-[#ffb4a8] cursor-pointer active:scale-95 transition-colors">
+<span class="material-symbols-outlined" data-icon="history_edu">history_edu</span>
+</button>
+<button class="text-[#920703] hover:text-[#ffb4a8] cursor-pointer active:scale-95 transition-colors">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Canvas Area -->
+<div class="flex-1 p-8 md:p-12 max-w-7xl mx-auto w-full grid grid-cols-12 gap-8">
+<!-- Session Logs Column -->
+<div class="col-span-12 lg:col-span-8 space-y-12">
+<div class="flex justify-between items-end mb-8 border-b border-outline-variant/10 pb-4">
+<div>
+<span class="font-label text-xs uppercase tracking-[0.3em] text-primary">Archivo de Campo</span>
+<h2 class="font-headline text-4xl mt-2 italic font-bold">Diário da Crônica</h2>
+</div>
+<button class="bg-primary-container text-on-surface px-6 py-2 font-label text-xs uppercase tracking-widest hover:shadow-[0_0_15px_rgba(139,0,0,0.4)] transition-all cursor-pointer">
+                        Nova Sessão
+                    </button>
+</div>
+<!-- Session Entry -->
+<article class="relative pl-8 group">
+<div class="absolute left-0 top-0 bottom-0 w-px bg-outline-variant/30 group-hover:bg-primary/50 transition-colors"></div>
+<div class="absolute left-[-4px] top-0 w-2 h-2 bg-primary-container border border-primary"></div>
+<header class="flex flex-col mb-4">
+<time class="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Outubro 14, 1998 — 21:45 PM</time>
+<h3 class="font-headline text-2xl font-bold tracking-tight text-on-surface group-hover:text-primary transition-colors">A Sombra de Greenwich</h3>
+</header>
+<div class="prose prose-invert max-w-none font-serif text-lg leading-relaxed text-on-surface/80 space-y-4">
+<p>
+                            A noite estava estranhamente silenciosa quando a <span class="text-primary bg-primary-container/20 px-1 border-b border-primary cursor-help">@Coterie</span> chegou ao moinho abandonado. O ar fedia a ozônio e estagnação. <span class="text-primary bg-primary-container/20 px-1 border-b border-primary cursor-help">@Julian</span> sentiu a ressonância antes mesmo de cruzarmos o portal.
+                        </p>
+<p>
+                            Encontramos o <span class="text-primary bg-primary-container/20 px-1 border-b border-primary cursor-help">@Olho_de_Vidro</span> em uma caixa de veludo, pulsando com uma luz fria que não deveria existir. O <span class="text-primary bg-primary-container/20 px-1 border-b border-primary cursor-help">@Inquisidor_Vargas</span> certamente viria atrás desse rastro. Precisamos nos mover para <span class="text-primary bg-primary-container/20 px-1 border-b border-primary cursor-help">@Refugio_Seguro</span> antes do amanhecer.
+                        </p>
+</div>
+<footer class="mt-6 flex gap-2">
+<span class="bg-surface-container-highest px-3 py-1 text-[10px] font-label uppercase tracking-tighter text-on-surface-variant">Mistério</span>
+<span class="bg-surface-container-highest px-3 py-1 text-[10px] font-label uppercase tracking-tighter text-on-surface-variant">Combate</span>
+</footer>
+</article>
+<!-- Session Entry 2 -->
+<article class="relative pl-8 group opacity-70 hover:opacity-100 transition-opacity">
+<div class="absolute left-0 top-0 bottom-0 w-px bg-outline-variant/30 group-hover:bg-primary/50 transition-colors"></div>
+<div class="absolute left-[-4px] top-0 w-2 h-2 bg-surface-container-highest border border-outline-variant"></div>
+<header class="flex flex-col mb-4">
+<time class="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Setembro 28, 1998 — 23:12 PM</time>
+<h3 class="font-headline text-2xl font-bold tracking-tight text-on-surface">O Convite Escarlate</h3>
+</header>
+<div class="prose prose-invert max-w-none font-serif text-lg leading-relaxed text-on-surface/70 space-y-4">
+<p>
+                            O baile na mansão <span class="text-primary bg-primary-container/20 px-1 border-b border-primary cursor-help">@Bellevue</span> foi uma armadilha desde o início. A música escondia os sussurros dos traidores. <span class="text-primary bg-primary-container/20 px-1 border-b border-primary cursor-help">@Marcus</span> quase perdeu o controle quando viu a marca no pescoço da Condessa.
+                        </p>
+</div>
+<footer class="mt-6 flex gap-2">
+<span class="bg-surface-container-highest px-3 py-1 text-[10px] font-label uppercase tracking-tighter text-on-surface-variant">Social</span>
+<span class="bg-surface-container-highest px-3 py-1 text-[10px] font-label uppercase tracking-tighter text-on-surface-variant">Intriga</span>
+</footer>
+</article>
+</div>
+<!-- Sidebar Widgets Column -->
+<aside class="col-span-12 lg:col-span-4 space-y-8">
+<!-- Quick Notes Section -->
+<section class="bg-surface-container-low p-6 border-l-2 border-primary/30 relative overflow-hidden">
+<div class="absolute top-0 right-0 p-2 opacity-10">
+<span class="material-symbols-outlined text-6xl" data-icon="sticky_note_2">sticky_note_2</span>
+</div>
+<h4 class="font-label text-xs uppercase tracking-widest text-primary mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="edit_note">edit_note</span>
+                        Notas Rápidas
+                    </h4>
+<div class="space-y-4">
+<div class="group">
+<textarea class="w-full bg-transparent border-none border-b border-outline-variant/30 focus:border-primary focus:ring-0 font-serif italic text-sm text-on-surface-variant placeholder:text-on-surface-variant/30 resize-none h-24" placeholder="Sussurros do narrador..."></textarea>
+</div>
+<ul class="space-y-3">
+<li class="flex items-start gap-3 group">
+<span class="material-symbols-outlined text-[10px] mt-1 text-primary" data-icon="circle" style="font-variation-settings: 'FILL' 1;">circle</span>
+<p class="text-xs font-label leading-relaxed text-on-surface-variant group-hover:text-on-surface transition-colors">Verificar se Julian ainda possui a adaga de obsidiana antes da próxima lua.</p>
+</li>
+<li class="flex items-start gap-3 group">
+<span class="material-symbols-outlined text-[10px] mt-1 text-primary" data-icon="circle" style="font-variation-settings: 'FILL' 1;">circle</span>
+<p class="text-xs font-label leading-relaxed text-on-surface-variant group-hover:text-on-surface transition-colors">O Inquisidor Vargas tem uma cicatriz no olho esquerdo que brilha sob luz ultravioleta.</p>
+</li>
+</ul>
+</div>
+</section>
+<!-- Chronicle Status -->
+<section class="bg-surface-container p-6 space-y-4">
+<h4 class="font-label text-xs uppercase tracking-widest text-on-surface-variant mb-2">Resumo da Trama</h4>
+<div class="relative h-48 w-full overflow-hidden">
+<img alt="Dark mystical background" class="w-full h-full object-cover grayscale contrast-125 opacity-40" data-alt="Cinematic close-up of a dark, antique map covered in candle wax and blood splatters, dramatic shadows, moody red lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5YJSqsP30fMkyEoIn34IQrlJyD3gK2m2V9H7w2byC-vIGcvU3ZPwOh3Iy303osYzTNomZOyzTbIUUnwbICfvADJgB2RC6l60GRY6qyegh0uYXmL96bi7cHfX1lE1QJiiwAJ63Xp3VXTZ5DkN4D-Mc6oZpdWxZqfcnhEU_NXej3Y0-NU3g5bX2ZQG0XqguNEbQADh_XvpDZ2lYOyH5H6gwaPws8yQ5DZxFBUgEr-rRnTvWlVwEdBXcR3OzmCOpyDZXr8lLeqPvEw41"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container to-transparent"></div>
+<div class="absolute bottom-4 left-4">
+<span class="font-label text-[10px] uppercase text-primary tracking-widest">Localização Atual</span>
+<p class="font-headline text-lg italic">Distrito de Londres Leste</p>
+</div>
+</div>
+<div class="flex items-center justify-between py-2 border-b border-outline-variant/10">
+<span class="font-label text-[10px] uppercase text-on-surface-variant">Sessões Totais</span>
+<span class="font-label text-sm text-primary">12</span>
+</div>
+<div class="flex items-center justify-between py-2 border-b border-outline-variant/10">
+<span class="font-label text-[10px] uppercase text-on-surface-variant">Letalidade</span>
+<span class="font-label text-sm text-[#ffb4a8]">ALTA</span>
+</div>
+</section>
+<!-- Mention Legend -->
+<section class="p-6 border border-outline-variant/10">
+<h4 class="font-label text-[10px] uppercase tracking-[0.2em] text-on-surface-variant mb-4 text-center">Protocolos de Registro</h4>
+<div class="grid grid-cols-2 gap-4">
+<div class="flex items-center gap-2">
+<div class="w-1 h-1 bg-primary"></div>
+<span class="font-label text-[9px] uppercase text-on-surface-variant">@Personagens</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-1 h-1 bg-primary"></div>
+<span class="font-label text-[9px] uppercase text-on-surface-variant">#Locais</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-1 h-1 bg-primary"></div>
+<span class="font-label text-[9px] uppercase text-on-surface-variant">!Itens</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-1 h-1 bg-primary"></div>
+<span class="font-label text-[9px] uppercase text-on-surface-variant">?Eventos</span>
+</div>
+</div>
+</section>
+</aside>
+</div>
+</main>
+<!-- Contextual FAB (Only on Session List) -->
+<button class="fixed bottom-8 right-8 w-14 h-14 bg-primary-container text-on-surface flex items-center justify-center shadow-[0px_20px_40px_rgba(0,0,0,0.6)] group active:scale-95 transition-all">
+<span class="material-symbols-outlined text-2xl group-hover:rotate-90 transition-transform" data-icon="add">add</span>
+</button>
+</body></html>

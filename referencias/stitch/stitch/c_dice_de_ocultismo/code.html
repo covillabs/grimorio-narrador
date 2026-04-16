@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pt-br"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Grimório do Narrador - Ocultismo</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&amp;family=Noto+Serif:ital,wght@0,400;0,700;0,900;1,400;1,700&amp;family=Space+Grotesk:wght@300;500;700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #131313;
+            color: #e5e2e1;
+            font-family: 'Inter', sans-serif;
+        }
+        .font-serif { font-family: 'Noto Serif', serif; }
+        .font-mono { font-family: 'Space Grotesk', sans-serif; }
+        .font-label { font-family: 'Space Grotesk', sans-serif; }
+        
+        /* Custom scrollbar for investigative feel */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #0e0e0e; }
+        ::-webkit-scrollbar-thumb { background: #8b0000; }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed-variant": "#0d2ccc",
+                        "tertiary": "#bcc3ff",
+                        "surface-container-high": "#2a2a2a",
+                        "on-secondary-fixed-variant": "#7b2d23",
+                        "surface-tint": "#ffb4a8",
+                        "surface-variant": "#353535",
+                        "inverse-on-surface": "#313030",
+                        "secondary-fixed": "#ffdad4",
+                        "error": "#ffb4ab",
+                        "tertiary-fixed": "#dfe0ff",
+                        "on-tertiary-fixed": "#000d60",
+                        "outline": "#aa8984",
+                        "error-container": "#93000a",
+                        "surface-container-lowest": "#0e0e0e",
+                        "outline-variant": "#5a403c",
+                        "primary-fixed-dim": "#ffb4a8",
+                        "on-surface": "#e5e2e1",
+                        "inverse-surface": "#e5e2e1",
+                        "secondary-container": "#7b2d23",
+                        "background": "#131313",
+                        "on-error": "#690005",
+                        "primary-container": "#8b0000",
+                        "surface-container-highest": "#353535",
+                        "on-error-container": "#ffdad6",
+                        "primary-fixed": "#ffdad4",
+                        "tertiary-container": "#0025c8",
+                        "on-tertiary-container": "#9ea9ff",
+                        "tertiary-fixed-dim": "#bcc3ff",
+                        "secondary-fixed-dim": "#ffb4a8",
+                        "on-secondary-fixed": "#400201",
+                        "inverse-primary": "#b52619",
+                        "secondary": "#ffb4a8",
+                        "on-primary-container": "#ff907f",
+                        "on-surface-variant": "#e3beb8",
+                        "on-secondary-container": "#ff9a8a",
+                        "on-primary-fixed-variant": "#920703",
+                        "on-background": "#e5e2e1",
+                        "surface-bright": "#393939",
+                        "surface": "#131313",
+                        "primary": "#ffb4a8",
+                        "on-primary": "#690000",
+                        "surface-dim": "#131313",
+                        "on-tertiary": "#001a98",
+                        "on-secondary": "#5d170f",
+                        "on-primary-fixed": "#410000",
+                        "surface-container-low": "#1c1b1b",
+                        "surface-container": "#20201f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0px",
+                        "lg": "0px",
+                        "xl": "0px",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Noto Serif"],
+                        "body": ["Inter"],
+                        "label": ["Space Grotesk"]
+                    }
+                },
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen bg-background flex flex-col md:flex-row">
+<!-- SideNavBar (Execution from JSON) -->
+<aside class="fixed left-0 top-0 h-full flex flex-col py-8 bg-[#0e0e0e] dark:bg-[#0e0e0e] h-full w-64 border-r-0 z-50 hidden md:flex">
+<div class="text-[#ffb4a8] font-serif font-bold text-xl px-4 mb-2">Grimório</div>
+<div class="font-mono text-xs uppercase tracking-widest px-4 text-[#920703] mb-12">Investigative Terminal</div>
+<nav class="flex flex-col gap-1">
+<!-- Labels and Icons mapped from JSON -->
+<a class="text-[#920703] hover:text-[#ffb4a8] px-4 py-3 flex items-center gap-3 hover:bg-[#353535] transition-all duration-300 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-mono text-xs uppercase tracking-widest">Coterie</span>
+</a>
+<a class="text-[#920703] hover:text-[#ffb4a8] px-4 py-3 flex items-center gap-3 hover:bg-[#353535] transition-all duration-300 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">person_search</span>
+<span class="font-mono text-xs uppercase tracking-widest">NPCs</span>
+</a>
+<a class="text-[#920703] hover:text-[#ffb4a8] px-4 py-3 flex items-center gap-3 hover:bg-[#353535] transition-all duration-300 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-mono text-xs uppercase tracking-widest">Itens</span>
+</a>
+<a class="text-[#920703] hover:text-[#ffb4a8] px-4 py-3 flex items-center gap-3 hover:bg-[#353535] transition-all duration-300 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">map</span>
+<span class="font-mono text-xs uppercase tracking-widest">Atlas</span>
+</a>
+<!-- Active Navigation State: Ocultismo -->
+<a class="text-[#ffb4a8] bg-[#8b0000] border-l-4 border-[#ffb4a8] px-4 py-3 flex items-center gap-3 transition-all duration-300" href="#">
+<span class="material-symbols-outlined">auto_stories</span>
+<span class="font-mono text-xs uppercase tracking-widest">Ocultismo</span>
+</a>
+<a class="text-[#920703] hover:text-[#ffb4a8] px-4 py-3 flex items-center gap-3 hover:bg-[#353535] transition-all duration-300 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">event_note</span>
+<span class="font-mono text-xs uppercase tracking-widest">Sessões</span>
+</a>
+</nav>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 md:ml-64 relative min-h-screen">
+<!-- TopAppBar (Execution from JSON) -->
+<header class="flex justify-between items-center px-6 h-16 w-full fixed top-0 left-0 border-b-0 bg-[#131313] dark:bg-[#131313] bg-gradient-to-b from-[#353535]/20 to-transparent shadow-[0px_20px_40px_rgba(0,0,0,0.6)] z-40 md:left-64 md:w-[calc(100%-16rem)]">
+<div class="font-serif text-2xl uppercase tracking-tighter text-[#ffb4a8] italic">Grimório do Narrador</div>
+<div class="flex items-center gap-6">
+<div class="hidden md:flex items-center border-b border-outline-variant px-2 py-1">
+<span class="material-symbols-outlined text-outline text-sm">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-xs font-mono uppercase tracking-widest placeholder-outline/50 w-48" placeholder="BUSCAR MITO..." type="text"/>
+</div>
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-[#ffb4a8] cursor-pointer active:scale-95 hover:bg-[#8b0000]/10 transition-colors p-1">settings</span>
+<span class="material-symbols-outlined text-[#ffb4a8] cursor-pointer active:scale-95 hover:bg-[#8b0000]/10 transition-colors p-1">history_edu</span>
+</div>
+</div>
+</header>
+<!-- Content Area -->
+<div class="pt-24 px-8 pb-12 max-w-6xl mx-auto">
+<!-- Page Header (Asymmetric Layout) -->
+<div class="mb-16">
+<h1 class="font-serif text-6xl font-black text-on-surface uppercase tracking-tighter leading-none mb-4">
+                    Ocultismo<br/>
+<span class="text-primary tracking-normal italic text-4xl block mt-2">Arquivo de Mitos</span>
+</h1>
+<div class="w-24 h-1 bg-primary mb-4"></div>
+<p class="font-mono text-xs text-on-surface-variant max-w-md uppercase tracking-widest leading-relaxed">
+                    Registros proibidos recuperados das cinzas de Alexandria. Verdades estratificadas para olhos preparados.
+                </p>
+</div>
+<!-- Myths Vertical Timeline/Accordion -->
+<div class="space-y-12">
+<!-- Entry 1 -->
+<section class="relative group">
+<!-- Vertical Line Anchor -->
+<div class="absolute -left-6 top-0 bottom-0 w-[1px] bg-outline-variant/30 group-hover:bg-primary transition-colors duration-500"></div>
+<div class="flex flex-col md:flex-row gap-8">
+<!-- Entry Title & Metadata -->
+<div class="md:w-1/3">
+<span class="font-mono text-[10px] text-primary uppercase tracking-[0.3em] block mb-2">Registro #089-B</span>
+<h2 class="font-serif text-3xl font-bold text-on-surface mb-4 group-hover:text-primary transition-colors cursor-pointer">O Banquete das Sombras</h2>
+<!-- Who Knows This Tracker -->
+<div class="mt-6">
+<span class="font-mono text-[9px] text-outline uppercase tracking-widest block mb-3">CONHECIMENTO ADQUIRIDO POR:</span>
+<div class="flex -space-x-2">
+<div class="w-10 h-10 bg-surface-container-highest border border-outline-variant flex items-center justify-center overflow-hidden">
+<img class="grayscale contrast-125 hover:grayscale-0 transition-all duration-300 object-cover" data-alt="close up gritty portrait of a man with mysterious eyes in cinematic dark lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAwfxi1sajSbbmvk0dfNh858qJ6Ci3yE6O4UmxB8NKwvDWaWUFYTVU1PYB7RV739pQcEi8uqGPGN2l_C400jntsGKWB6JYVnLx6JI4hZrhbrDBvqzvInA_j2IPVPxqGTvo6TGpRfQyVq0At0mICPMni1fprt75pGVUyTrDzs8mA20lxU2-cO3XCVqZJ8X3utfa9InMCp0tCu29Bw_xOqCRp83_MreWJ8I8QKt_-OPOTCUZEdsT5xdZ_xP6ped4XkU8VmweCvdQgiX_E"/>
+</div>
+<div class="w-10 h-10 bg-surface-container-highest border border-outline-variant flex items-center justify-center overflow-hidden">
+<img class="grayscale contrast-125 hover:grayscale-0 transition-all duration-300 object-cover" data-alt="extreme close up of a woman's face with dramatic shadows and sharp focus" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAPYmmMlcWvNbT5TvBS6_q3vV7qwTcPzgvSZI0ndzF9I99NWdGZZXNZLZ2qTFjSPFlhA1rRPq9tdYUhjtDklpGPB1TJCzpJ0SNfDotYvPPCTYFjpN8tyB--rf28ft-ShzJFTg0Y1EL9f3igIkHXV9LuJKb9YyNaFG-CQVvkH6vu4-UfNVbmbLhwNNqx0uTID3VvsBLJsX1SndjNwZo6eRb_Hzc6O19HMKt5-tfalfgD24gSwyYLYgkDr6sFJJjXnMKxcEwAIQTMS8kl"/>
+</div>
+<div class="w-10 h-10 bg-surface-container-lowest border border-outline-variant flex items-center justify-center font-mono text-[10px] text-outline">
+                                        +3
+                                    </div>
+</div>
+</div>
+</div>
+<!-- Triple Truth Layout -->
+<div class="md:w-2/3 grid grid-cols-1 gap-1">
+<!-- Level 1: Mortal Vision -->
+<div class="bg-surface-container-low p-6 transition-all duration-300 hover:bg-surface-container-high border-l-2 border-transparent hover:border-outline">
+<div class="flex items-center gap-3 mb-3">
+<span class="material-symbols-outlined text-outline text-sm">visibility</span>
+<h3 class="font-mono text-[10px] uppercase tracking-[0.2em] text-outline">I. Visão Mortal</h3>
+</div>
+<p class="font-body text-sm text-on-surface-variant leading-relaxed">
+                                    Lendas locais falam de uma festa anual em que os convidados nunca envelhecem. Ouve-se música clássica vinda da mansão abandonada nos arredores de Sintra toda primeira lua cheia de Outubro.
+                                </p>
+</div>
+<!-- Level 2: Supernatural Vision -->
+<div class="bg-surface-container-low p-6 transition-all duration-300 hover:bg-surface-container-high border-l-2 border-transparent hover:border-primary">
+<div class="flex items-center gap-3 mb-3">
+<span class="material-symbols-outlined text-primary text-sm">flare</span>
+<h3 class="font-mono text-[10px] uppercase tracking-[0.2em] text-primary">II. Visão Sobrenatural</h3>
+</div>
+<p class="font-body text-sm text-on-surface leading-relaxed">
+                                    Um ritual de sangue de 5º nível. A mansão é um receptáculo para uma entidade do Vazio. A "música" é o eco de gritos processados por uma ressonância etérea que distorce o fluxo temporal.
+                                </p>
+</div>
+<!-- Level 3: The Hidden Truth (Master's Notes) -->
+<div class="bg-primary-container/20 p-6 border-l-2 border-primary relative overflow-hidden">
+<div class="absolute top-0 right-0 p-4 opacity-10">
+<span class="material-symbols-outlined text-6xl" style="font-variation-settings: 'FILL' 1;">skull</span>
+</div>
+<div class="flex items-center gap-3 mb-3">
+<span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">lock</span>
+<h3 class="font-mono text-[10px] uppercase tracking-[0.2em] text-primary">III. A Verdade Oculta</h3>
+</div>
+<p class="font-serif italic text-base text-on-primary-container leading-relaxed">
+                                    "A entidade não está sendo invocada; ela está sendo alimentada para manter as correntes de um Antigo presas sob o solo português. Se o banquete parar, o terremoto de 1755 parecerá uma vibração leve."
+                                </p>
+<div class="mt-4 flex gap-2">
+<span class="inline-block bg-surface-container-highest px-2 py-1 font-mono text-[8px] text-primary uppercase">CRÍTICO</span>
+<span class="inline-block bg-surface-container-highest px-2 py-1 font-mono text-[8px] text-outline uppercase">SEGURANÇA NÍVEL 5</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Entry 2 -->
+<section class="relative group">
+<div class="absolute -left-6 top-0 bottom-0 w-[1px] bg-outline-variant/30 group-hover:bg-primary transition-colors duration-500"></div>
+<div class="flex flex-col md:flex-row gap-8">
+<div class="md:w-1/3">
+<span class="font-mono text-[10px] text-primary uppercase tracking-[0.3em] block mb-2">Registro #112-D</span>
+<h2 class="font-serif text-3xl font-bold text-on-surface mb-4 group-hover:text-primary transition-colors cursor-pointer">O Relógio de Areia Prateada</h2>
+<div class="mt-6">
+<span class="font-mono text-[9px] text-outline uppercase tracking-widest block mb-3">CONHECIMENTO ADQUIRIDO POR:</span>
+<div class="flex -space-x-2">
+<div class="w-10 h-10 bg-surface-container-highest border border-outline-variant flex items-center justify-center overflow-hidden">
+<img class="grayscale contrast-125 hover:grayscale-0 transition-all duration-300 object-cover" data-alt="moody portrait of a man with spectacles in a dark study environment" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5Bbs3WsvWzoSH2mThbENO5zX3ylZXEoC2UhzMBYxiagKc4Upq3KJPdNY5KeCT84nVIqQ_biwCKD5C_F4J8Zx4qlDaIpFYG2rhjPSfYQ9I1XVDwRmI6XNEfsh1NLdY6AuoZORb9-9eOUYo-Y0d5-oSmhZZ356OL7BcFL66YG5WjRg8zM-1Tjlv6WkccPKUYk_dTEwCgw-pbPwN34pc9KQT0eSykVtmRgrjumWo0EDOAyV1CZamfjz1zUqWy_NdCeK6NSazCSM3i-3Y"/>
+</div>
+<div class="w-10 h-10 bg-surface-container-lowest border border-outline-variant flex items-center justify-center font-mono text-[10px] text-outline">
+                                        +1
+                                    </div>
+</div>
+</div>
+</div>
+<div class="md:w-2/3 grid grid-cols-1 gap-1">
+<div class="bg-surface-container-low p-6 transition-all duration-300 hover:bg-surface-container-high border-l-2 border-transparent hover:border-outline">
+<div class="flex items-center gap-3 mb-3">
+<span class="material-symbols-outlined text-outline text-sm">visibility</span>
+<h3 class="font-mono text-[10px] uppercase tracking-[0.2em] text-outline">I. Visão Mortal</h3>
+</div>
+<p class="font-body text-sm text-on-surface-variant leading-relaxed">
+                                    Um item de leilão amaldiçoado que teria pertencido a um relojoeiro cego em Veneza. Dizem que quem o possui ganha sorte incalculável por 24 horas antes de desaparecer sem deixar rastros.
+                                </p>
+</div>
+<div class="bg-surface-container-low p-6 transition-all duration-300 hover:bg-surface-container-high border-l-2 border-transparent hover:border-primary">
+<div class="flex items-center gap-3 mb-3">
+<span class="material-symbols-outlined text-primary text-sm">flare</span>
+<h3 class="font-mono text-[10px] uppercase tracking-[0.2em] text-primary">II. Visão Sobrenatural</h3>
+</div>
+<p class="font-body text-sm text-on-surface leading-relaxed">
+                                    O artefato não contém areia, mas poeira de almas incineradas. Ele permite ao usuário "saltar" para uma linha do tempo adjacente onde seu desejo foi realizado, mas consome a existência original do usuário.
+                                </p>
+</div>
+<div class="bg-primary-container/20 p-6 border-l-2 border-primary relative overflow-hidden">
+<div class="absolute top-0 right-0 p-4 opacity-10">
+<span class="material-symbols-outlined text-6xl" style="font-variation-settings: 'FILL' 1;">hourglass_empty</span>
+</div>
+<div class="flex items-center gap-3 mb-3">
+<span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">lock</span>
+<h3 class="font-mono text-[10px] uppercase tracking-[0.2em] text-primary">III. A Verdade Oculta</h3>
+</div>
+<p class="font-serif italic text-base text-on-primary-container leading-relaxed">
+                                    "O relojoeiro nunca foi cego. Ele era um Arauto do Destino. Cada grão de poeira prateada é um fragmento de um mundo que ele mesmo destruiu para fabricar o relógio. O item é um Cavalo de Troia para a Entropia."
+                                </p>
+</div>
+</div>
+</div>
+</section>
+<!-- Entry 3 (Locked/Mysterious) -->
+<section class="relative group opacity-40 grayscale">
+<div class="absolute -left-6 top-0 bottom-0 w-[1px] bg-outline-variant/30"></div>
+<div class="flex flex-col md:flex-row gap-8">
+<div class="md:w-1/3">
+<span class="font-mono text-[10px] text-outline uppercase tracking-[0.3em] block mb-2">Registro #???-?</span>
+<h2 class="font-serif text-3xl font-bold text-outline mb-4">O Codex de Mercúrio</h2>
+</div>
+<div class="md:w-2/3 bg-surface-container-lowest border border-dashed border-outline-variant p-12 flex flex-col items-center justify-center text-center">
+<span class="material-symbols-outlined text-outline-variant text-4xl mb-4">lock_reset</span>
+<span class="font-mono text-xs text-outline uppercase tracking-[0.5em]">CONHECIMENTO INSUFICIENTE</span>
+<p class="font-body text-[10px] text-outline-variant mt-2">Requer 15 pontos de Ocultismo ou Sangue de uma Linhagem Antiga.</p>
+</div>
+</div>
+</section>
+</div>
+<!-- Evidence Tags / Metadata Footer -->
+<div class="mt-24 pt-12 border-t border-outline-variant/20 grid grid-cols-2 md:grid-cols-4 gap-4">
+<div class="bg-surface-container-highest p-4">
+<span class="font-mono text-[9px] text-outline uppercase block mb-1">TOTAL DE REGISTROS</span>
+<span class="font-serif text-xl font-bold text-on-surface">142</span>
+</div>
+<div class="bg-surface-container-highest p-4 border-l-4 border-primary">
+<span class="font-mono text-[9px] text-primary uppercase block mb-1">AMALDIÇOADOS</span>
+<span class="font-serif text-xl font-bold text-on-surface">12</span>
+</div>
+<div class="bg-surface-container-highest p-4">
+<span class="font-mono text-[9px] text-outline uppercase block mb-1">ÚLTIMA ATUALIZAÇÃO</span>
+<span class="font-serif text-xl font-bold text-on-surface">12.OUT.99</span>
+</div>
+<div class="bg-surface-container-highest p-4">
+<span class="font-mono text-[9px] text-outline uppercase block mb-1">STATUS TERMINAL</span>
+<span class="font-serif text-xl font-bold text-green-800">STABLE</span>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full bg-[#131313] flex justify-around items-center h-16 z-50 px-2 shadow-[0px_-10px_30px_rgba(0,0,0,0.5)]">
+<a class="text-[#920703] flex flex-col items-center justify-center transition-colors" href="#">
+<span class="material-symbols-outlined">group</span>
+</a>
+<a class="text-[#920703] flex flex-col items-center justify-center transition-colors" href="#">
+<span class="material-symbols-outlined">person_search</span>
+</a>
+<a class="text-[#ffb4a8] flex flex-col items-center justify-center transition-colors" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">auto_stories</span>
+</a>
+<a class="text-[#920703] flex flex-col items-center justify-center transition-colors" href="#">
+<span class="material-symbols-outlined">map</span>
+</a>
+<a class="text-[#920703] flex flex-col items-center justify-center transition-colors" href="#">
+<span class="material-symbols-outlined">event_note</span>
+</a>
+</nav>
+<!-- Grain Texture Overlay -->
+<div class="fixed inset-0 pointer-events-none opacity-[0.03] z-[100] bg-[url('https://www.transparenttextures.com/patterns/pinstriped-suit.png')]"></div>
+</body></html>

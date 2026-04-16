@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pt-br"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&amp;family=Inter:wght@400;600&amp;family=Space+Grotesk:wght@300;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-low": "#1c1b1b",
+                        "surface-container": "#20201f",
+                        "on-tertiary": "#001a98",
+                        "on-primary-fixed": "#410000",
+                        "on-secondary": "#5d170f",
+                        "on-primary": "#690000",
+                        "surface-bright": "#393939",
+                        "surface": "#131313",
+                        "primary": "#ffb4a8",
+                        "surface-dim": "#131313",
+                        "on-primary-fixed-variant": "#920703",
+                        "on-background": "#e5e2e1",
+                        "on-surface-variant": "#e3beb8",
+                        "on-secondary-container": "#ff9a8a",
+                        "on-primary-container": "#ff907f",
+                        "secondary": "#ffb4a8",
+                        "on-secondary-fixed": "#400201",
+                        "inverse-primary": "#b52619",
+                        "tertiary-fixed-dim": "#bcc3ff",
+                        "secondary-fixed-dim": "#ffb4a8",
+                        "tertiary-container": "#0025c8",
+                        "on-tertiary-container": "#9ea9ff",
+                        "primary-fixed": "#ffdad4",
+                        "surface-container-highest": "#353535",
+                        "on-error-container": "#ffdad6",
+                        "primary-container": "#8b0000",
+                        "on-error": "#690005",
+                        "inverse-surface": "#e5e2e1",
+                        "secondary-container": "#7b2d23",
+                        "background": "#131313",
+                        "on-surface": "#e5e2e1",
+                        "primary-fixed-dim": "#ffb4a8",
+                        "outline-variant": "#5a403c",
+                        "outline": "#aa8984",
+                        "error-container": "#93000a",
+                        "surface-container-lowest": "#0e0e0e",
+                        "tertiary-fixed": "#dfe0ff",
+                        "on-tertiary-fixed": "#000d60",
+                        "error": "#ffb4ab",
+                        "inverse-on-surface": "#313030",
+                        "secondary-fixed": "#ffdad4",
+                        "surface-tint": "#ffb4a8",
+                        "surface-variant": "#353535",
+                        "surface-container-high": "#2a2a2a",
+                        "on-secondary-fixed-variant": "#7b2d23",
+                        "tertiary": "#bcc3ff",
+                        "on-tertiary-fixed-variant": "#0d2ccc"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0px",
+                        "lg": "0px",
+                        "xl": "0px",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Noto Serif"],
+                        "body": ["Inter"],
+                        "label": ["Space Grotesk"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #131313;
+            color: #e5e2e1;
+            font-family: 'Inter', sans-serif;
+        }
+        .grain-overlay {
+            pointer-events: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: url("https://www.transparenttextures.com/patterns/asfalt-dark.png");
+            opacity: 0.03;
+            z-index: 50;
+        }
+    </style>
+</head>
+<body class="flex min-h-screen overflow-x-hidden">
+<div class="grain-overlay"></div>
+<!-- SideNavBar (Shared Component) -->
+<aside class="hidden md:flex flex-col h-screen w-64 left-0 top-0 sticky bg-[#0e0e0e] shadow-[20px_0px_40px_rgba(0,0,0,0.6)] py-8 space-y-4 z-40">
+<div class="px-6 mb-8">
+<h1 class="font-['Noto_Serif'] italic text-lg text-[#ffb4a8]">Crônica Noturna</h1>
+<p class="font-['Space_Grotesk'] tracking-widest uppercase text-[10px] text-[#5a403c]">Investigador de Sombras</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-4 bg-[#8b0000] text-white font-bold p-3 transition-all duration-300 ease-in-out" href="#">
+<span class="material-symbols-outlined">groups</span>
+<span class="font-['Space_Grotesk'] tracking-widest uppercase text-xs">Coterie</span>
+</a>
+<a class="flex items-center gap-4 text-[#5a403c] p-3 hover:bg-[#353535] hover:text-[#ffb4a8] transition-all duration-300 ease-in-out" href="#">
+<span class="material-symbols-outlined">person_search</span>
+<span class="font-['Space_Grotesk'] tracking-widest uppercase text-xs">NPCs</span>
+</a>
+<a class="flex items-center gap-4 text-[#5a403c] p-3 hover:bg-[#353535] hover:text-[#ffb4a8] transition-all duration-300 ease-in-out" href="#">
+<span class="material-symbols-outlined">auto_stories</span>
+<span class="font-['Space_Grotesk'] tracking-widest uppercase text-xs">Itens</span>
+</a>
+<a class="flex items-center gap-4 text-[#5a403c] p-3 hover:bg-[#353535] hover:text-[#ffb4a8] transition-all duration-300 ease-in-out" href="#">
+<span class="material-symbols-outlined">map</span>
+<span class="font-['Space_Grotesk'] tracking-widest uppercase text-xs">Atlas</span>
+</a>
+<a class="flex items-center gap-4 text-[#5a403c] p-3 hover:bg-[#353535] hover:text-[#ffb4a8] transition-all duration-300 ease-in-out" href="#">
+<span class="material-symbols-outlined">auto_fix_high</span>
+<span class="font-['Space_Grotesk'] tracking-widest uppercase text-xs">Ocultismo</span>
+</a>
+<a class="flex items-center gap-4 text-[#5a403c] p-3 hover:bg-[#353535] hover:text-[#ffb4a8] transition-all duration-300 ease-in-out" href="#">
+<span class="material-symbols-outlined">menu_book</span>
+<span class="font-['Space_Grotesk'] tracking-widest uppercase text-xs">Sessões</span>
+</a>
+</nav>
+<div class="px-4 mt-auto">
+<button class="w-full bg-[#8b0000] text-white font-['Space_Grotesk'] tracking-widest uppercase text-xs py-4 hover:brightness-110 transition-all active:scale-95">
+                Nova Sessão
+            </button>
+</div>
+</aside>
+<div class="flex-1 flex flex-col min-w-0">
+<!-- TopAppBar (Shared Component) -->
+<header class="w-full top-0 left-0 bg-[#131313] border-b border-[#5a403c]/15 flex justify-between items-center px-8 py-6 z-30">
+<div class="flex items-center gap-4">
+<span class="font-['Noto_Serif'] font-bold text-[#ffb4a8] text-2xl tracking-tighter uppercase">Grimório do Narrador</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="hidden lg:flex items-center bg-surface-container-lowest px-4 py-2 border-b border-outline-variant/30">
+<span class="material-symbols-outlined text-outline text-sm">search</span>
+<input class="bg-transparent border-none text-xs font-label tracking-widest focus:ring-0 text-on-surface-variant w-48" placeholder="BUSCAR NA CRÔNICA..." type="text"/>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-[#920703] hover:text-[#ffb4a8] transition-colors scale-95 active:scale-90">
+<span class="material-symbols-outlined">history_edu</span>
+</button>
+<button class="text-[#920703] hover:text-[#ffb4a8] transition-colors scale-95 active:scale-90">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="p-8 lg:p-12 overflow-y-auto">
+<!-- Breadcrumbs / Section Title -->
+<div class="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div>
+<span class="font-label text-[10px] tracking-[0.3em] text-primary uppercase mb-2 block">Protocolo de Coterie</span>
+<h2 class="font-headline text-5xl lg:text-7xl font-bold text-on-surface leading-none">A Coterie</h2>
+</div>
+<div class="flex gap-4">
+<div class="bg-surface-container-high p-4 flex flex-col min-w-[120px]">
+<span class="font-label text-[10px] text-outline uppercase">Membros Ativos</span>
+<span class="font-headline text-3xl text-primary">04</span>
+</div>
+<div class="bg-surface-container-high p-4 flex flex-col min-w-[120px]">
+<span class="font-label text-[10px] text-outline uppercase">Status de Alerta</span>
+<span class="font-headline text-3xl text-primary-container">BAIXO</span>
+</div>
+</div>
+</div>
+<!-- Bento Grid Characters -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-0 bg-outline-variant/10">
+<!-- Card 1: Tremere -->
+<div class="bg-surface-container-lowest border border-outline-variant/20 group hover:bg-surface-container transition-all duration-500">
+<div class="aspect-[3/4] overflow-hidden relative grayscale hover:grayscale-0 transition-all duration-700">
+<img class="w-full h-full object-cover" data-alt="Dark dramatic portrait of a man in vintage Victorian clothing, moody shadows, painterly texture, esoteric atmosphere" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDw6kzzQm97MXi31e2WmP0Pz0Nns-8NckcC6SrOExis_aOu8q4g63r6rXlJt7U2E7xBL20S0oritnzlfATYRAlgSiTXR6rttI-qnbUnCWxKCjuP4jOVSuDyauTuLML64F9VR2tifGXa8KY-TyVnVUdqIEAfDWvH_M5Z-_naDJbfiObc-sWNDZKsTYINVot13uSU1TJwYNIaMuAU9aVZKzjUT2UVkCYt4LIkNA79cZP59q7KaaY9Ox9ouHwYkd43kG22b7SXAtcRwoj7"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-transparent to-transparent opacity-80"></div>
+<div class="absolute bottom-4 left-4">
+<span class="font-label text-[10px] tracking-widest text-primary uppercase block mb-1">Clã Tremere</span>
+<h3 class="font-headline text-2xl text-on-surface">Julian Vane</h3>
+</div>
+</div>
+<div class="p-6 space-y-6">
+<!-- Hunger Tracker -->
+<div>
+<div class="flex justify-between items-center mb-3">
+<span class="font-label text-[10px] tracking-widest text-outline uppercase">Fome</span>
+<div class="flex gap-2">
+<button class="text-on-primary-fixed-variant hover:text-primary transition-colors active:scale-90"><span class="material-symbols-outlined text-sm">remove</span></button>
+<button class="text-on-primary-fixed-variant hover:text-primary transition-colors active:scale-90"><span class="material-symbols-outlined text-sm">add</span></button>
+</div>
+</div>
+<div class="flex gap-1.5">
+<span class="material-symbols-outlined text-primary-container" style="font-variation-settings: 'FILL' 1;">water_drop</span>
+<span class="material-symbols-outlined text-primary-container" style="font-variation-settings: 'FILL' 1;">water_drop</span>
+<span class="material-symbols-outlined text-outline-variant">water_drop</span>
+<span class="material-symbols-outlined text-outline-variant">water_drop</span>
+<span class="material-symbols-outlined text-outline-variant">water_drop</span>
+</div>
+</div>
+<!-- Humanity Tracker -->
+<div>
+<div class="flex justify-between items-center mb-2">
+<span class="font-label text-[10px] tracking-widest text-outline uppercase">Humanidade</span>
+<span class="font-label text-[10px] text-on-surface">7/10</span>
+</div>
+<div class="h-[2px] w-full bg-outline-variant/30 relative">
+<div class="absolute top-0 left-0 h-full bg-primary-container" style="width: 70%;"></div>
+</div>
+</div>
+<!-- Actions -->
+<div class="pt-4 border-t border-outline-variant/10 flex justify-between items-center">
+<button class="font-label text-[10px] tracking-tighter text-outline hover:text-primary uppercase flex items-center gap-2">
+<span class="material-symbols-outlined text-xs">edit</span> Ficha Completa
+                            </button>
+<span class="material-symbols-outlined text-outline-variant text-sm">emergency_home</span>
+</div>
+</div>
+</div>
+<!-- Card 2: Ventrue -->
+<div class="bg-surface-container-lowest border border-outline-variant/20 group hover:bg-surface-container transition-all duration-500">
+<div class="aspect-[3/4] overflow-hidden relative grayscale hover:grayscale-0 transition-all duration-700">
+<img class="w-full h-full object-cover" data-alt="Cinematic portrait of a regal woman in dark velvet, high contrast lighting, chiaroscuro style, sharp gaze, gothic elegance" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAfNHzk2yssSwtmE90zmvFEN_JLM3pe95B4p7fILxmzm-TKdEadE7bDdoIiIlklb4S2fu2lCmSLy1laGFwCPkz5kyZpOAVwNSfX9qeUbYqP_dOzSaddSuHqeGN6neOTII4uTS6m4THr3CLTS8yeLB-heQW7D4ibac7B98NLdSRf21wxE2lsopvHP-C-rGaWkBHAI0m_0rM5-l7Ecj6yieioaSk9K0XxA6KLFnlweqYloPCm8Bf9uqAptGfX18kpSVdDEuxsTjJhFenl"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-transparent to-transparent opacity-80"></div>
+<div class="absolute bottom-4 left-4">
+<span class="font-label text-[10px] tracking-widest text-primary uppercase block mb-1">Clã Ventrue</span>
+<h3 class="font-headline text-2xl text-on-surface">Eleanor Thorne</h3>
+</div>
+</div>
+<div class="p-6 space-y-6">
+<div>
+<div class="flex justify-between items-center mb-3">
+<span class="font-label text-[10px] tracking-widest text-outline uppercase">Fome</span>
+<div class="flex gap-2">
+<button class="text-on-primary-fixed-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-sm">remove</span></button>
+<button class="text-on-primary-fixed-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-sm">add</span></button>
+</div>
+</div>
+<div class="flex gap-1.5">
+<span class="material-symbols-outlined text-primary-container" style="font-variation-settings: 'FILL' 1;">water_drop</span>
+<span class="material-symbols-outlined text-outline-variant">water_drop</span>
+<span class="material-symbols-outlined text-outline-variant">water_drop</span>
+<span class="material-symbols-outlined text-outline-variant">water_drop</span>
+<span class="material-symbols-outlined text-outline-variant">water_drop</span>
+</div>
+</div>
+<div>
+<div class="flex justify-between items-center mb-2">
+<span class="font-label text-[10px] tracking-widest text-outline uppercase">Humanidade</span>
+<span class="font-label text-[10px] text-on-surface">5/10</span>
+</div>
+<div class="h-[2px] w-full bg-outline-variant/30 relative">
+<div class="absolute top-0 left-0 h-full bg-primary-container" style="width: 50%;"></div>
+</div>
+</div>
+<div class="pt-4 border-t border-outline-variant/10 flex justify-between items-center">
+<button class="font-label text-[10px] tracking-tighter text-outline hover:text-primary uppercase flex items-center gap-2">
+<span class="material-symbols-outlined text-xs">edit</span> Ficha Completa
+                            </button>
+<span class="material-symbols-outlined text-outline-variant text-sm">balance</span>
+</div>
+</div>
+</div>
+<!-- Card 3: Toreador -->
+<div class="bg-surface-container-lowest border border-outline-variant/20 group hover:bg-surface-container transition-all duration-500">
+<div class="aspect-[3/4] overflow-hidden relative grayscale hover:grayscale-0 transition-all duration-700">
+<img class="w-full h-full object-cover" data-alt="Moody artistic portrait of a young woman with intense eyes, dark smoky background, faint red lighting, oil painting style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA-2VbO-H5oS4oR3SHp3MhPmg0yDs9-Q7m0rvbd63emm88hDhF0ogBhGKWrxKAEmmrrdWPHfJ5eU29538y6vjjpYGHaQW_mBZHdsTFKvFIfR_-lEwSNQuHq9hnbBUAe49WzobUMuhffsa2EfDiL_IXPBfCqV3qF4AMkxTETICsAyw4K5h1CBsgKHoVjr8Fa4oYMMfVS3_BawK-sOSnX-AtyG_A-xcSGCWG0bY_2JKH99WryuxhV7DdEwfRbK51JdJ7y2fPeNRFtR9Zr"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-transparent to-transparent opacity-80"></div>
+<div class="absolute bottom-4 left-4">
+<span class="font-label text-[10px] tracking-widest text-primary uppercase block mb-1">Clã Toreador</span>
+<h3 class="font-headline text-2xl text-on-surface">Sasha Rossetti</h3>
+</div>
+</div>
+<div class="p-6 space-y-6">
+<div>
+<div class="flex justify-between items-center mb-3">
+<span class="font-label text-[10px] tracking-widest text-outline uppercase">Fome</span>
+<div class="flex gap-2">
+<button class="text-on-primary-fixed-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-sm">remove</span></button>
+<button class="text-on-primary-fixed-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-sm">add</span></button>
+</div>
+</div>
+<div class="flex gap-1.5">
+<span class="material-symbols-outlined text-primary-container" style="font-variation-settings: 'FILL' 1;">water_drop</span>
+<span class="material-symbols-outlined text-primary-container" style="font-variation-settings: 'FILL' 1;">water_drop</span>
+<span class="material-symbols-outlined text-primary-container" style="font-variation-settings: 'FILL' 1;">water_drop</span>
+<span class="material-symbols-outlined text-outline-variant">water_drop</span>
+<span class="material-symbols-outlined text-outline-variant">water_drop</span>
+</div>
+</div>
+<div>
+<div class="flex justify-between items-center mb-2">
+<span class="font-label text-[10px] tracking-widest text-outline uppercase">Humanidade</span>
+<span class="font-label text-[10px] text-on-surface">8/10</span>
+</div>
+<div class="h-[2px] w-full bg-outline-variant/30 relative">
+<div class="absolute top-0 left-0 h-full bg-primary-container" style="width: 80%;"></div>
+</div>
+</div>
+<div class="pt-4 border-t border-outline-variant/10 flex justify-between items-center">
+<button class="font-label text-[10px] tracking-tighter text-outline hover:text-primary uppercase flex items-center gap-2">
+<span class="material-symbols-outlined text-xs">edit</span> Ficha Completa
+                            </button>
+<span class="material-symbols-outlined text-outline-variant text-sm">palette</span>
+</div>
+</div>
+</div>
+<!-- Card 4: Malkavian -->
+<div class="bg-surface-container-lowest border border-outline-variant/20 group hover:bg-surface-container transition-all duration-500">
+<div class="aspect-[3/4] overflow-hidden relative grayscale hover:grayscale-0 transition-all duration-700">
+<img class="w-full h-full object-cover" data-alt="Symmetric portrait of a pale man with mysterious expression, foggy dark background, cinematic shadows, expressive and eerie" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAMkEsgfP7aWe5vUyQ95Ay6Fi_d0nglDqXWrb10bRG9YyT-ixEFQW0nAG369sAD3eZECK-YWZNQwwRGHZpIJiDNs6w3PV4JAphZzNShCXp0jQyaj_DWk3UR_UnFiYjtLgBxl5CUeJbH9Ni-xkI_tLMz1RTIBZUpvKUj-5xMq3oRqTMVi7nZt1WAHbnyutIm5WeOScYx_VjEj99fFUDIrfEJP33-qMPXP87nsNW9YZL4AtOc2RyxCc56cxF6LBwgbdHePBooMroPu4w2"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-transparent to-transparent opacity-80"></div>
+<div class="absolute bottom-4 left-4">
+<span class="font-label text-[10px] tracking-widest text-primary uppercase block mb-1">Clã Malkavian</span>
+<h3 class="font-headline text-2xl text-on-surface">Xavier Silence</h3>
+</div>
+</div>
+<div class="p-6 space-y-6">
+<div>
+<div class="flex justify-between items-center mb-3">
+<span class="font-label text-[10px] tracking-widest text-outline uppercase">Fome</span>
+<div class="flex gap-2">
+<button class="text-on-primary-fixed-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-sm">remove</span></button>
+<button class="text-on-primary-fixed-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-sm">add</span></button>
+</div>
+</div>
+<div class="flex gap-1.5">
+<span class="material-symbols-outlined text-primary-container" style="font-variation-settings: 'FILL' 1;">water_drop</span>
+<span class="material-symbols-outlined text-primary-container" style="font-variation-settings: 'FILL' 1;">water_drop</span>
+<span class="material-symbols-outlined text-primary-container" style="font-variation-settings: 'FILL' 1;">water_drop</span>
+<span class="material-symbols-outlined text-primary-container" style="font-variation-settings: 'FILL' 1;">water_drop</span>
+<span class="material-symbols-outlined text-outline-variant">water_drop</span>
+</div>
+</div>
+<div>
+<div class="flex justify-between items-center mb-2">
+<span class="font-label text-[10px] tracking-widest text-outline uppercase">Humanidade</span>
+<span class="font-label text-[10px] text-on-surface">4/10</span>
+</div>
+<div class="h-[2px] w-full bg-outline-variant/30 relative">
+<div class="absolute top-0 left-0 h-full bg-primary-container" style="width: 40%;"></div>
+</div>
+</div>
+<div class="pt-4 border-t border-outline-variant/10 flex justify-between items-center">
+<button class="font-label text-[10px] tracking-tighter text-outline hover:text-primary uppercase flex items-center gap-2">
+<span class="material-symbols-outlined text-xs">edit</span> Ficha Completa
+                            </button>
+<span class="material-symbols-outlined text-outline-variant text-sm">psychology</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Meta Info -->
+<footer class="mt-16 flex flex-col md:flex-row gap-12 border-t border-outline-variant/10 pt-12 opacity-60">
+<div class="max-w-md">
+<h4 class="font-label text-[10px] tracking-widest text-primary uppercase mb-4">Nota do Narrador</h4>
+<p class="font-body text-sm text-on-surface-variant leading-relaxed">A tensão no Eliseu está aumentando. Os Tremere estão sob escrutínio após o desaparecimento do Regente. Monitore os níveis de fome da coterie; o próximo frenesi pode ser o último.</p>
+</div>
+<div class="flex flex-wrap gap-8">
+<div>
+<span class="font-label text-[10px] text-outline uppercase block mb-1">Localização</span>
+<span class="font-headline text-lg text-on-surface">Londres Vitoriana</span>
+</div>
+<div>
+<span class="font-label text-[10px] text-outline uppercase block mb-1">Data Astral</span>
+<span class="font-headline text-lg text-on-surface">14.Out.1888</span>
+</div>
+<div>
+<span class="font-label text-[10px] text-outline uppercase block mb-1">Segurança</span>
+<span class="font-headline text-lg text-primary">Encriptado</span>
+</div>
+</div>
+</footer>
+</main>
+</div>
+<!-- Mobile Navigation (Shared Component Placeholder) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full bg-[#131313] flex justify-around items-center py-4 border-t border-outline-variant/20 z-50">
+<span class="material-symbols-outlined text-primary">groups</span>
+<span class="material-symbols-outlined text-outline">person_search</span>
+<span class="material-symbols-outlined text-outline">map</span>
+<span class="material-symbols-outlined text-outline">menu_book</span>
+</nav>
+</body></html>

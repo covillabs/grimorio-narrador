@@ -14,30 +14,76 @@ export default function NpcsPage() {
   const [editingNpc, setEditingNpc] = useState<any>(null);
   const [filter, setFilter] = useState("");
   const [combatMode, setCombatMode] = useState<Record<string, boolean>>({});
-  const queryClient = useQueryClient();
-
-  const { data: npcs = [], isLoading } = useQuery({
-    queryKey: ["npcs"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("npcs").select("*").order("name");
-      if (error) throw error;
-      return data;
+  const [mockNpcs, setMockNpcs] = useState([
+    {
+      id: "1",
+      name: "Príncipe Sebastian Van Der Meer",
+      species_faction: "Camarilla",
+      clan: "Ventrue",
+      status: "Ativo",
+      appearance: "Um senhor de idade aparentemente nos seus 50 anos mortais, sempre vestido com ternos impecáveis. Seus olhos são frios e calculistas.",
+      image_url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=400&auto=format&fit=crop",
+      physical_pool: 5,
+      social_pool: 9,
+      mental_pool: 8,
+      health: 6,
+      blood_potency: 4,
+      disciplines: "Dominação 4, Fortitude 3, Presença 3",
+      specialties: "Liderança, Manipulação de Mercado",
+      secrets: "Ele está secretamente financiando uma facção Anarch rival para enfraquecer o Barão Zora sem se envolver diretamente."
     },
-  });
-
-  const deleteNpc = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("npcs").delete().eq("id", id);
-      if (error) throw error;
+    {
+      id: "2",
+      name: "Baronesa Zora",
+      species_faction: "Anarch",
+      clan: "Brujah",
+      status: "Ativo",
+      appearance: "Elegante e intensa, usa joias douradas pesadas. Constantemente desafia as tradições, mas mantém controle estrito em seu domínio.",
+      image_url: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=400&auto=format&fit=crop",
+      physical_pool: 8,
+      social_pool: 6,
+      mental_pool: 5,
+      health: 8,
+      blood_potency: 3,
+      disciplines: "Rapidez 3, Potência 4, Presença 2",
+      specialties: "Intimidação, Combate Desarmado",
+      secrets: 'Zora deve um "Boon de Sangue" ("Life Debt") a um ancião Tremere, algo que ela esconde a todo custo dos outros Anarchs.'
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["npcs"] });
+    {
+      id: "3",
+      name: "O Algoz (The Scourge)",
+      species_faction: "Camarilla",
+      clan: "Desconhecido",
+      status: "Ativo",
+      appearance: "Rosto oculto sob capuz pesado, age apenas nas sombras a mando do Príncipe.",
+      image_url: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=400&auto=format&fit=crop",
+      physical_pool: 10,
+      social_pool: 2,
+      mental_pool: 6,
+      health: 9,
+      blood_potency: 5,
+      disciplines: "Ofuscação 5, Rapidez 4, Potência 3",
+      specialties: "Furtividade, Assassinato",
+      secrets: "Ele é na verdade um carniçal ancestral superpoderoso, não um vampiro."
+    }
+  ]);
+
+  const isLoading = false;
+  const npcs = mockNpcs;
+
+  const deleteNpc = {
+    mutate: (id: string) => {
+      setMockNpcs(prev => prev.filter(npc => npc.id !== id));
       toast.success("NPC removido.");
-    },
-  });
+      setDialogOpen(false);
+    }
+  };
 
   const filtered = npcs.filter((npc) =>
-    !filter || npc.species_faction?.toLowerCase().includes(filter.toLowerCase()) || npc.name.toLowerCase().includes(filter.toLowerCase())
+    !filter || 
+    (npc.species_faction && npc.species_faction.toLowerCase().includes(filter.toLowerCase())) || 
+    (npc.clan && npc.clan.toLowerCase().includes(filter.toLowerCase())) ||
+    npc.name.toLowerCase().includes(filter.toLowerCase())
   );
 
   return (
@@ -149,9 +195,23 @@ export default function NpcsPage() {
                     </div>
                   )}
                   {npc.specialties && (
-                    <div className="col-span-2">
+                    <div className="col-span-2 md:col-span-4">
                       <span className="text-muted-foreground text-xs uppercase tracking-wider">Especialidades</span>
                       <p className="text-sm mt-1">{npc.specialties}</p>
+                    </div>
+                  )}
+                  {npc.secrets && (
+                    <div className="col-span-2 md:col-span-4 mt-2">
+                       <Accordion type="single" collapsible className="w-full">
+                         <AccordionItem value="secret" className="border-blood/30">
+                           <AccordionTrigger className="text-blood hover:text-blood-glow py-2 text-sm font-bold uppercase tracking-widest">
+                             Segredos Obscuros (Apenas Narrador)
+                           </AccordionTrigger>
+                           <AccordionContent className="text-sm text-muted-foreground bg-blood/5 p-3 rounded-b-md border-l-2 border-blood">
+                             {npc.secrets}
+                           </AccordionContent>
+                         </AccordionItem>
+                       </Accordion>
                     </div>
                   )}
                 </div>

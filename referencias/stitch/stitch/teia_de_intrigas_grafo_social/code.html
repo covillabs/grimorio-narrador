@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;0,900;1,400&amp;family=Inter:wght@300;400;600&amp;family=Space+Grotesk:wght@300;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-container": "#ff9a8a",
+                        "tertiary-fixed": "#dfe0ff",
+                        "on-primary-fixed-variant": "#920703",
+                        "on-tertiary-fixed": "#000d60",
+                        "surface-container-low": "#1c1b1b",
+                        "surface-container-highest": "#353535",
+                        "secondary-container": "#7b2d23",
+                        "inverse-surface": "#e5e2e1",
+                        "on-error-container": "#ffdad6",
+                        "primary-fixed-dim": "#ffb4a8",
+                        "surface-container-high": "#2a2a2a",
+                        "secondary-fixed": "#ffdad4",
+                        "on-background": "#e5e2e1",
+                        "surface-container-lowest": "#0e0e0e",
+                        "on-primary-fixed": "#410000",
+                        "primary-container": "#8b0000",
+                        "background": "#131313",
+                        "on-tertiary-container": "#9ea9ff",
+                        "tertiary": "#bcc3ff",
+                        "on-surface": "#e5e2e1",
+                        "inverse-primary": "#b52619",
+                        "tertiary-fixed-dim": "#bcc3ff",
+                        "on-primary": "#690000",
+                        "surface-variant": "#353535",
+                        "secondary-fixed-dim": "#ffb4a8",
+                        "on-secondary-fixed-variant": "#7b2d23",
+                        "tertiary-container": "#0025c8",
+                        "on-tertiary": "#001a98",
+                        "on-tertiary-fixed-variant": "#0d2ccc",
+                        "on-error": "#690005",
+                        "inverse-on-surface": "#313030",
+                        "outline-variant": "#5a403c",
+                        "surface-dim": "#131313",
+                        "on-surface-variant": "#e3beb8",
+                        "primary-fixed": "#ffdad4",
+                        "on-secondary": "#5d170f",
+                        "on-primary-container": "#ff907f",
+                        "primary": "#ffb4a8",
+                        "error-container": "#93000a",
+                        "surface": "#131313",
+                        "on-secondary-fixed": "#400201",
+                        "secondary": "#ffb4a8",
+                        "surface-tint": "#ffb4a8",
+                        "surface-bright": "#393939",
+                        "error": "#ffb4ab",
+                        "surface-container": "#20201f",
+                        "outline": "#aa8984"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0px",
+                        "lg": "0px",
+                        "xl": "0px",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Noto Serif"],
+                        "body": ["Inter"],
+                        "label": ["Space Grotesk"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { background-color: #131313; color: #e5e2e1; font-family: 'Inter', sans-serif; overflow: hidden; }
+        .grain {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: url("https://www.transparenttextures.com/patterns/carbon-fibre.png");
+            opacity: 0.03; pointer-events: none; z-index: 100;
+        }
+        .network-grid {
+            background-image: linear-gradient(#5a403c15 1px, transparent 1px), linear-gradient(90deg, #5a403c15 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        .node-glow:hover {
+            box-shadow: 0 0 25px #8b0000;
+            border-color: #ffb4a8;
+        }
+        .blood-bond { filter: drop-shadow(0 0 5px #8b0000); }
+    </style>
+</head>
+<body class="selection:bg-primary-container selection:text-on-primary-container">
+<div class="grain"></div>
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#131313] text-[#ffb4a8] border-b border-[#5a403c]/15 shadow-[0px_20px_40px_rgba(0,0,0,0.6)] flex justify-between items-center px-6 h-16 w-full">
+<div class="flex items-center gap-4">
+<span class="text-2xl font-['Noto_Serif'] font-black uppercase text-[#ffb4a8]">Teia de Intrigas</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="hidden md:flex gap-4">
+<span class="text-[#ffb4a8] border-b-2 border-[#8b0000] font-['Noto_Serif'] font-bold tracking-tight cursor-pointer">Investigation</span>
+<span class="text-[#E0E0E0]/60 hover:bg-[#353535] transition-colors duration-300 font-['Noto_Serif'] font-bold tracking-tight cursor-pointer px-2">Timeline</span>
+</div>
+<div class="flex gap-4">
+<span class="material-symbols-outlined cursor-pointer hover:bg-[#353535] p-1 transition-colors">filter_list</span>
+<span class="material-symbols-outlined cursor-pointer hover:bg-[#353535] p-1 transition-colors">settings</span>
+</div>
+</div>
+</header>
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-16 h-full w-64 z-40 bg-[#0e0e0e] border-r border-[#5a403c]/15 flex flex-col py-8 gap-4 overflow-hidden">
+<div class="px-6 mb-4">
+<h2 class="text-[#ffb4a8] font-bold font-['Space_Grotesk'] uppercase tracking-widest text-xs">Investigation Log</h2>
+<p class="text-[#E0E0E0]/40 text-[10px] font-['Space_Grotesk'] uppercase tracking-tighter">Forensic Metadata</p>
+</div>
+<nav class="flex flex-col gap-1">
+<div class="flex items-center gap-4 px-6 py-3 text-[#ffb4a8] bg-[#8b0000]/20 border-l-4 border-[#8b0000] transition-all duration-200 ease-in-out cursor-pointer">
+<span class="material-symbols-outlined">group</span>
+<span class="font-['Space_Grotesk'] uppercase tracking-widest text-xs">Coterie</span>
+</div>
+<div class="flex items-center gap-4 px-6 py-3 text-[#E0E0E0]/40 hover:text-[#E0E0E0] hover:bg-[#353535]/50 transition-all duration-200 ease-in-out cursor-pointer">
+<span class="material-symbols-outlined">person_search</span>
+<span class="font-['Space_Grotesk'] uppercase tracking-widest text-xs">NPCs</span>
+</div>
+<div class="flex items-center gap-4 px-6 py-3 text-[#E0E0E0]/40 hover:text-[#E0E0E0] hover:bg-[#353535]/50 transition-all duration-200 ease-in-out cursor-pointer">
+<span class="material-symbols-outlined">visibility_off</span>
+<span class="font-['Space_Grotesk'] uppercase tracking-widest text-xs">The Masquerade</span>
+</div>
+<div class="flex items-center gap-4 px-6 py-3 text-[#E0E0E0]/40 hover:text-[#E0E0E0] hover:bg-[#353535]/50 transition-all duration-200 ease-in-out cursor-pointer">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-['Space_Grotesk'] uppercase tracking-widest text-xs">Archives</span>
+</div>
+</nav>
+<div class="mt-auto mb-20">
+<div class="flex items-center gap-4 px-6 py-3 text-[#E0E0E0]/40 hover:text-error transition-all duration-200 ease-in-out cursor-pointer">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-['Space_Grotesk'] uppercase tracking-widest text-xs">Logout</span>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 mt-16 h-[calc(100vh-64px)] w-[calc(100%-256px)] relative overflow-hidden network-grid">
+<!-- SVG Connections Layer -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none z-10">
+<!-- Blood Bonds (Crimson Glowing) -->
+<line class="blood-bond" stroke="#8b0000" stroke-width="3" x1="50%" x2="40%" y1="50%" y2="35%"></line>
+<line class="blood-bond" stroke="#8b0000" stroke-width="3" x1="50%" x2="60%" y1="50%" y2="35%"></line>
+<!-- Rivals (Red Solid) -->
+<line stroke="#ffb4ab" stroke-width="2" x1="50%" x2="50%" y1="50%" y2="15%"></line>
+<path d="M 50% 50% Q 80% 50% 80% 25%" fill="transparent" stroke="#ffb4ab" stroke-width="2"></path>
+<!-- Allies (Blue Dashed) -->
+<line stroke="#bcc3ff" stroke-dasharray="8,4" stroke-width="2" x1="40%" x2="20%" y1="35%" y2="40%"></line>
+<!-- Life Debt (Yellow Dotted) -->
+<line stroke="#ffdad4" stroke-dasharray="2,4" stroke-width="2" x1="60%" x2="80%" y1="35%" y2="45%"></line>
+</svg>
+<!-- Legend Card -->
+<div class="absolute bottom-8 left-8 z-30 bg-[#1c1b1b] p-6 border-l-4 border-primary shadow-2xl max-w-xs">
+<h3 class="font-headline font-bold text-lg mb-4 text-on-surface">Vinculum Legend</h3>
+<div class="space-y-3 font-label text-[10px] uppercase tracking-widest">
+<div class="flex items-center gap-3">
+<div class="w-8 h-0.5 bg-[#ffb4ab]"></div>
+<span class="text-on-surface-variant">Rivalry / Hostile</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-8 h-1 bg-[#8b0000] shadow-[0_0_5px_#8b0000]"></div>
+<span class="text-on-surface-variant">Blood Bond (Active)</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-8 h-0.5 border-t-2 border-dashed border-[#bcc3ff]"></div>
+<span class="text-on-surface-variant">Ally / Touchstone</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-8 h-0.5 border-t-2 border-dotted border-[#ffdad4]"></div>
+<span class="text-on-surface-variant">Life Debt / Boon</span>
+</div>
+</div>
+</div>
+<!-- Node Layer -->
+<div class="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
+<!-- Central Coterie Hub -->
+<div class="relative pointer-events-auto flex flex-col items-center group">
+<div class="w-24 h-24 bg-primary-container border-2 border-primary node-glow transition-all cursor-pointer flex items-center justify-center p-1 overflow-hidden">
+<img class="w-full h-full object-cover grayscale brightness-75 contrast-125" data-alt="Gothic architectural detail of a dark castle window with moonlit atmosphere" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAMv59VjSlRsqtcBVhw4abE7YMiyXUCoDynhegGi88Y7uxG9_qIqP6xi5Y7i8uVvA6c_PmLa07osHQDDWA61apF0T6gsnfpeA8Xq-KRUJefBy_DsFalWLOLcvAxTaSz7GMaa5xIaUJZm5-lsqsLn1IsCtB5zAQlDwBK4G1qO-TDAspkRFPyjsQ3ubDbdAmyM_v-035R62spuEoaVEGPMkmFxUvjduJ2T_bUmqy_bBCrwZGo8mP7DcXUYKOAquHfWEOSHSarVrz4xQ7Q"/>
+</div>
+<span class="mt-2 font-label text-xs tracking-widest bg-black px-2 py-1 border border-outline-variant/30">THE COTERIE</span>
+</div>
+<!-- Julian Vane -->
+<div class="absolute pointer-events-auto flex flex-col items-center group transition-transform hover:-translate-y-1" style="left: 38%; top: 30%;">
+<div class="w-16 h-16 bg-surface-container-high border border-outline-variant node-glow transition-all cursor-pointer overflow-hidden">
+<img class="w-full h-full object-cover grayscale contrast-125" data-alt="Cinematic close-up of a pale man with sharp features and cold blue eyes in noir style lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDAEJfG9xjiMJZoSxgMxuAN-_uTIcmQjzzcZwqdNxKge9klXHq7z7I-siPx2BWsCgcVFprgP25yApL3gPU9xIRbiLJhq20qXMGOSYn5D8zXJZpkC-1oqE82AJPuLPR6lfESK0cAtRJwrJQPWj1n5RpXGaNSwZfZQf8ZfIGhWbuU3SjycA_ArY5PpYGWU2vV3eMInDmsGf-ddJeiZjFlomdF8FLgdvUBYEHsvChv829XAlRBHiiIv_sLzGMns_E751e5u8xA7gySVnpr"/>
+</div>
+<span class="mt-2 font-label text-[10px] tracking-widest uppercase text-on-surface-variant group-hover:text-primary">Julian Vane</span>
+</div>
+<!-- Eleanor Thorne -->
+<div class="absolute pointer-events-auto flex flex-col items-center group transition-transform hover:-translate-y-1" style="left: 60%; top: 30%;">
+<div class="w-16 h-16 bg-surface-container-high border border-outline-variant node-glow transition-all cursor-pointer overflow-hidden">
+<img class="w-full h-full object-cover grayscale contrast-125" data-alt="Portrait of a woman with long dark hair and intense gaze wearing a Victorian velvet collar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDirfFDfJ9VG0t1lysH956O7-iBQ4QazBLSgHjjF6aoqDkfMT7FyFA-Fnt5PrMxKIP-4_rZ0-wdr4HMf1geKuNDXdh7Xr4GMeRnX6_cp96J0f4LGE1QFbbwjavdck-IsEAZs0pfIlVpDTNP6_Gcc18kqdWfDszeXF0wUE0fo1N4afLgjSsILMV_7wqqG3oscN4Dzt3Pr9ArjJUN6L6K8F30CTjmtPL7VLByAbGw0iFt81Oa5P0LkmRfHJdip_x71WYW4LKXNaVhLUkv"/>
+</div>
+<span class="mt-2 font-label text-[10px] tracking-widest uppercase text-on-surface-variant group-hover:text-primary">Eleanor Thorne</span>
+</div>
+<!-- NPC: Sebastian Van Der Meer -->
+<div class="absolute pointer-events-auto flex flex-col items-center group transition-transform hover:-translate-y-1" style="left: 48%; top: 10%;">
+<div class="w-12 h-12 bg-surface-container-lowest border-2 border-error node-glow transition-all cursor-pointer overflow-hidden">
+<img class="w-full h-full object-cover grayscale contrast-150" data-alt="Older man with sophisticated glasses and a menacing smile in dramatic chiaroscuro lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB4juKsj6AqI7kCt2_tPMHtiJVDHbpmIiK7EkrKCzshhWVsMzdyEHNav9bJLU-XzMSKC3jvMstZRUQqL-8v7TCK0BY6OjELRdQOKI_-OYpRIwoy3hdN7VUwd2pSRSpy4v8ukYCikQMZRqeI0vYHh0CUgjHlBkkfD53QVZ5nh_n_BIKnr-D5_EdmkvG9xrgvS5dVuby0opFr3aOLvShdTa53Q1V-VoasT3KkrXpECXXEGGOhSb90OcFv-EFYKfPnWoS_KGkPDY7WBgfw"/>
+</div>
+<span class="mt-2 font-label text-[9px] tracking-tighter uppercase text-error">Sebastian V.D.M.</span>
+</div>
+<!-- NPC: The Archivist -->
+<div class="absolute pointer-events-auto flex flex-col items-center group transition-transform hover:-translate-y-1" style="left: 20%; top: 40%;">
+<div class="w-12 h-12 bg-surface-container-lowest border border-tertiary node-glow transition-all cursor-pointer overflow-hidden">
+<img class="w-full h-full object-cover grayscale contrast-125" data-alt="Close-up of a mysterious person wearing a heavy hood with eyes hidden in deep shadows" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAkO3-GA1r0mQ-KyUipnvtUYH1Ik5QiGjr8aMDdSxBXsTnd4hTYb6rYCn67_A0XJOduYt-5Ikd_jGcMqcU1xE3JAZ_pK5LH14ZAKvQX9QklW0TWL3Rahb7YNs3Se5gfsJn0hP1EfQ-H3VdtqrExXGJu2vQXxl8rk6TOJwaHrHn59QF9rR8Cugcr8MZTgXja4QVtCCukAgeXmnilKh4oOdWa56PLPQTQJ9KGyGjkWN_QPPZk8siPL2lO25BMZwHMgAIqzMJhBMmEg-GL"/>
+</div>
+<span class="mt-2 font-label text-[9px] tracking-tighter uppercase text-tertiary">The Archivist</span>
+</div>
+<!-- NPC: Baroness Zora -->
+<div class="absolute pointer-events-auto flex flex-col items-center group transition-transform hover:-translate-y-1" style="left: 78%; top: 45%;">
+<div class="w-14 h-14 bg-surface-container-lowest border border-on-secondary-fixed-variant node-glow transition-all cursor-pointer overflow-hidden">
+<img class="w-full h-full object-cover grayscale contrast-125" data-alt="Elegant woman in profile with elaborate gold jewelry and mysterious expression in dim library" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCB58d-nInDjM3UNlLRgBnqbXYPZF7m6r7jX3JtEOZJdGCPJDPoC8ZqbtAfoP3eMWv5YONIkaUvrlG_lYabpAENhQjycqUeeEEDa-jTQZ-2g4MZtBhfKOsiEq8qjJ03dazkDy34hNA_fzhK4fz8dlkU3vLcxtE0aRsiRvC1AnRE3DgPDkmvJG9GqEfdZRa2toLsZDrZkPSb08r-zAcGWvCTqGBocsttOMLcmQjX3eV8voB4C2cAIowMzPKoTXrxubNTW0S2PJQESzhG"/>
+</div>
+<span class="mt-2 font-label text-[9px] tracking-tighter uppercase text-secondary">Baroness Zora</span>
+</div>
+</div>
+<!-- Detail Sidebar (Connection Details) -->
+<div class="absolute top-8 right-8 z-30 w-72 bg-[#131313]/90 backdrop-blur-xl border border-outline-variant/20 p-0 shadow-2xl flex flex-col">
+<div class="h-1 bg-primary-container w-full"></div>
+<div class="p-6">
+<div class="flex justify-between items-start mb-4">
+<h4 class="font-label text-xs text-primary tracking-[0.2em] uppercase">Connection Profile</h4>
+<span class="material-symbols-outlined text-on-surface-variant text-sm cursor-pointer hover:text-white">close</span>
+</div>
+<div class="space-y-6">
+<div>
+<p class="text-[10px] font-label text-on-surface-variant uppercase mb-1">Classification</p>
+<h5 class="font-headline text-xl text-on-surface italic">Blood Bond - Level III</h5>
+</div>
+<div class="bg-surface-container-low p-4 border-l border-primary-container">
+<p class="text-xs font-body text-on-surface-variant leading-relaxed">
+                            A visceral, supernatural link between <span class="text-on-surface">Julian Vane</span> and the <span class="text-on-surface">Coterie Core</span>. Bonded during the Night of the Shattered Chalice.
+                        </p>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="border border-outline-variant/20 p-2">
+<p class="text-[8px] font-label text-on-secondary-container uppercase">Intensity</p>
+<p class="text-sm font-label text-on-surface font-bold">CRITICAL</p>
+</div>
+<div class="border border-outline-variant/20 p-2">
+<p class="text-[8px] font-label text-on-secondary-container uppercase">Risk Factor</p>
+<p class="text-sm font-label text-on-surface font-bold">94%</p>
+</div>
+</div>
+<button class="w-full py-3 bg-primary-container text-on-primary-fixed font-label text-[10px] uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all">
+                        Open Forensic History
+                    </button>
+</div>
+</div>
+</div>
+<!-- Interaction Overlay Controls -->
+<div class="absolute bottom-8 right-8 z-30 flex flex-col gap-2">
+<button class="w-10 h-10 bg-surface-container-highest border border-outline-variant text-on-surface-variant hover:bg-primary-container hover:text-white flex items-center justify-center transition-colors shadow-lg">
+<span class="material-symbols-outlined">add</span>
+</button>
+<button class="w-10 h-10 bg-surface-container-highest border border-outline-variant text-on-surface-variant hover:bg-primary-container hover:text-white flex items-center justify-center transition-colors shadow-lg">
+<span class="material-symbols-outlined">remove</span>
+</button>
+<button class="w-10 h-10 bg-surface-container-highest border border-outline-variant text-on-surface-variant hover:bg-primary-container hover:text-white flex items-center justify-center transition-colors shadow-lg">
+<span class="material-symbols-outlined">center_focus_strong</span>
+</button>
+</div>
+</main>
+</body></html>

@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Códice de NPCs | Grimório do Narrador</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&amp;family=Inter:wght@400;600&amp;family=Space+Grotesk:wght@300;500;700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-low": "#1c1b1b",
+                    "surface-container": "#20201f",
+                    "on-tertiary": "#001a98",
+                    "on-primary-fixed": "#410000",
+                    "on-secondary": "#5d170f",
+                    "on-primary": "#690000",
+                    "surface-bright": "#393939",
+                    "surface": "#131313",
+                    "primary": "#ffb4a8",
+                    "surface-dim": "#131313",
+                    "on-primary-fixed-variant": "#920703",
+                    "on-background": "#e5e2e1",
+                    "on-surface-variant": "#e3beb8",
+                    "on-secondary-container": "#ff9a8a",
+                    "on-primary-container": "#ff907f",
+                    "secondary": "#ffb4a8",
+                    "on-secondary-fixed": "#400201",
+                    "inverse-primary": "#b52619",
+                    "tertiary-fixed-dim": "#bcc3ff",
+                    "secondary-fixed-dim": "#ffb4a8",
+                    "tertiary-container": "#0025c8",
+                    "on-tertiary-container": "#9ea9ff",
+                    "primary-fixed": "#ffdad4",
+                    "surface-container-highest": "#353535",
+                    "on-error-container": "#ffdad6",
+                    "primary-container": "#8b0000",
+                    "on-error": "#690005",
+                    "inverse-surface": "#e5e2e1",
+                    "secondary-container": "#7b2d23",
+                    "background": "#131313",
+                    "on-surface": "#e5e2e1",
+                    "primary-fixed-dim": "#ffb4a8",
+                    "outline-variant": "#5a403c",
+                    "outline": "#aa8984",
+                    "error-container": "#93000a",
+                    "surface-container-lowest": "#0e0e0e",
+                    "tertiary-fixed": "#dfe0ff",
+                    "on-tertiary-fixed": "#000d60",
+                    "error": "#ffb4ab",
+                    "inverse-on-surface": "#313030",
+                    "secondary-fixed": "#ffdad4",
+                    "surface-tint": "#ffb4a8",
+                    "surface-variant": "#353535",
+                    "surface-container-high": "#2a2a2a",
+                    "on-secondary-fixed-variant": "#7b2d23",
+                    "tertiary": "#bcc3ff",
+                    "on-tertiary-fixed-variant": "#0d2ccc"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0px",
+                    "lg": "0px",
+                    "xl": "0px",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Noto Serif"],
+                    "body": ["Inter"],
+                    "label": ["Space Grotesk"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body {
+            background-color: #131313;
+            background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.02) 1px, transparent 0);
+            background-size: 40px 40px;
+        }
+    </style>
+</head>
+<body class="flex min-h-screen text-on-surface font-body overflow-x-hidden">
+<!-- SideNavBar -->
+<aside class="hidden md:flex flex-col h-screen w-64 left-0 top-0 bg-[#0e0e0e] shadow-[20px_0px_40px_rgba(0,0,0,0.6)] fixed z-50 py-8 space-y-4">
+<div class="px-6 mb-8">
+<h1 class="font-['Noto_Serif'] italic text-lg text-[#ffb4a8]">Crônica Noturna</h1>
+<p class="font-['Space_Grotesk'] tracking-widest uppercase text-[10px] text-outline">Investigador de Sombras</p>
+</div>
+<nav class="flex-1 flex flex-col">
+<a class="text-[#5a403c] p-3 flex items-center space-x-3 px-6 hover:bg-[#353535] hover:text-[#ffb4a8] transition-all duration-300 ease-in-out font-['Space_Grotesk'] tracking-widest uppercase text-xs" href="#">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span>Coterie</span>
+</a>
+<a class="bg-[#8b0000] text-white font-bold p-3 flex items-center space-x-3 px-6 transition-all duration-300 ease-in-out font-['Space_Grotesk'] tracking-widest uppercase text-xs" href="#">
+<span class="material-symbols-outlined" data-icon="person_search">person_search</span>
+<span>NPCs</span>
+</a>
+<a class="text-[#5a403c] p-3 flex items-center space-x-3 px-6 hover:bg-[#353535] hover:text-[#ffb4a8] transition-all duration-300 ease-in-out font-['Space_Grotesk'] tracking-widest uppercase text-xs" href="#">
+<span class="material-symbols-outlined" data-icon="auto_stories">auto_stories</span>
+<span>Itens</span>
+</a>
+<a class="text-[#5a403c] p-3 flex items-center space-x-3 px-6 hover:bg-[#353535] hover:text-[#ffb4a8] transition-all duration-300 ease-in-out font-['Space_Grotesk'] tracking-widest uppercase text-xs" href="#">
+<span class="material-symbols-outlined" data-icon="map">map</span>
+<span>Atlas</span>
+</a>
+<a class="text-[#5a403c] p-3 flex items-center space-x-3 px-6 hover:bg-[#353535] hover:text-[#ffb4a8] transition-all duration-300 ease-in-out font-['Space_Grotesk'] tracking-widest uppercase text-xs" href="#">
+<span class="material-symbols-outlined" data-icon="auto_fix_high">auto_fix_high</span>
+<span>Ocultismo</span>
+</a>
+<a class="text-[#5a403c] p-3 flex items-center space-x-3 px-6 hover:bg-[#353535] hover:text-[#ffb4a8] transition-all duration-300 ease-in-out font-['Space_Grotesk'] tracking-widest uppercase text-xs" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+<span>Sessões</span>
+</a>
+</nav>
+<div class="px-6 pt-4">
+<button class="w-full bg-primary-container text-on-surface py-3 font-['Space_Grotesk'] tracking-widest uppercase text-xs hover:shadow-[0_0_15px_rgba(139,0,0,0.4)] transition-all">
+                Nova Sessão
+            </button>
+</div>
+</aside>
+<main class="flex-1 md:ml-64 flex flex-col min-h-screen relative">
+<!-- TopAppBar -->
+<header class="w-full top-0 left-0 bg-[#131313] border-b border-[#5a403c]/15 flex justify-between items-center px-8 py-6 z-40">
+<div class="flex items-center space-x-4">
+<span class="font-['Noto_Serif'] text-2xl tracking-tighter uppercase text-[#ffb4a8]">Grimório do Narrador</span>
+</div>
+<div class="flex items-center space-x-6">
+<div class="hidden lg:flex items-center bg-surface-container-low px-4 py-2 border-b border-outline-variant/30">
+<span class="material-symbols-outlined text-outline-variant mr-2" data-icon="search">search</span>
+<input class="bg-transparent border-none text-xs font-label tracking-widest focus:ring-0 placeholder:text-outline-variant/50 text-on-surface w-48" placeholder="BUSCAR NO CÓDICE..." type="text"/>
+</div>
+<div class="flex space-x-4">
+<button class="text-[#920703] hover:text-[#ffb4a8] transition-colors scale-95 active:scale-90">
+<span class="material-symbols-outlined" data-icon="history_edu">history_edu</span>
+</button>
+<button class="text-[#920703] hover:text-[#ffb4a8] transition-colors scale-95 active:scale-90">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Content Canvas -->
+<div class="p-8 max-w-6xl mx-auto w-full">
+<div class="mb-12 border-l-4 border-primary-container pl-6 py-2">
+<h2 class="font-headline text-5xl font-bold tracking-tighter mb-2">CÓDICE DE <span class="text-primary italic">PERSONAGENS</span></h2>
+<p class="font-label text-outline uppercase tracking-[0.3em] text-sm italic">Registros Forenses e Transcrições Ocultas</p>
+</div>
+<!-- Faction Section: Camarilla -->
+<section class="mb-16">
+<div class="flex items-center mb-6 space-x-4">
+<div class="h-[1px] flex-1 bg-gradient-to-r from-transparent to-outline-variant/30"></div>
+<h3 class="font-label text-primary font-bold tracking-[0.4em] uppercase text-xs">A SEITA: CAMARILLA</h3>
+<div class="h-[1px] flex-1 bg-gradient-to-l from-transparent to-outline-variant/30"></div>
+</div>
+<!-- NPC Accordion List -->
+<div class="space-y-4">
+<!-- NPC Item 1 (Expanded Example) -->
+<div class="bg-surface-container-lowest border-l border-primary-container/40">
+<!-- Accordion Header -->
+<button class="w-full flex items-center justify-between p-4 bg-surface-container-low hover:bg-surface-container-high transition-colors text-left group">
+<div class="flex items-center space-x-6">
+<div class="w-16 h-16 grayscale hover:grayscale-0 transition-all duration-500 overflow-hidden border border-outline-variant/20">
+<img class="w-full h-full object-cover" data-alt="Close-up portrait of a stern older man in a high-collared black suit, moody dramatic shadows, noir style photography" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA9bgTmGQd0hoL1mtTbd8LQB4KJ4WHHEx7dc05Fyp4cUhxbYsYJQanr9ZPT2OPQpXwbUxnlnX_I8e2bywH1Uob7rT5ZeizCmIwtco_eEsPmVk7tVbR-DmGzdwjqduYdzKkDIgAhBqwYzukhIev_Fq1p-YgUOVyA4GuTlanudJUCZcDc9lsIB7iRF0QyVxVIOI8J1J5xRdDHIJ_gD6m7FoJVREgjIr3SASPCtTpG6OScspdLuXKgv_qUGYkzfrh7futJpExgRfUGWUkb"/>
+</div>
+<div>
+<h4 class="font-headline text-xl text-on-surface group-hover:text-primary transition-colors">Sebastian Van Der Meer</h4>
+<div class="flex space-x-4 mt-1">
+<span class="font-label text-[10px] tracking-widest text-primary uppercase">Príncipe de Lisboa</span>
+<div class="flex items-center space-x-1">
+<span class="w-1.5 h-1.5 bg-green-500"></span>
+<span class="font-label text-[10px] tracking-widest text-on-surface-variant uppercase">Ativo / Vivo</span>
+</div>
+</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-primary group-hover:rotate-180 transition-transform" data-icon="expand_more">expand_more</span>
+</button>
+<!-- Expanded Content -->
+<div class="p-8 border-t border-outline-variant/10">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
+<!-- Lore & Description -->
+<div class="lg:col-span-2 space-y-6">
+<div class="space-y-2">
+<h5 class="font-label text-xs font-bold text-outline uppercase tracking-widest">Descrição &amp; Presença</h5>
+<p class="font-body text-on-surface-variant leading-relaxed text-sm">
+                                            Veste-se invariavelmente com ternos sob medida da era Eduardiana. Sua pele é como pergaminho antigo esticado sobre osso. Possui um tique nervoso na mão esquerda, que esconde em luvas de seda branca. Sua voz soa como o arranhar de unhas em mármore.
+                                        </p>
+</div>
+<div class="space-y-2 p-4 bg-primary-container/5 border-l-2 border-primary-container">
+<h5 class="font-label text-xs font-bold text-primary uppercase tracking-widest flex items-center">
+<span class="material-symbols-outlined text-sm mr-2" data-icon="lock">lock</span>Segredos do Mestre
+                                        </h5>
+<p class="font-body italic text-on-surface-variant text-sm">
+                                            Ele não é o verdadeiro Sebastian. O real foi destruído há 40 anos; este é um impostor Tremere usando Máscara dos Mil Rostos, sustentando a fachada para evitar o colapso da cidade. Ele deve favores de sangue à Inquisição.
+                                        </p>
+</div>
+</div>
+<!-- Combat Mode Trigger -->
+<div class="space-y-4">
+<button class="w-full py-4 border border-primary-container text-primary font-label text-xs font-bold tracking-[0.3em] uppercase flex items-center justify-center space-x-2 hover:bg-primary-container hover:text-on-surface transition-all">
+<span class="material-symbols-outlined" data-icon="swords">swords</span>
+<span>Modo Combate</span>
+</button>
+<!-- Inner Stats Section (Combat) -->
+<div class="p-6 bg-surface-container border border-outline-variant/15 space-y-6">
+<div class="grid grid-cols-1 gap-4">
+<div>
+<span class="font-label text-[10px] text-outline uppercase block mb-2">Reserva de Dados: Físico</span>
+<div class="flex space-x-1">
+<span class="w-2.5 h-2.5 bg-primary-container"></span>
+<span class="w-2.5 h-2.5 bg-primary-container"></span>
+<span class="w-2.5 h-2.5 bg-primary-container"></span>
+<span class="w-2.5 h-2.5 bg-primary-container"></span>
+<span class="w-2.5 h-2.5 border border-outline-variant"></span>
+<span class="font-label text-xs ml-2 text-primary">4</span>
+</div>
+</div>
+<div>
+<span class="font-label text-[10px] text-outline uppercase block mb-2">Reserva de Dados: Social</span>
+<div class="flex space-x-1">
+<span class="w-2.5 h-2.5 bg-primary-container"></span>
+<span class="w-2.5 h-2.5 bg-primary-container"></span>
+<span class="w-2.5 h-2.5 bg-primary-container"></span>
+<span class="w-2.5 h-2.5 bg-primary-container"></span>
+<span class="w-2.5 h-2.5 bg-primary-container"></span>
+<span class="w-2.5 h-2.5 bg-primary-container"></span>
+<span class="w-2.5 h-2.5 bg-primary-container"></span>
+<span class="w-2.5 h-2.5 border border-outline-variant"></span>
+<span class="font-label text-xs ml-2 text-primary">7</span>
+</div>
+</div>
+<div>
+<span class="font-label text-[10px] text-outline uppercase block mb-2">Reserva de Dados: Mental</span>
+<div class="flex space-x-1">
+<span class="w-2.5 h-2.5 bg-primary-container"></span>
+<span class="w-2.5 h-2.5 bg-primary-container"></span>
+<span class="w-2.5 h-2.5 bg-primary-container"></span>
+<span class="w-2.5 h-2.5 bg-primary-container"></span>
+<span class="w-2.5 h-2.5 bg-primary-container"></span>
+<span class="w-2.5 h-2.5 bg-primary-container"></span>
+<span class="w-2.5 h-2.5 border border-outline-variant"></span>
+<span class="w-2.5 h-2.5 border border-outline-variant"></span>
+<span class="font-label text-xs ml-2 text-primary">6</span>
+</div>
+</div>
+</div>
+<div class="pt-4 border-t border-outline-variant/20">
+<h6 class="font-label text-[10px] text-outline uppercase tracking-widest mb-3">Disciplinas Ativas</h6>
+<div class="flex flex-wrap gap-2">
+<span class="px-2 py-1 bg-surface-container-highest text-primary font-label text-[9px] uppercase border-l-2 border-primary tracking-widest">Dominação 4</span>
+<span class="px-2 py-1 bg-surface-container-highest text-primary font-label text-[9px] uppercase border-l-2 border-primary tracking-widest">Auspícios 3</span>
+<span class="px-2 py-1 bg-surface-container-highest text-primary font-label text-[9px] uppercase border-l-2 border-primary tracking-widest">Taumaturgia 2</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- NPC Item 2 (Collapsed) -->
+<div class="bg-surface-container-lowest border-l border-outline-variant/30 opacity-80 hover:opacity-100 transition-opacity">
+<button class="w-full flex items-center justify-between p-4 bg-surface-container-low hover:bg-surface-container-high transition-colors text-left group">
+<div class="flex items-center space-x-6">
+<div class="w-16 h-16 grayscale overflow-hidden border border-outline-variant/20">
+<img class="w-full h-full object-cover" data-alt="Portrait of a woman with sharp features, dark red lipstick, wearing an elegant silk dress, dramatic chiaroscuro lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQ7EMd5V0KkL2LnPeK6v1b_1bYko_hFDuopXzIRcmA6xye1U7L6QWc1rO1aEcZi3DfNjC3HS-2nD8Vfhi9DL3aOopDEHTOQLIGC4s5KbpLKGk7Mc_VY8vKzyqPlMy0rRPOJuJo2ZDH0rq-7bBJB53jEwaKKne7rWzQXezaCm1AA7oOIixelnxOftaX978kGQqeTLFZNWX1ciqKWUWp6EkWpSCl2k40RYzO8RKcPGNdkJ4cKleVcSaVh1k86lQ46ynHJ8J_UopCrRGN"/>
+</div>
+<div>
+<h4 class="font-headline text-xl text-on-surface group-hover:text-primary transition-colors">Elena 'A Rosa Sombria'</h4>
+<div class="flex space-x-4 mt-1">
+<span class="font-label text-[10px] tracking-widest text-outline-variant uppercase">Toreador • Harpia</span>
+<div class="flex items-center space-x-1">
+<span class="w-1.5 h-1.5 bg-green-500"></span>
+<span class="font-label text-[10px] tracking-widest text-on-surface-variant uppercase">Ativo / Vivo</span>
+</div>
+</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-transform" data-icon="expand_more">expand_more</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Faction Section: Anarchists -->
+<section class="mb-16">
+<div class="flex items-center mb-6 space-x-4">
+<div class="h-[1px] flex-1 bg-gradient-to-r from-transparent to-outline-variant/30"></div>
+<h3 class="font-label text-primary font-bold tracking-[0.4em] uppercase text-xs">O MOVIMENTO: ANARQUISTAS</h3>
+<div class="h-[1px] flex-1 bg-gradient-to-l from-transparent to-outline-variant/30"></div>
+</div>
+<div class="space-y-4">
+<!-- NPC Item 3 (Dead Status) -->
+<div class="bg-surface-container-lowest border-l border-error/40 opacity-60">
+<button class="w-full flex items-center justify-between p-4 bg-surface-container-low hover:bg-surface-container-high transition-colors text-left group">
+<div class="flex items-center space-x-6">
+<div class="w-16 h-16 grayscale sepia overflow-hidden border border-outline-variant/20 relative">
+<div class="absolute inset-0 flex items-center justify-center bg-black/40">
+<span class="font-headline text-error text-[8px] uppercase font-bold border border-error px-1 rotate-[-15deg]">Destruído</span>
+</div>
+<img class="w-full h-full object-cover blur-[1px]" data-alt="Portrait of a young man with messy hair and piercings, street wear style, grain film texture, dark moody atmosphere" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKelhA_-VXM3oR9Z81yetJR5GE_Qi2Vn3M-WcRgFXBckgO1AvLLFnIfnkdICDFCPrPvnmfMuSG-x7kMRZQT21sOgfItsciM6M5t291kU2rQhd2TrTkbI2SFiGkzvl3IqMkhvVoBzVXwv0aaWvDbxjXo8bHHASOfcm-at0bBR63-M-Djbzcb5I9KSY_Zd5u6Sk27ETOKkkLoK0yApZABUIbRwaUmEYn9lip8l7dxivBO5xbtbu5ojK0Su0LOLKzfee2HimgM6Aax7jG"/>
+</div>
+<div>
+<h4 class="font-headline text-xl text-on-surface-variant line-through">Jax 'Sem Filtro'</h4>
+<div class="flex space-x-4 mt-1">
+<span class="font-label text-[10px] tracking-widest text-outline-variant uppercase">Brujah • Barão Local</span>
+<div class="flex items-center space-x-1">
+<span class="w-1.5 h-1.5 bg-error"></span>
+<span class="font-label text-[10px] tracking-widest text-error uppercase">Finalizado (Sessão 12)</span>
+</div>
+</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant" data-icon="expand_more">expand_more</span>
+</button>
+</div>
+<!-- NPC Item 4 -->
+<div class="bg-surface-container-lowest border-l border-outline-variant/30">
+<button class="w-full flex items-center justify-between p-4 bg-surface-container-low hover:bg-surface-container-high transition-colors text-left group">
+<div class="flex items-center space-x-6">
+<div class="w-16 h-16 grayscale overflow-hidden border border-outline-variant/20">
+<img class="w-full h-full object-cover" data-alt="Cinematic shot of a middle-aged woman with intense eyes, wearing a leather jacket, industrial urban background with red neon glow" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBp2lEuwbU2d-Hpg86JesaE81_bIdflYvgb6DYkGpDX_CsVjeZeVAEoHr7pa4J4OK86xOsJNaLRRQXqKcj0WulkQHYVIEbKCODFJih9zJyJnoDS4jHsGw2dwgNmThKPGvkoPt5vcMMOj5o_Px3wvoDsBMAx7ruJUHxuoa-Kg2aZt27AOfgMgGplELO64W3EJK-Rj5o7AMz0godqBn8QeqX_Ep8JWoMTvNe9z-xBmHu06m4GpXtsqQFM0rU4rT_lCOwValEs1bQdaOJG"/>
+</div>
+<div>
+<h4 class="font-headline text-xl text-on-surface group-hover:text-primary transition-colors">Vera Sallow</h4>
+<div class="flex space-x-4 mt-1">
+<span class="font-label text-[10px] tracking-widest text-outline-variant uppercase">Gangrel • Batedora</span>
+<div class="flex items-center space-x-1">
+<span class="w-1.5 h-1.5 bg-green-500"></span>
+<span class="font-label text-[10px] tracking-widest text-on-surface-variant uppercase">Ativo / Vivo</span>
+</div>
+</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-transform" data-icon="expand_more">expand_more</span>
+</button>
+</div>
+</div>
+</section>
+</div>
+<!-- Sticky Floating Action for Master -->
+<div class="fixed bottom-12 right-12 flex flex-col space-y-4">
+<button class="w-14 h-14 bg-primary-container text-on-surface flex items-center justify-center shadow-[0_0_30px_rgba(139,0,0,0.5)] active:scale-95 transition-all">
+<span class="material-symbols-outlined" data-icon="person_add">person_add</span>
+</button>
+<button class="w-14 h-14 bg-surface-container-highest text-primary flex items-center justify-center border border-primary/20 active:scale-95 transition-all">
+<span class="material-symbols-outlined" data-icon="print">print</span>
+</button>
+</div>
+</main>
+<!-- BottomNavBar (Mobile only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full bg-[#131313] border-t border-[#5a403c]/15 flex justify-around items-center py-3 z-50">
+<a class="text-[#5a403c] flex flex-col items-center space-y-1" href="#">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span class="text-[8px] font-label uppercase">Coterie</span>
+</a>
+<a class="text-[#ffb4a8] flex flex-col items-center space-y-1" href="#">
+<span class="material-symbols-outlined" data-icon="person_search" style="font-variation-settings: 'FILL' 1;">person_search</span>
+<span class="text-[8px] font-label uppercase">NPCs</span>
+</a>
+<div class="relative -top-6">
+<button class="bg-[#8b0000] p-4 shadow-lg">
+<span class="material-symbols-outlined text-white" data-icon="add">add</span>
+</button>
+</div>
+<a class="text-[#5a403c] flex flex-col items-center space-y-1" href="#">
+<span class="material-symbols-outlined" data-icon="map">map</span>
+<span class="text-[8px] font-label uppercase">Atlas</span>
+</a>
+<a class="text-[#5a403c] flex flex-col items-center space-y-1" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+<span class="text-[8px] font-label uppercase">Sessões</span>
+</a>
+</nav>
+</body></html>

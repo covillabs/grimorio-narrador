@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pt-br"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;700&amp;family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@300;500;700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary-fixed-variant": "#0d2ccc",
+                    "tertiary": "#bcc3ff",
+                    "surface-container-high": "#2a2a2a",
+                    "on-secondary-fixed-variant": "#7b2d23",
+                    "surface-tint": "#ffb4a8",
+                    "surface-variant": "#353535",
+                    "inverse-on-surface": "#313030",
+                    "secondary-fixed": "#ffdad4",
+                    "error": "#ffb4ab",
+                    "tertiary-fixed": "#dfe0ff",
+                    "on-tertiary-fixed": "#000d60",
+                    "outline": "#aa8984",
+                    "error-container": "#93000a",
+                    "surface-container-lowest": "#0e0e0e",
+                    "outline-variant": "#5a403c",
+                    "primary-fixed-dim": "#ffb4a8",
+                    "on-surface": "#e5e2e1",
+                    "inverse-surface": "#e5e2e1",
+                    "secondary-container": "#7b2d23",
+                    "background": "#131313",
+                    "on-error": "#690005",
+                    "primary-container": "#8b0000",
+                    "surface-container-highest": "#353535",
+                    "on-error-container": "#ffdad6",
+                    "primary-fixed": "#ffdad4",
+                    "tertiary-container": "#0025c8",
+                    "on-tertiary-container": "#9ea9ff",
+                    "tertiary-fixed-dim": "#bcc3ff",
+                    "secondary-fixed-dim": "#ffb4a8",
+                    "on-secondary-fixed": "#400201",
+                    "inverse-primary": "#b52619",
+                    "secondary": "#ffb4a8",
+                    "on-primary-container": "#ff907f",
+                    "on-surface-variant": "#e3beb8",
+                    "on-secondary-container": "#ff9a8a",
+                    "on-primary-fixed-variant": "#920703",
+                    "on-background": "#e5e2e1",
+                    "surface-bright": "#393939",
+                    "surface": "#131313",
+                    "primary": "#ffb4a8",
+                    "on-primary": "#690000",
+                    "surface-dim": "#131313",
+                    "on-tertiary": "#001a98",
+                    "on-secondary": "#5d170f",
+                    "on-primary-fixed": "#410000",
+                    "surface-container-low": "#1c1b1b",
+                    "surface-container": "#20201f"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0px",
+                    "lg": "0px",
+                    "xl": "0px",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Noto Serif"],
+                    "body": ["Inter"],
+                    "label": ["Space Grotesk"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-image: radial-gradient(circle at 50% 50%, #1a1a1a 0%, #131313 100%);
+            background-attachment: fixed;
+        }
+        .grain {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 50;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body min-h-screen">
+<div class="grain"></div>
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-40 bg-[#131313] shadow-[0px_20px_40px_rgba(0,0,0,0.6)] flex justify-between items-center px-6 h-16 border-b-0 bg-gradient-to-b from-[#353535]/20 to-transparent">
+<div class="flex items-center gap-4">
+<span class="text-2xl font-black text-[#ffb4a8] italic font-headline uppercase tracking-tighter">Grimório do Narrador</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-primary text-sm">search</span>
+<input class="bg-surface-container-lowest border-0 border-b border-outline-variant/30 text-xs font-label uppercase tracking-widest pl-10 pr-4 py-2 focus:ring-0 focus:border-primary w-64 transition-all" placeholder="BUSCAR ARTEFATO..." type="text"/>
+</div>
+<div class="flex items-center gap-4">
+<button class="cursor-pointer active:scale-95 hover:bg-[#8b0000]/10 transition-colors p-2">
+<span class="material-symbols-outlined text-[#ffb4a8]">history_edu</span>
+</button>
+<button class="cursor-pointer active:scale-95 hover:bg-[#8b0000]/10 transition-colors p-2">
+<span class="material-symbols-outlined text-[#ffb4a8]">settings</span>
+</button>
+</div>
+</div>
+</header>
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full w-64 bg-[#0e0e0e] flex flex-col py-8 z-30 pt-24">
+<div class="mb-10 px-4">
+<h2 class="text-[#ffb4a8] font-serif font-bold text-xl">Grimório</h2>
+<p class="font-mono text-[10px] uppercase tracking-[0.2em] text-outline">Investigative Terminal</p>
+</div>
+<nav class="flex flex-col flex-1">
+<a class="text-[#920703] hover:text-[#ffb4a8] px-4 py-3 flex items-center gap-3 transition-all duration-300 hover:bg-[#353535] hover:translate-x-1 font-label text-xs uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined">group</span>
+<span>Coterie</span>
+</a>
+<a class="text-[#920703] hover:text-[#ffb4a8] px-4 py-3 flex items-center gap-3 transition-all duration-300 hover:bg-[#353535] hover:translate-x-1 font-label text-xs uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined">person_search</span>
+<span>NPCs</span>
+</a>
+<!-- Active Tab -->
+<a class="text-[#ffb4a8] bg-[#8b0000] border-l-4 border-[#ffb4a8] px-4 py-3 flex items-center gap-3 font-label text-xs uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span>Itens</span>
+</a>
+<a class="text-[#920703] hover:text-[#ffb4a8] px-4 py-3 flex items-center gap-3 transition-all duration-300 hover:bg-[#353535] hover:translate-x-1 font-label text-xs uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined">map</span>
+<span>Atlas</span>
+</a>
+<a class="text-[#920703] hover:text-[#ffb4a8] px-4 py-3 flex items-center gap-3 transition-all duration-300 hover:bg-[#353535] hover:translate-x-1 font-label text-xs uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined">auto_stories</span>
+<span>Ocultismo</span>
+</a>
+<a class="text-[#920703] hover:text-[#ffb4a8] px-4 py-3 flex items-center gap-3 transition-all duration-300 hover:bg-[#353535] hover:translate-x-1 font-label text-xs uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined">event_note</span>
+<span>Sessões</span>
+</a>
+</nav>
+<div class="mt-auto px-4 border-t border-outline-variant/10 pt-4">
+<div class="flex items-center gap-3 text-on-surface-variant">
+<div class="w-8 h-8 bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-xs">terminal</span>
+</div>
+<div class="text-[10px] font-label">
+<p class="font-bold uppercase">System Status</p>
+<p class="text-primary">ENCRYPTED</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="ml-64 pt-24 px-12 pb-12 min-h-screen">
+<!-- Header Section -->
+<section class="mb-12 flex items-baseline justify-between">
+<div class="max-w-2xl">
+<h1 class="font-headline text-6xl font-bold tracking-tighter text-on-surface mb-2">Arsenal &amp; Inventário</h1>
+<p class="font-label text-sm uppercase tracking-[0.3em] text-primary">Evidências e Relíquias do Caso #742</p>
+</div>
+<div class="flex gap-4">
+<button class="bg-primary-container text-on-surface font-label text-xs uppercase tracking-widest px-6 py-3 border border-transparent hover:border-primary transition-all active:scale-95">
+                    REGISTRAR NOVO ITEM
+                </button>
+</div>
+</section>
+<!-- Filter Chips -->
+<div class="flex gap-3 mb-10 overflow-x-auto pb-2">
+<button class="bg-surface-container-highest text-primary font-label text-[10px] uppercase tracking-widest px-4 py-2 border border-primary">TODOS</button>
+<button class="bg-surface-container-low text-on-surface-variant font-label text-[10px] uppercase tracking-widest px-4 py-2 hover:bg-surface-container-highest transition-colors">ARMAS</button>
+<button class="bg-surface-container-low text-on-surface-variant font-label text-[10px] uppercase tracking-widest px-4 py-2 hover:bg-surface-container-highest transition-colors">INVESTIGAÇÃO</button>
+<button class="bg-surface-container-low text-on-surface-variant font-label text-[10px] uppercase tracking-widest px-4 py-2 hover:bg-surface-container-highest transition-colors">ARTEFATOS OCULTOS</button>
+<button class="bg-surface-container-low text-on-surface-variant font-label text-[10px] uppercase tracking-widest px-4 py-2 hover:bg-surface-container-highest transition-colors">CONSUMÍVEIS</button>
+</div>
+<!-- Bento Grid Gallery -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+<!-- Item Card 1: Weapon -->
+<div class="bg-surface-container-low group cursor-pointer border border-transparent hover:border-primary-container/50 transition-all duration-500 overflow-hidden">
+<div class="relative h-64 overflow-hidden bg-black">
+<img class="w-full h-full object-cover opacity-60 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" data-alt="ancient ornamental dagger with obsidian blade and silver hilt engraved with runes on dark velvet background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDsbzNElzw4B1b2qS37RLMPmkGBQyJNVYY067ohogBw0Z-D3w5wUGvgwSwYRExnsvLeox3I6vCzMQcEXaQGebX8UDZSVtmR2IJMqQbcvv6vi5QhxnIKH_m2Ue6QOKIjj9TQBujzAnzQTmWFKg26CeF0a3Ew1SuOWIJqkH3k8i9kw6pqaMkh6pGvMmN7PN0QEN2y6gSKvWF7QraR8ADD6SdY3ulOqWFPSrUL5zi2M91vghnlUxTLUVGzak5Xu4rkj8nktGnDd__kvIur"/>
+<div class="absolute top-4 left-4 bg-primary-container px-3 py-1">
+<span class="text-[9px] font-label uppercase tracking-widest text-on-surface">ARMA</span>
+</div>
+</div>
+<div class="p-6">
+<h3 class="font-headline text-xl font-bold text-on-surface mb-1 uppercase tracking-tight group-hover:text-primary transition-colors">Adaga de Obsidiana</h3>
+<p class="text-[10px] font-label text-outline uppercase tracking-widest mb-4">Portador: <span class="text-on-surface">Julian Vane</span></p>
+<div class="bg-surface-container-highest p-4 mb-4">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-xs text-primary">psychiatry</span>
+<span class="text-[10px] font-label uppercase font-bold text-primary">Mecânicas</span>
+</div>
+<p class="text-xs text-on-surface-variant leading-relaxed">+2 Furtividade ao atacar das sombras. Causa dano espiritual.</p>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-[10px] font-label text-outline uppercase">REF: OBJ-001</span>
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors">arrow_forward</span>
+</div>
+</div>
+</div>
+<!-- Item Card 2: Investigation Tool -->
+<div class="bg-surface-container-low group cursor-pointer border border-transparent hover:border-primary-container/50 transition-all duration-500 overflow-hidden">
+<div class="relative h-64 overflow-hidden bg-black">
+<img class="w-full h-full object-cover opacity-60 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" data-alt="macro close-up of a vintage brass magnifying glass laying over a cryptic yellowed parchment map with ink stains" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAA4dhwJSHyrCPS6dXO9h4aTikIQq2NEEkXFmbEk6hYfL-Ouj8i0vqpzjgAa2FI1W_FuDqgTfmDOCWEYmZ61Dl47LsRvZzzwr5ck8d49KVCt5C5rTnS_CBQRy3xRx8rqsBG8RfjWgao5616VXac4woRRDJzXM1kNoPuNne16CrXMMA7hZJl5dXKpCEUmqYhA3nc7F5n8gGFs_npcLmjPs6Mb0LCSXCDBrB9hlq4ITQ-aIKnddDL-k08tcozof8M5ZUlcRNrAjl-ReGE"/>
+<div class="absolute top-4 left-4 bg-surface-container-highest px-3 py-1 border border-outline-variant/30">
+<span class="text-[9px] font-label uppercase tracking-widest text-on-surface">INVESTIGAÇÃO</span>
+</div>
+</div>
+<div class="p-6">
+<h3 class="font-headline text-xl font-bold text-on-surface mb-1 uppercase tracking-tight group-hover:text-primary transition-colors">Lente de Veracidade</h3>
+<p class="text-[10px] font-label text-outline uppercase tracking-widest mb-4">Portador: <span class="text-on-surface">Dr. Aris</span></p>
+<div class="bg-surface-container-highest p-4 mb-4">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-xs text-primary">visibility</span>
+<span class="text-[10px] font-label uppercase font-bold text-primary">Mecânicas</span>
+</div>
+<p class="text-xs text-on-surface-variant leading-relaxed">Ignora ilusões mundanas. +3 em testes de Percepção Visual.</p>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-[10px] font-label text-outline uppercase">REF: OBJ-042</span>
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors">arrow_forward</span>
+</div>
+</div>
+</div>
+<!-- Item Card 3: Artifact -->
+<div class="bg-surface-container-low group cursor-pointer border border-transparent hover:border-primary-container/50 transition-all duration-500 overflow-hidden">
+<div class="relative h-64 overflow-hidden bg-black">
+<img class="w-full h-full object-cover opacity-60 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" data-alt="old silver crucifix tarnished by age with a hidden compartment showing glowing residue under dim red light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmvfTayt1Ox5SgPVF7h2xa6OhVk7EnO7b7iNXWBd2kqMbOmVWcHUlQONnYAXa94OnbS1OLoffB8hf31wrkHkELpS8Z2BnVJY1qz-ir78QLBX1tGFAqv-uddUVpMoYaP57N8VIPoylkLc417hVG82_scae_mw1KKCVQjUn-KU_o6szD7X-6HKXB1QmIDiRKj4L7r0w7D2Xq17nSKWHylexs-S9VhUMjuGS-E6g-hOa9ne2JMbDhrSCFxSS53xQLNBo2nUsNCnUT9UaD"/>
+<div class="absolute top-4 left-4 bg-[#8b0000] px-3 py-1">
+<span class="text-[9px] font-label uppercase tracking-widest text-on-surface">ARTEFATO</span>
+</div>
+</div>
+<div class="p-6">
+<h3 class="font-headline text-xl font-bold text-on-surface mb-1 uppercase tracking-tight group-hover:text-primary transition-colors">Cruz de São Lázaro</h3>
+<p class="text-[10px] font-label text-outline uppercase tracking-widest mb-4">Portador: <span class="text-on-surface">Elena Cross</span></p>
+<div class="bg-surface-container-highest p-4 mb-4">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-xs text-primary">shield</span>
+<span class="text-[10px] font-label uppercase font-bold text-primary">Mecânicas</span>
+</div>
+<p class="text-xs text-on-surface-variant leading-relaxed">Proteção passiva contra possessão. -1 de Sanidade ao usar.</p>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-[10px] font-label text-outline uppercase">REF: REL-009</span>
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors">arrow_forward</span>
+</div>
+</div>
+</div>
+<!-- Item Card 4: Document -->
+<div class="bg-surface-container-low group cursor-pointer border border-transparent hover:border-primary-container/50 transition-all duration-500 overflow-hidden">
+<div class="relative h-64 overflow-hidden bg-black">
+<img class="w-full h-full object-cover opacity-60 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" data-alt="crumpled ancient scroll with cryptic symbols and wax seal photographed in a cold forensic light setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBo0scxU-tVvbRW5HUGRpKNCP-XoznlQj6wccWYlpB6YkdJDC1XlM1Qo_w160SCG5yEUerh2tuDDFZqacNuAKvI4x2uYb86S2bGsyhsnOs1y6ua_K3VWzQApb7iq5t13rPZDdGv49xZTm-eXqhH3-eLu6O0pU195LTz90PzXWQZC8-s7JR1hllOq9C7ilqLSjYGVINizyrpVTbI8rems69Pm_Nwc_mtvbBAuMsiwKcouaxYDeX_nxnU42D1FjkAiVoKamdCJ82cXhsH"/>
+<div class="absolute top-4 left-4 bg-surface-container-highest px-3 py-1 border border-outline-variant/30">
+<span class="text-[9px] font-label uppercase tracking-widest text-on-surface">DOCUMENTO</span>
+</div>
+</div>
+<div class="p-6">
+<h3 class="font-headline text-xl font-bold text-on-surface mb-1 uppercase tracking-tight group-hover:text-primary transition-colors">Códice Sussurrante</h3>
+<p class="text-[10px] font-label text-outline uppercase tracking-widest mb-4">Portador: <span class="text-on-surface">Grimório Coletivo</span></p>
+<div class="bg-surface-container-highest p-4 mb-4">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-xs text-primary">menu_book</span>
+<span class="text-[10px] font-label uppercase font-bold text-primary">Mecânicas</span>
+</div>
+<p class="text-xs text-on-surface-variant leading-relaxed">Revela segredos ocultos em rituais. Requer teste de Ocultismo.</p>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-[10px] font-label text-outline uppercase">REF: DOC-112</span>
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors">arrow_forward</span>
+</div>
+</div>
+</div>
+<!-- Item Card 5: Weapon -->
+<div class="bg-surface-container-low group cursor-pointer border border-transparent hover:border-primary-container/50 transition-all duration-500 overflow-hidden">
+<div class="relative h-64 overflow-hidden bg-black">
+<img class="w-full h-full object-cover opacity-60 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" data-alt="heavy antique revolver with silver engravings resting on a dark wood table next to silver bullets" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCL06kYmOnP4yAakQ1KPIywmtg-qForFh-Xt5jp6ZSgIhtHBUf0xMyRno6pLoVPNDedq-3J4_XkfifXh-7fdpKHsnkG6MMluY3_2Q0EfEJ5Bgbp_-VDQTmHeG676NteVrAyevzP7CeFsfCnVJP3JDKzT9IO1sSzX7zlHNjQhp9EoyyQo6YRZ6OEQAYeCWt4ot_G6zG0CLSY9e96spv04RHxjTqx9atyaNTKakm5qtQ00F9vRvvTKJe5Ey6jADyfWcsKOh--j_XFK-B6"/>
+<div class="absolute top-4 left-4 bg-primary-container px-3 py-1">
+<span class="text-[9px] font-label uppercase tracking-widest text-on-surface">ARMA</span>
+</div>
+</div>
+<div class="p-6">
+<h3 class="font-headline text-xl font-bold text-on-surface mb-1 uppercase tracking-tight group-hover:text-primary transition-colors">Pacificador Argento</h3>
+<p class="text-[10px] font-label text-outline uppercase tracking-widest mb-4">Portador: <span class="text-on-surface">Marcus Thorne</span></p>
+<div class="bg-surface-container-highest p-4 mb-4">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-xs text-primary">flare</span>
+<span class="text-[10px] font-label uppercase font-bold text-primary">Mecânicas</span>
+</div>
+<p class="text-xs text-on-surface-variant leading-relaxed">Letal contra licantropos. Munição limitada (6/6).</p>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-[10px] font-label text-outline uppercase">REF: OBJ-015</span>
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors">arrow_forward</span>
+</div>
+</div>
+</div>
+<!-- Item Card 6: Artifact -->
+<div class="bg-surface-container-low group cursor-pointer border border-transparent hover:border-primary-container/50 transition-all duration-500 overflow-hidden">
+<div class="relative h-64 overflow-hidden bg-black">
+<img class="w-full h-full object-cover opacity-60 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" data-alt="glowing green liquid in a small vintage corked glass vial on a dusty shelf with cobwebs" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB2TmfdpwRW1Md4m1CYRBXk4loCERfWIMb2WOez0PSkpALtGnz0qNcmzToLkIvofxbwr9Kx46FVkJXZh84zteG8QE9W-fxAq8nWeUbFdxi54x9aKp2zr0448gA1GNyNAWloCFs7Q2F6iXAAQ5rPMvlidtxp6dP_lsLIs9Y4P-688YpEb6AJLEpopP4YBuolHgLFe36jJAMgH7elbxd5VO4wFzmftncmbqKaGm-1-DPwuuuKxmmV3D2IgfH3LCB5dXknyb066IDN7MMK"/>
+<div class="absolute top-4 left-4 bg-[#8b0000] px-3 py-1">
+<span class="text-[9px] font-label uppercase tracking-widest text-on-surface">CONSUMÍVEL</span>
+</div>
+</div>
+<div class="p-6">
+<h3 class="font-headline text-xl font-bold text-on-surface mb-1 uppercase tracking-tight group-hover:text-primary transition-colors">Ectoplasma Purificado</h3>
+<p class="text-[10px] font-label text-outline uppercase tracking-widest mb-4">Portador: <span class="text-on-surface">Dr. Aris</span></p>
+<div class="bg-surface-container-highest p-4 mb-4">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-xs text-primary">science</span>
+<span class="text-[10px] font-label uppercase font-bold text-primary">Mecânicas</span>
+</div>
+<p class="text-xs text-on-surface-variant leading-relaxed">Restaura 2d10 de Mana. Pode causar alucinações breves.</p>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-[10px] font-label text-outline uppercase">REF: CONS-05</span>
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors">arrow_forward</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer / Pagination -->
+<footer class="mt-16 pt-8 border-t border-outline-variant/10 flex justify-between items-center text-[10px] font-label uppercase tracking-[0.2em] text-outline">
+<div>EXIBINDO 6 DE 24 ARTEFATOS CATALOGADOS</div>
+<div class="flex gap-4">
+<button class="hover:text-primary transition-colors cursor-pointer">ANTERIOR</button>
+<div class="flex gap-2">
+<span class="text-on-surface">01</span>
+<span class="text-outline/40">02</span>
+<span class="text-outline/40">03</span>
+</div>
+<button class="hover:text-primary transition-colors cursor-pointer">PRÓXIMO</button>
+</div>
+</footer>
+</main>
+<!-- Floating Action Button (Suppressed per rule for specialized pages, but demonstrating internal logic) -->
+<!-- Not rendered as this is a detail/task-focused screen -->
+</body></html>

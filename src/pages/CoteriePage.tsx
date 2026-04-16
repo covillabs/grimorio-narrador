@@ -11,35 +11,52 @@ import { toast } from "sonner";
 export default function CoteriePage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<any>(null);
-  const queryClient = useQueryClient();
-
-  const { data: players = [], isLoading } = useQuery({
-    queryKey: ["players"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("players").select("*").order("created_at");
-      if (error) throw error;
-      return data;
+  const [mockPlayers, setMockPlayers] = useState([
+    {
+      id: "1",
+      character_name: "Lucien (O Belo)",
+      player_name: "João",
+      clan: "Toreador",
+      image_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400&auto=format&fit=crop",
+      hunger: 2,
+      humanity: 7,
     },
-  });
-
-  const updateTracker = useMutation({
-    mutationFn: async ({ id, field, value }: { id: string; field: string; value: number }) => {
-      const { error } = await supabase.from("players").update({ [field]: value } as any).eq("id", id);
-      if (error) throw error;
+    {
+      id: "2",
+      character_name: "Viktoria",
+      player_name: "Ana",
+      clan: "Ventrue",
+      image_url: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=400&auto=format&fit=crop",
+      hunger: 4,
+      humanity: 5,
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["players"] }),
-  });
+    {
+      id: "3",
+      character_name: "Kaleb",
+      player_name: "Marcos",
+      clan: "Brujah",
+      image_url: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=400&auto=format&fit=crop",
+      hunger: 1,
+      humanity: 6,
+    }
+  ]);
 
-  const deletePlayer = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("players").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["players"] });
+  const isLoading = false;
+  const players = mockPlayers;
+
+  const updateTracker = {
+    mutate: ({ id, field, value }: { id: string; field: string; value: number }) => {
+      setMockPlayers(prev => prev.map(p => p.id === id ? { ...p, [field]: value } : p));
+    }
+  };
+
+  const deletePlayer = {
+    mutate: (id: string) => {
+      setMockPlayers(prev => prev.filter(p => p.id !== id));
       toast.success("Personagem removido.");
-    },
-  });
+      setDialogOpen(false);
+    }
+  };
 
   return (
     <div>

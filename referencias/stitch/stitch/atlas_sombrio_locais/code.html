@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;700&amp;family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@300;500;700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary-fixed-variant": "#0d2ccc",
+                    "tertiary": "#bcc3ff",
+                    "surface-container-high": "#2a2a2a",
+                    "on-secondary-fixed-variant": "#7b2d23",
+                    "surface-tint": "#ffb4a8",
+                    "surface-variant": "#353535",
+                    "inverse-on-surface": "#313030",
+                    "secondary-fixed": "#ffdad4",
+                    "error": "#ffb4ab",
+                    "tertiary-fixed": "#dfe0ff",
+                    "on-tertiary-fixed": "#000d60",
+                    "outline": "#aa8984",
+                    "error-container": "#93000a",
+                    "surface-container-lowest": "#0e0e0e",
+                    "outline-variant": "#5a403c",
+                    "primary-fixed-dim": "#ffb4a8",
+                    "on-surface": "#e5e2e1",
+                    "inverse-surface": "#e5e2e1",
+                    "secondary-container": "#7b2d23",
+                    "background": "#131313",
+                    "on-error": "#690005",
+                    "primary-container": "#8b0000",
+                    "surface-container-highest": "#353535",
+                    "on-error-container": "#ffdad6",
+                    "primary-fixed": "#ffdad4",
+                    "tertiary-container": "#0025c8",
+                    "on-tertiary-container": "#9ea9ff",
+                    "tertiary-fixed-dim": "#bcc3ff",
+                    "secondary-fixed-dim": "#ffb4a8",
+                    "on-secondary-fixed": "#400201",
+                    "inverse-primary": "#b52619",
+                    "secondary": "#ffb4a8",
+                    "on-primary-container": "#ff907f",
+                    "on-surface-variant": "#e3beb8",
+                    "on-secondary-container": "#ff9a8a",
+                    "on-primary-fixed-variant": "#920703",
+                    "on-background": "#e5e2e1",
+                    "surface-bright": "#393939",
+                    "surface": "#131313",
+                    "primary": "#ffb4a8",
+                    "on-primary": "#690000",
+                    "surface-dim": "#131313",
+                    "on-tertiary": "#001a98",
+                    "on-secondary": "#5d170f",
+                    "on-primary-fixed": "#410000",
+                    "surface-container-low": "#1c1b1b",
+                    "surface-container": "#20201f"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0px",
+                    "lg": "0px",
+                    "xl": "0px",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Noto Serif"],
+                    "body": ["Inter"],
+                    "label": ["Space Grotesk"]
+            }
+          },
+        }
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #131313;
+            color: #e5e2e1;
+            font-family: 'Inter', sans-serif;
+        }
+        .grain-overlay {
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.03;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="bg-background min-h-screen overflow-x-hidden">
+<div class="grain-overlay fixed inset-0 z-50"></div>
+<!-- SideNavBar (Shared Component) -->
+<aside class="fixed left-0 top-0 h-full flex flex-col py-8 bg-[#0e0e0e] dark:bg-[#0e0e0e] h-full w-64 left-0 top-0 border-r-0 z-40 hidden md:flex">
+<div class="text-[#ffb4a8] font-serif font-bold text-xl px-4 mb-2">Grimório</div>
+<div class="font-mono text-[10px] uppercase tracking-widest text-on-surface-variant px-4 mb-8">Investigative Terminal</div>
+<nav class="flex-1 space-y-1">
+<a class="text-[#920703] hover:text-[#ffb4a8] px-4 py-3 flex items-center gap-3 hover:bg-[#353535] transition-all duration-300 hover:translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-label uppercase tracking-widest text-xs">Coterie</span>
+</a>
+<a class="text-[#920703] hover:text-[#ffb4a8] px-4 py-3 flex items-center gap-3 hover:bg-[#353535] transition-all duration-300 hover:translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined">person_search</span>
+<span class="font-label uppercase tracking-widest text-xs">NPCs</span>
+</a>
+<a class="text-[#920703] hover:text-[#ffb4a8] px-4 py-3 flex items-center gap-3 hover:bg-[#353535] transition-all duration-300 hover:translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-label uppercase tracking-widest text-xs">Itens</span>
+</a>
+<!-- Active Tab: Atlas -->
+<a class="text-[#ffb4a8] bg-[#8b0000] border-l-4 border-[#ffb4a8] px-4 py-3 flex items-center gap-3 transition-all duration-300 translate-x-1" href="#">
+<span class="material-symbols-outlined">map</span>
+<span class="font-label uppercase tracking-widest text-xs">Atlas</span>
+</a>
+<a class="text-[#920703] hover:text-[#ffb4a8] px-4 py-3 flex items-center gap-3 hover:bg-[#353535] transition-all duration-300 hover:translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined">auto_stories</span>
+<span class="font-label uppercase tracking-widest text-xs">Ocultismo</span>
+</a>
+<a class="text-[#920703] hover:text-[#ffb4a8] px-4 py-3 flex items-center gap-3 hover:bg-[#353535] transition-all duration-300 hover:translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined">event_note</span>
+<span class="font-label uppercase tracking-widest text-xs">Sessões</span>
+</a>
+</nav>
+</aside>
+<!-- TopAppBar (Shared Component) -->
+<header class="fixed top-0 left-0 w-full z-30 bg-[#131313] dark:bg-[#131313] flex justify-between items-center px-6 h-16 w-full shadow-[0px_20px_40px_rgba(0,0,0,0.6)] bg-gradient-to-b from-[#353535]/20 to-transparent md:pl-72">
+<div class="font-serif text-2xl uppercase tracking-tighter text-[#ffb4a8] italic">Grimório do Narrador</div>
+<div class="flex items-center gap-6">
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline-variant text-sm">search</span>
+<input class="bg-transparent border-0 border-b border-outline-variant text-xs font-label tracking-widest focus:ring-0 focus:border-primary w-48 pl-10 uppercase transition-all" placeholder="LOCALIZAR ARQUIVO..." type="text"/>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-[#920703] cursor-pointer active:scale-95 hover:bg-[#8b0000]/10 transition-colors p-2">history_edu</span>
+<span class="material-symbols-outlined text-[#920703] cursor-pointer active:scale-95 hover:bg-[#8b0000]/10 transition-colors p-2">settings</span>
+</div>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="pt-24 pb-12 px-6 md:pl-72 min-h-screen">
+<!-- Header Section (Asymmetric) -->
+<section class="mb-12 max-w-6xl">
+<div class="flex flex-col md:flex-row md:items-end gap-4 mb-4">
+<h1 class="font-headline text-5xl md:text-7xl font-bold tracking-tighter text-on-surface">Atlas Sombrio</h1>
+<div class="font-label text-xs tracking-widest text-primary-container uppercase bg-on-primary-container px-2 py-1 mb-2">Terminal Ativo v4.2</div>
+</div>
+<p class="font-body text-on-surface-variant max-w-xl leading-relaxed opacity-80">
+                Mapeamento forense de pontos de interesse. As zonas de conflito e refúgios seguros da metrópole sob o domínio da noite. Cada sombra esconde um segredo, cada monumento uma história de sangue.
+            </p>
+</section>
+<!-- Bento Grid View -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl">
+<!-- Card 1: Gothic Cathedral -->
+<article class="group relative bg-surface-container-high overflow-hidden border-0 transition-all duration-500 hover:bg-surface-container-highest cursor-pointer">
+<div class="aspect-[16/10] overflow-hidden relative">
+<img alt="Catedral Gótica" class="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-110" data-alt="Ancient gothic cathedral at night with sharp spires reaching into a foggy dark red sky, dramatic moonlight hitting the stone details" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKKPhfmoSS5pnIKI6sdWNzMftZrqBgnH4OvRk77GIdWnJ1RA7ukQyzAUc5AyGis9zPTR0NMYFNBwqZ6RiXt6iK1kjE25mqD-eKpcOUrr4d7so6Qw0vXU9koq0FBeixSZIG_ZEx0lWgKYNIVzNEb0Cd7YzShYhdOHWIHFtSZYOnsJg8OJBzeVycfABrn79YyjKHijWGSfmGSA9-0DtOsOjOEAdQ6mbA-U14QeD1hCPLg8A1cgmiFd7t2ealt0Hn27fOoYVE-XXY5TJh"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background to-transparent opacity-90"></div>
+<div class="absolute top-4 right-4 flex gap-2">
+<div class="bg-primary-container text-on-surface text-[10px] font-label px-3 py-1 uppercase tracking-widest">Elysium</div>
+</div>
+</div>
+<div class="p-6 relative -mt-12 bg-surface-container-high group-hover:bg-surface-container-highest transition-colors">
+<h2 class="font-headline text-2xl mb-2 text-on-surface">Catedral de São Judas</h2>
+<div class="flex flex-col gap-3">
+<div class="flex items-center gap-2 text-on-surface-variant text-xs font-label uppercase tracking-tighter">
+<span class="material-symbols-outlined text-sm text-primary">account_balance</span>
+<span>Controlador: <span class="text-on-surface">Bispo Malachi</span></span>
+</div>
+<div class="flex justify-between items-center mt-4">
+<div class="flex items-center gap-1 bg-surface-container-lowest px-2 py-1 border-l-2 border-primary">
+<span class="material-symbols-outlined text-[14px] text-primary" style="font-variation-settings: 'FILL' 1;">security</span>
+<span class="text-[10px] font-label uppercase tracking-widest text-primary">Segredos do Mestre</span>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">arrow_right_alt</span>
+</div>
+</div>
+</div>
+</article>
+<!-- Card 2: Neon Alley -->
+<article class="group relative bg-surface-container-high overflow-hidden border-0 transition-all duration-500 hover:bg-surface-container-highest cursor-pointer">
+<div class="aspect-[16/10] overflow-hidden relative">
+<img alt="Beco Neon" class="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-110" data-alt="Narrow dark city alley with wet asphalt reflecting blood red and deep purple neon signs, heavy industrial cyberpunk atmosphere" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7sfi-ztImlHiWJHOwl3wOxnVCfhvDoI8ywR8Yhr40iryINllyFYkZX-uEBVjc3Y0HhZ2YtaT-1zHDPGVqp2jFD-U8BlXmkrYk2s5TTyHr8oC3r2sditNPU2vlvCBagN-uPr5YieuUyOYUVHNRTdAWo131asyOVNisfsPk6FI-Ba6Be1IpKOeRqGQA6MOJ5hH2Ij1XDeWZNtPetrT7fRm9ssKUjRRJ7MUXocrycupTo3kRd2NRkQ1hgl8EkoV54fSFFbYtEvZkrm8V"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background to-transparent opacity-90"></div>
+<div class="absolute top-4 right-4 flex gap-2">
+<div class="bg-on-secondary-fixed-variant text-on-surface text-[10px] font-label px-3 py-1 uppercase tracking-widest">Warzone</div>
+</div>
+</div>
+<div class="p-6 relative -mt-12 bg-surface-container-high group-hover:bg-surface-container-highest transition-colors">
+<h2 class="font-headline text-2xl mb-2 text-on-surface">Distrito de Neon-Leste</h2>
+<div class="flex flex-col gap-3">
+<div class="flex items-center gap-2 text-on-surface-variant text-xs font-label uppercase tracking-tighter">
+<span class="material-symbols-outlined text-sm text-primary">person_alert</span>
+<span>Controlador: <span class="text-on-surface">Vane "O Carniceiro"</span></span>
+</div>
+<div class="flex justify-between items-center mt-4">
+<div class="text-[10px] font-label uppercase tracking-widest text-outline-variant italic">Zona de Conflito Nível 4</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">arrow_right_alt</span>
+</div>
+</div>
+</div>
+</article>
+<!-- Card 3: Old Mansion -->
+<article class="group relative bg-surface-container-high overflow-hidden border-0 transition-all duration-500 hover:bg-surface-container-highest cursor-pointer">
+<div class="aspect-[16/10] overflow-hidden relative">
+<img alt="Mansão Antiga" class="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-110" data-alt="Derelict victorian mansion hidden behind overgrown iron gates at dusk, eerie glowing windows, cold cinematic lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAF1G1ff9QpgYPkXrdC_IrLUqrVREnNVcWcB1DlQhExtAiM4WIHdTHwHqKpm9ZvfbJCZG9pH2WXg0hoNAWjfTqCZqealjYCPvVk6_97s6eY33xaz1yIl4JdSglOCubjumPuW8c_ZtlnzDV4-uCPJjYbBpfVSoE61m5XbqSJAjxezuf3cZFtsa8-VG622idx--qxYFjhp1b1y9fdQFPjllL41z4qjabkHRV9sRCXBGc36e3X4HKWe4Tr2fsZzOfXxPHsSgVwB9dou2tO"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background to-transparent opacity-90"></div>
+<div class="absolute top-4 right-4 flex gap-2">
+<div class="bg-surface-variant text-on-surface text-[10px] font-label px-3 py-1 uppercase tracking-widest">Haven</div>
+</div>
+</div>
+<div class="p-6 relative -mt-12 bg-surface-container-high group-hover:bg-surface-container-highest transition-colors">
+<h2 class="font-headline text-2xl mb-2 text-on-surface">Solar dos Ashworth</h2>
+<div class="flex flex-col gap-3">
+<div class="flex items-center gap-2 text-on-surface-variant text-xs font-label uppercase tracking-tighter">
+<span class="material-symbols-outlined text-sm text-primary">home_pin</span>
+<span>Controlador: <span class="text-on-surface">Lady Evelyn</span></span>
+</div>
+<div class="flex justify-between items-center mt-4">
+<div class="flex items-center gap-1 bg-surface-container-lowest px-2 py-1 border-l-2 border-primary">
+<span class="material-symbols-outlined text-[14px] text-primary" style="font-variation-settings: 'FILL' 1;">security</span>
+<span class="text-[10px] font-label uppercase tracking-widest text-primary">Segredos do Mestre</span>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">arrow_right_alt</span>
+</div>
+</div>
+</div>
+</article>
+<!-- Card 4: Abandoned Subway -->
+<article class="group relative bg-surface-container-high overflow-hidden border-0 transition-all duration-500 hover:bg-surface-container-highest cursor-pointer">
+<div class="aspect-[16/10] overflow-hidden relative">
+<img alt="Metrô Abandonado" class="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-110" data-alt="Damp abandoned subway tunnel with flickering lights, rusty train car, shadows moving in the distance, high contrast noir style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuADaLwaiGOV8ltA3QHN9xMvfPLGcnYdsvPIezNq5X4mosUB0Hz5H2fwc7nHkHmGnAYLkZk1Z9sl8C5ChCwxnGfSR0TF1ucJa2l2YewML5NJn_TQ6BMsTvauJM3muI8TDrMkquQdbpyDU2SlxuIW0U90UfstmBEB95KckibRbbN9HNNHgSqJfVoF6QiiJL7n23cnvLbuG-erVnsXFbkEQbqrYuX4qeaFqA_qWFb9zNpwBnkL19kdgeK--c8LhNM33kpnDyRlQpFhI4ww"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background to-transparent opacity-90"></div>
+<div class="absolute top-4 right-4 flex gap-2">
+<div class="bg-on-secondary-fixed-variant text-on-surface text-[10px] font-label px-3 py-1 uppercase tracking-widest">Warzone</div>
+</div>
+</div>
+<div class="p-6 relative -mt-12 bg-surface-container-high group-hover:bg-surface-container-highest transition-colors">
+<h2 class="font-headline text-2xl mb-2 text-on-surface">Terminal Zero</h2>
+<div class="flex flex-col gap-3">
+<div class="flex items-center gap-2 text-on-surface-variant text-xs font-label uppercase tracking-tighter">
+<span class="material-symbols-outlined text-sm text-primary">group</span>
+<span>Controlador: <span class="text-on-surface">Clã Nosferatu</span></span>
+</div>
+<div class="flex justify-between items-center mt-4">
+<div class="text-[10px] font-label uppercase tracking-widest text-outline-variant italic">Território não mapeado</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">arrow_right_alt</span>
+</div>
+</div>
+</div>
+</article>
+<!-- Card 5: Modern Skyscraper Penthouse -->
+<article class="group relative bg-surface-container-high overflow-hidden border-0 transition-all duration-500 hover:bg-surface-container-highest cursor-pointer">
+<div class="aspect-[16/10] overflow-hidden relative">
+<img alt="Arranha-céu" class="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-110" data-alt="Sleek glass skyscraper penthouse overlooking a dark city at night, floor to ceiling windows, minimalist luxury, cold blue and red lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC4qNGkGLI3FW3h1XZ_qzV-Ur0am2hlsC-9JEVr_L38Ze_GO6rjkVmZBwudNWwlC3445lO4RkUJfp4eyGll4h5TADNjjmY0hBJtZwOGQevejk8qF7c0LvxvPr2Z7RB-qNKaszL2cVUX44xSpTDcnOoqd_hV4-jkH4dgMIL3qfl1x4xIdAD3A4NFdZry84e6cf25wefn9wVFtpPyHBr7X59gXHLyemh8x87pjma51EwiBobmPCPJtuTfIXAMCuPql6qxK5feuOla2Fre"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background to-transparent opacity-90"></div>
+<div class="absolute top-4 right-4 flex gap-2">
+<div class="bg-primary-container text-on-surface text-[10px] font-label px-3 py-1 uppercase tracking-widest">Elysium</div>
+</div>
+</div>
+<div class="p-6 relative -mt-12 bg-surface-container-high group-hover:bg-surface-container-highest transition-colors">
+<h2 class="font-headline text-2xl mb-2 text-on-surface">Torre Ventrue</h2>
+<div class="flex flex-col gap-3">
+<div class="flex items-center gap-2 text-on-surface-variant text-xs font-label uppercase tracking-tighter">
+<span class="material-symbols-outlined text-sm text-primary">domain</span>
+<span>Controlador: <span class="text-on-surface">Príncipe Julian</span></span>
+</div>
+<div class="flex justify-between items-center mt-4">
+<div class="flex items-center gap-1 bg-surface-container-lowest px-2 py-1 border-l-2 border-primary">
+<span class="material-symbols-outlined text-[14px] text-primary" style="font-variation-settings: 'FILL' 1;">security</span>
+<span class="text-[10px] font-label uppercase tracking-widest text-primary">Segredos do Mestre</span>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">arrow_right_alt</span>
+</div>
+</div>
+</div>
+</article>
+<!-- Card 6: Industrial Docks -->
+<article class="group relative bg-surface-container-high overflow-hidden border-0 transition-all duration-500 hover:bg-surface-container-highest cursor-pointer">
+<div class="aspect-[16/10] overflow-hidden relative">
+<img alt="Docas Industriais" class="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-110" data-alt="Foggy industrial shipping docks at night, rusted cranes like skeletons against a dark horizon, oil on dark water, forensic atmosphere" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNn3vAegcZW8g0UZnKPj9gT0jfvJSaEYBHnS3Zb3VB-TMe75ps_b98DJWSAbFUalJCRB-sOtQOSbq0C6WItsn32mUEj55xaFUPKXckjvOWNXA2h54UBeBLrmqZQxD-kqPX8XD1auge8dB9Nd13QPbFtcTW02jzRynxlRAM4F8RnPMJRzQab8SNCHdtL32uFMgKm-JaPuuJYWTqeb0Kz9qHYpYEahzx3pscW4yN06xCZCL5lwdWLKU1JF8SOpzNGSpjKZpjSfO0WjGf"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background to-transparent opacity-90"></div>
+<div class="absolute top-4 right-4 flex gap-2">
+<div class="bg-surface-variant text-on-surface text-[10px] font-label px-3 py-1 uppercase tracking-widest">Haven</div>
+</div>
+</div>
+<div class="p-6 relative -mt-12 bg-surface-container-high group-hover:bg-surface-container-highest transition-colors">
+<h2 class="font-headline text-2xl mb-2 text-on-surface">Pier 13</h2>
+<div class="flex flex-col gap-3">
+<div class="flex items-center gap-2 text-on-surface-variant text-xs font-label uppercase tracking-tighter">
+<span class="material-symbols-outlined text-sm text-primary">anchor</span>
+<span>Controlador: <span class="text-on-surface">O Capitão</span></span>
+</div>
+<div class="flex justify-between items-center mt-4">
+<div class="text-[10px] font-label uppercase tracking-widest text-outline-variant italic">Acesso Restrito Marítimo</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">arrow_right_alt</span>
+</div>
+</div>
+</div>
+</article>
+</div>
+<!-- Floating Forensic Overlay (Decoration) -->
+<div class="fixed bottom-10 right-10 hidden lg:block pointer-events-none">
+<div class="bg-surface-container-lowest p-4 border-l-4 border-primary shadow-2xl opacity-60">
+<div class="font-label text-[10px] tracking-[0.2em] text-primary uppercase mb-2">SISTEMA STATUS</div>
+<div class="text-[9px] font-mono leading-tight text-on-surface-variant">
+                    SYNCING ATLAS DATA... [OK]<br/>
+                    MASQUERADE PROTOCOL... [ACTIVE]<br/>
+                    LOCATIONS IDENTIFIED... [6/158]<br/>
+                    THREAT LEVEL... [HIGH]
+                </div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Shared Component - Mobile Only) -->
+<nav class="fixed bottom-0 left-0 w-full bg-[#131313] flex justify-around items-center h-16 md:hidden z-40 border-t border-outline-variant/10">
+<button class="text-[#920703] flex flex-col items-center gap-1">
+<span class="material-symbols-outlined">group</span>
+</button>
+<button class="text-[#920703] flex flex-col items-center gap-1">
+<span class="material-symbols-outlined">person_search</span>
+</button>
+<button class="text-[#ffb4a8] flex flex-col items-center gap-1 border-t-2 border-[#ffb4a8] pt-1">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">map</span>
+</button>
+<button class="text-[#920703] flex flex-col items-center gap-1">
+<span class="material-symbols-outlined">auto_stories</span>
+</button>
+<button class="text-[#920703] flex flex-col items-center gap-1">
+<span class="material-symbols-outlined">event_note</span>
+</button>
+</nav>
+</body></html>
