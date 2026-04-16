@@ -1,4 +1,4 @@
-import { Users, Ghost, Swords, MapPin, BookOpen, ScrollText, Network, ShieldAlert } from "lucide-react";
+import { Users, Ghost, Swords, MapPin, BookOpen, ScrollText, Network, ShieldAlert, Home } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {
@@ -13,8 +13,9 @@ import {
 } from "@/components/ui/sidebar";
 
 const items = [
+  { title: "Home", url: "/", icon: Home },
   { title: "Escudo do Narrador", url: "/escudo", icon: ShieldAlert },
-  { title: "A Coterie", url: "/", icon: Users },
+  { title: "A Coterie", url: "/coterie", icon: Users },
   { title: "Galeria de NPCs", url: "/npcs", icon: Ghost },
   { title: "Teia de Intrigas", url: "/teia", icon: Network },
   { title: "Arsenal", url: "/arsenal", icon: Swords },
