@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Plus, Crosshair, Sparkles, ScrollText, UserSearch, AlertTriangle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Plus, Crosshair, Sparkles, ScrollText, UserSearch, AlertTriangle, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -10,8 +10,12 @@ const CATEGORIES = ["Arma", "Ferramenta", "Artefato", "Documento"];
 export default function ArsenalPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [coterieNames, setCoterieNames] = useState<string[]>([]);
 
-  const [mockItems] = useState([
+  const [items, setItems] = useState<any[]>(() => {
+    const saved = localStorage.getItem("v5_arsenal");
+    if (saved) return JSON.parse(saved);
+    return [
     {
       id: "1",
       name: "MAC-10 Silenciada (Fósforo)",
@@ -42,9 +46,28 @@ export default function ArsenalPage() {
       description: "Uma pasta grossa interceptada de um agente falecido da Segunda Inquisição. Possui fotos granuladas de reuniões do Elysium e algumas rotas de patrulha humana.",
       mechanical_details: "Fornece Dados Bônus (+2) em qualquer rolagem de Política ou Investigação para prever movimentos da Segunda Inquisição. Pode comprometer portadores se descoberto."
     }
-  ]);
+    ];
+  });
 
-  const items = mockItems;
+  useEffect(() => {
+    localStorage.setItem("v5_arsenal", JSON.stringify(items));
+  }, [items]);
+
+  useEffect(() => {
+    const savedCoterie = localStorage.getItem("v5_coterie");
+    if (savedCoterie) {
+      const parsed = JSON.parse(savedCoterie);
+      setCoterieNames(parsed.map((p: any) => p.character_name));
+    } else {
+      setCoterieNames(["Lucien (O Belo)", "Viktoria", "Kaleb"]);
+    }
+  }, []);
+
+  const handleAssignOwner = (itemId: string, newOwner: string) => {
+    setItems(prev => prev.map(item => item.id === itemId ? { ...item, owner: newOwner } : item));
+    toast.success(`Artefato transferido para ${newOwner}`);
+  };
+
   const filtered = items.filter((item) => categoryFilter === "all" || item.category === categoryFilter);
 
   const getCategoryIcon = (category: string) => {
@@ -139,12 +162,29 @@ export default function ArsenalPage() {
                 <div className="h-[1px] w-full bg-border/40"></div>
 
                 {/* Ownership */}
-                <div className="flex items-center gap-2">
-                  <UserSearch className="w-4 h-4 text-primary opacity-80" />
-                  <div>
-                    <span className="block text-[10px] uppercase tracking-widest text-muted-foreground">Em Posse Atual de</span>
-                    <span className="text-xs font-semibold text-foreground">{item.owner}</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <UserSearch className="w-4 h-4 text-primary opacity-80" />
+                    <div>
+                      <span className="block text-[10px] uppercase tracking-widest text-muted-foreground">Em Posse Atual de</span>
+                      <span className="text-xs font-semibold text-foreground">{item.owner}</span>
+                    </div>
                   </div>
+                  
+                  {/* Select for Assignment */}
+                  <Select value={item.owner} onValueChange={(val) => handleAssignOwner(item.id, val)}>
+                    <SelectTrigger className="w-[110px] h-7 text-[10px] border-border bg-background">
+                       <UserPlus className="w-3 h-3 mr-1" /> Reatribuir
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Ninguém">Ninguém</SelectItem>
+                      <SelectItem value="Príncipe Sebastian">Príncipe Sebastian</SelectItem>
+                      <SelectItem value="Barão Zora">Barão Zora</SelectItem>
+                      {coterieNames.map(name => (
+                         <SelectItem key={name} value={name}>{name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
               </div>

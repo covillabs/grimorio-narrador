@@ -11,8 +11,11 @@ import TeiaPage from "@/pages/TeiaPage";
 import ArsenalPage from "@/pages/ArsenalPage";
 import AtlasPage from "@/pages/AtlasPage";
 import OcultismoPage from "@/pages/OcultismoPage";
+import QuestsPage from "@/pages/QuestsPage";
 import DiarioPage from "@/pages/DiarioPage";
 import EscudoPage from "@/pages/EscudoPage";
+import BoonsPage from "@/pages/BoonsPage";
+import CombatePage from "@/pages/CombatePage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,7 +35,10 @@ const App = () => (
             <Route path="/arsenal" element={<ArsenalPage />} />
             <Route path="/atlas" element={<AtlasPage />} />
             <Route path="/ocultismo" element={<OcultismoPage />} />
+            <Route path="/quests" element={<QuestsPage />} />
             <Route path="/diario" element={<DiarioPage />} />
+            <Route path="/boons" element={<BoonsPage />} />
+            <Route path="/combate" element={<CombatePage />} />
             <Route path="/escudo" element={<EscudoPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />

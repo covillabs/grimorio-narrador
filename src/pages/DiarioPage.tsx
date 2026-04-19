@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Calendar, Skull, Link as LinkIcon, Sparkles, BookOpen, PenLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -6,31 +6,46 @@ import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
 
 export default function DiarioPage() {
-  const [scratchpad, setScratchpad] = useState("• Investigar a doca 4.\n• Lucien deve responder pelo que disse ao Barão.\n• Lembrete: Nosferatu da esgoto tem informações sobre a 2ª Inquisição.");
+  const [scratchpad, setScratchpad] = useState(() => {
+    return localStorage.getItem("v5_scratchpad") || "• Investigar a doca 4.\n• Lucien deve responder pelo que disse ao Barão.\n• Lembrete: Nosferatu da esgoto tem informações sobre a 2ª Inquisição.";
+  });
+  
   const [viewMode, setViewMode] = useState<Record<string, "resumo" | "ganchos">>({});
 
-  const mockSessions = [
-    {
-      id: "2",
-      title: "Sessão 02: Ecos de Fogo",
-      date: "14 de Novembro de 2026",
-      summary: "A coterie investigou as ruínas do antigo Haven Brujah incendiado. Descobriram que o mandante não foi a Segunda Inquisição, mas sim agentes infiltrados cruzando ordens do próprio Príncipe. Ocorreu um tenso embate com Carniçais rebeldes nas vielas.",
-      hooks: "Quem dentro da Camarilla entregou a localização Brujah? Onde está o diário perdido do Ancião que queimou? O Barão Zora ainda não sabe desse envolvimento.",
-      xp: "2 XP Distribuidos",
-      stains: "Lucien: Mácula (Destruição de propriedade sagrada). Kaleb: 2 Máculas (Assassinato não provocado).",
-      resonance: "Melancólica consumida do sobrevivente do fogo."
-    },
-    {
-      id: "1",
-      title: "Sessão 01: O Abraço e a Queda",
-      date: "07 de Novembro de 2026",
-      summary: "Nossa primeira noite. O grupo foi reunido à força por convocação da Xerife sob a alegação de acobertamento de Mascote. Encontro com Barão Zora que exigiu lealdade imediata. A Inquisição atacou as docas no meio da negociação.",
-      hooks: "Por que a Xerife os escolheu, entre tantos Neófitos? O que a Inquisição procurava nos contêineres?",
-      xp: "1 XP Distribuído",
-      stains: "Nenhum princípio quebrado.",
-      resonance: "Sanguínea / Colérica."
-    }
-  ];
+  const [sessions, setSessions] = useState<any[]>(() => {
+    const saved = localStorage.getItem("v5_sessions");
+    if (saved) return JSON.parse(saved);
+    return [
+      {
+        id: "2",
+        title: "Sessão 02: Ecos de Fogo",
+        date: "14 de Novembro de 2024",
+        summary: "A coterie investigou as ruínas do antigo Haven Brujah incendiado. Descobriram que o mandante não foi a Segunda Inquisição, mas sim agentes infiltrados cruzando ordens do próprio Príncipe. Ocorreu um tenso embate com Carniçais rebeldes nas vielas.",
+        hooks: "Quem dentro da Camarilla entregou a localização Brujah? Onde está o diário perdido do Ancião que queimou? O Barão Zora ainda não sabe desse envolvimento.",
+        xp: "2 XP Distribuidos",
+        stains: "Lucien: Mácula (Destruição de propriedade sagrada). Kaleb: 2 Máculas (Assassinato não provocado).",
+        resonance: "Melancólica consumida do sobrevivente do fogo."
+      },
+      {
+        id: "1",
+        title: "Sessão 01: O Abraço e a Queda",
+        date: "07 de Novembro de 2024",
+        summary: "Nossa primeira noite. O grupo foi reunido à força por convocação da Xerife sob a alegação de acobertamento de Mascote. Encontro com Barão Zora que exigiu lealdade imediata. A Inquisição atacou as docas no meio da negociação.",
+        hooks: "Por que a Xerife os escolheu, entre tantos Neófitos? O que a Inquisição procurava nos contêineres?",
+        xp: "1 XP Distribuído",
+        stains: "Nenhum princípio quebrado.",
+        resonance: "Sanguínea / Colérica."
+      }
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem("v5_sessions", JSON.stringify(sessions));
+  }, [sessions]);
+
+  useEffect(() => {
+    localStorage.setItem("v5_scratchpad", scratchpad);
+  }, [scratchpad]);
 
   const handleToggleView = (id: string, mode: "resumo" | "ganchos") => {
     setViewMode((prev) => ({ ...prev, [id]: mode }));
@@ -55,7 +70,7 @@ export default function DiarioPage() {
           {/* Linha vertical (red string) */}
           <div className="absolute left-8 top-4 bottom-0 w-1 bg-blood/20 rounded-full z-0 origin-top"></div>
 
-          {mockSessions.map((sess, idx) => (
+          {sessions.map((sess, idx) => (
             <div key={sess.id} className="relative z-10 flex gap-6 group">
               {/* Timeline Node */}
               <div className="flex flex-col items-center mt-2">

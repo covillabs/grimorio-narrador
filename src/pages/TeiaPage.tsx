@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Network, Users } from 'lucide-react';
-import { ReactFlow, Controls, Background, useNodesState, useEdgesState } from '@xyflow/react';
+import { ReactFlow, Controls, Background, useNodesState, useEdgesState, Edge, Node } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { CharacterNode } from '@/components/Teia/CharacterNode';
 import { coterieNodes, coterieEdges, globalNodes, globalEdges } from '@/components/Teia/mockData';
@@ -22,10 +22,62 @@ export default function TeiaPage() {
       setNodes(coterieNodes);
       setEdges(coterieEdges);
     } else {
-      setNodes(globalNodes);
-      setEdges(globalEdges);
+      // Injetando Boons Dinâmicos no Modo Global
+      let dynamicEdges = [...globalEdges];
+      let dynamicNodes = [...globalNodes];
+      
+      try {
+        const savedBoons = localStorage.getItem("v5_boons");
+        if (savedBoons) {
+          const boonsList = JSON.parse(savedBoons);
+          
+          boonsList.forEach((boon: any) => {
+            if (boon.isResolved) return; // Só favores ativos
+            
+            let fromNode = dynamicNodes.find(n => n.data.label.toLowerCase() === boon.from.toLowerCase());
+            let toNode = dynamicNodes.find(n => n.data.label.toLowerCase() === boon.to.toLowerCase());
+            
+            // Cria nós fantasmas se a pessoa ainda não estiver na teia oficial
+            if (!fromNode) {
+              const newId = 'dyn_' + Date.now() + Math.random();
+              fromNode = { id: newId, position: { x: Math.random() * 800, y: Math.random() * 400 }, data: { label: boon.from, type: 'npc' }, type: 'character' };
+              dynamicNodes.push(fromNode);
+            }
+            if (!toNode) {
+              const newId = 'dyn_' + Date.now() + Math.random();
+              toNode = { id: newId, position: { x: Math.random() * 800, y: Math.random() * 400 }, data: { label: boon.to, type: 'npc' }, type: 'character' };
+              dynamicNodes.push(toNode);
+            }
+            
+            // Cor baseada no tipo
+            let strokeColor = '#f59e0b'; // yellow-500
+            if (boon.type === 'minor') strokeColor = '#3b82f6';
+            if (boon.type === 'trivial') strokeColor = '#9ca3af';
+            if (boon.type === 'life') strokeColor = '#991b1b';
+
+            dynamicEdges.push({
+              id: `boon_${boon.id}`,
+              source: fromNode.id,
+              target: toNode.id,
+              label: `Dívida: ${boon.description}`,
+              animated: true,
+              style: { stroke: strokeColor, strokeWidth: 2, strokeDasharray: '4,4' }
+            });
+          });
+        }
+      } catch (e) {
+        console.error("Erro ao ler Livro de Dívidas na Teia", e);
+      }
+      
+      setNodes(dynamicNodes);
+      setEdges(dynamicEdges);
     }
   };
+
+  useEffect(() => {
+    // Carrega o modo inicial com os Boons se necessário
+    if (mode === 'global') handleModeSwitch('global');
+  }, []);
 
   return (
     <div className="flex flex-col h-[calc(100vh-6rem)]">

@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Skull, Shield, Search } from "lucide-react";
+import { Plus, Skull, Shield, Search, Scale, ScrollText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -14,66 +14,73 @@ export default function NpcsPage() {
   const [editingNpc, setEditingNpc] = useState<any>(null);
   const [filter, setFilter] = useState("");
   const [combatMode, setCombatMode] = useState<Record<string, boolean>>({});
-  const [mockNpcs, setMockNpcs] = useState([
-    {
-      id: "1",
-      name: "Príncipe Sebastian Van Der Meer",
-      species_faction: "Camarilla",
-      clan: "Ventrue",
-      status: "Ativo",
-      appearance: "Um senhor de idade aparentemente nos seus 50 anos mortais, sempre vestido com ternos impecáveis. Seus olhos são frios e calculistas.",
-      image_url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=400&auto=format&fit=crop",
-      physical_pool: 5,
-      social_pool: 9,
-      mental_pool: 8,
-      health: 6,
-      blood_potency: 4,
-      disciplines: "Dominação 4, Fortitude 3, Presença 3",
-      specialties: "Liderança, Manipulação de Mercado",
-      secrets: "Ele está secretamente financiando uma facção Anarch rival para enfraquecer o Barão Zora sem se envolver diretamente."
-    },
-    {
-      id: "2",
-      name: "Baronesa Zora",
-      species_faction: "Anarch",
-      clan: "Brujah",
-      status: "Ativo",
-      appearance: "Elegante e intensa, usa joias douradas pesadas. Constantemente desafia as tradições, mas mantém controle estrito em seu domínio.",
-      image_url: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=400&auto=format&fit=crop",
-      physical_pool: 8,
-      social_pool: 6,
-      mental_pool: 5,
-      health: 8,
-      blood_potency: 3,
-      disciplines: "Rapidez 3, Potência 4, Presença 2",
-      specialties: "Intimidação, Combate Desarmado",
-      secrets: 'Zora deve um "Boon de Sangue" ("Life Debt") a um ancião Tremere, algo que ela esconde a todo custo dos outros Anarchs.'
-    },
-    {
-      id: "3",
-      name: "O Algoz (The Scourge)",
-      species_faction: "Camarilla",
-      clan: "Desconhecido",
-      status: "Ativo",
-      appearance: "Rosto oculto sob capuz pesado, age apenas nas sombras a mando do Príncipe.",
-      image_url: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=400&auto=format&fit=crop",
-      physical_pool: 10,
-      social_pool: 2,
-      mental_pool: 6,
-      health: 9,
-      blood_potency: 5,
-      disciplines: "Ofuscação 5, Rapidez 4, Potência 3",
-      specialties: "Furtividade, Assassinato",
-      secrets: "Ele é na verdade um carniçal ancestral superpoderoso, não um vampiro."
-    }
-  ]);
+  const [npcs, setNpcs] = useState<any[]>(() => {
+    const saved = localStorage.getItem("v5_npcs");
+    if (saved) return JSON.parse(saved);
+    return [
+      {
+        id: "1",
+        name: "Príncipe Sebastian Van Der Meer",
+        species_faction: "Camarilla",
+        clan: "Ventrue",
+        status: "Ativo",
+        appearance: "Um senhor de idade aparentemente nos seus 50 anos mortais, sempre vestido com ternos impecáveis. Seus olhos são frios e calculistas.",
+        image_url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=400&auto=format&fit=crop",
+        physical_pool: 5,
+        social_pool: 9,
+        mental_pool: 8,
+        health: 6,
+        blood_potency: 4,
+        disciplines: "Dominação 4, Fortitude 3, Presença 3",
+        specialties: "Liderança, Manipulação de Mercado",
+        secrets: "Ele está secretamente financiando uma facção Anarch rival para enfraquecer o Barão Zora sem se envolver diretamente."
+      },
+      {
+        id: "2",
+        name: "Baronesa Zora",
+        species_faction: "Anarch",
+        clan: "Brujah",
+        status: "Ativo",
+        appearance: "Elegante e intensa, usa joias douradas pesadas. Constantemente desafia as tradições, mas mantém controle estrito em seu domínio.",
+        image_url: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=400&auto=format&fit=crop",
+        physical_pool: 8,
+        social_pool: 6,
+        mental_pool: 5,
+        health: 8,
+        blood_potency: 3,
+        disciplines: "Rapidez 3, Potência 4, Presença 2",
+        specialties: "Intimidação, Combate Desarmado",
+        secrets: 'Zora deve um "Boon de Sangue" ("Life Debt") a um ancião Tremere, algo que ela esconde a todo custo dos outros Anarchs.'
+      },
+      {
+        id: "3",
+        name: "O Algoz (The Scourge)",
+        species_faction: "Camarilla",
+        clan: "Desconhecido",
+        status: "Ativo",
+        appearance: "Rosto oculto sob capuz pesado, age apenas nas sombras a mando do Príncipe.",
+        image_url: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=400&auto=format&fit=crop",
+        physical_pool: 10,
+        social_pool: 2,
+        mental_pool: 6,
+        health: 9,
+        blood_potency: 5,
+        disciplines: "Ofuscação 5, Rapidez 4, Potência 3",
+        specialties: "Furtividade, Assassinato",
+        secrets: "Ele é na verdade um carniçal ancestral superpoderoso, não um vampiro."
+      }
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem("v5_npcs", JSON.stringify(npcs));
+  }, [npcs]);
 
   const isLoading = false;
-  const npcs = mockNpcs;
 
   const deleteNpc = {
     mutate: (id: string) => {
-      setMockNpcs(prev => prev.filter(npc => npc.id !== id));
+      setNpcs(prev => prev.filter(npc => npc.id !== id));
       toast.success("NPC removido.");
       setDialogOpen(false);
     }
@@ -214,6 +221,36 @@ export default function NpcsPage() {
                        </Accordion>
                     </div>
                   )}
+
+                  {/* Integração com Boons (Livro de Dívidas) */}
+                  <div className="col-span-2 md:col-span-4 mt-4 bg-background/40 p-3 rounded border border-border/50">
+                    <h5 className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
+                      <Scale className="w-3 h-3"/> Dívidas e Favores Neste Códice
+                    </h5>
+                    {(() => {
+                      const savedBoons = localStorage.getItem("v5_boons");
+                      const allBoons = savedBoons ? JSON.parse(savedBoons) : [];
+                      const npcBoons = allBoons.filter((b: any) => 
+                        (b.from.toLowerCase() === npc.name.toLowerCase() || b.to.toLowerCase() === npc.name.toLowerCase()) && !b.isResolved
+                      );
+
+                      if (npcBoons.length === 0) return <p className="text-[10px] italic text-muted-foreground">Nenhum débito ativo registrado.</p>;
+
+                      return (
+                        <div className="space-y-2">
+                          {npcBoons.map((boon: any) => (
+                            <div key={boon.id} className="text-xs flex items-center gap-2">
+                              <Badge variant="outline" className="text-[8px] uppercase">{boon.type}</Badge>
+                              <span className="font-semibold text-foreground">
+                                {boon.from.toLowerCase() === npc.name.toLowerCase() ? "DEVE para " + boon.to : "A RECEBER de " + boon.from}
+                              </span>
+                              <span className="text-muted-foreground opacity-60">— {boon.description}</span>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </div>
                 </div>
               )}
             </div>
