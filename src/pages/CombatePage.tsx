@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useCloudStorage } from "@/hooks/useCloudStorage";
 import { Sword, Plus, Trash2, Heart, Skull, ShieldBan, Crosshair } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -19,20 +20,12 @@ type Combatant = {
 };
 
 export default function CombatePage() {
-  const [combatants, setCombatants] = useState<Combatant[]>(() => {
-    const saved = localStorage.getItem("v5_arena");
-    if (saved) return JSON.parse(saved);
-    return [];
-  });
+  const [combatants, setCombatants] = useCloudStorage<Combatant[]>("v5_arena", []);
 
   const [availablePlayers, setAvailablePlayers] = useState<any[]>([]);
   const [availableNpcs, setAvailableNpcs] = useState<any[]>([]);
   const [selectedEntity, setSelectedEntity] = useState<string>("");
   const [customName, setCustomName] = useState<string>("");
-
-  useEffect(() => {
-    localStorage.setItem("v5_arena", JSON.stringify(combatants));
-  }, [combatants]);
 
   useEffect(() => {
     const p = localStorage.getItem("v5_coterie");

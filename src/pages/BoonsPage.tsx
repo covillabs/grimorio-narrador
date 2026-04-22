@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useCloudStorage } from "@/hooks/useCloudStorage";
 import { Scale, Plus, X, Trash2, CheckCircle, User, Users, ArrowRight, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,17 +19,7 @@ export default function BoonsPage() {
   const [isCreatorOpen, setIsCreatorOpen] = useState(false);
   
   // Boons Dictionary
-  const [boons, setBoons] = useState<any[]>(() => {
-    const saved = localStorage.getItem("v5_boons");
-    return saved ? JSON.parse(saved) : [
-      { id: "1", type: "major", from: "Príncipe Sebastian", to: "Coterie", description: "Por acobertarem o incidente nas docas.", isResolved: false },
-      { id: "2", type: "minor", from: "Coterie", to: "Baronesa Zora", description: "Pela informação sobre a Inquisição.", isResolved: true }
-    ];
-  });
-
-  useEffect(() => {
-    localStorage.setItem("v5_boons", JSON.stringify(boons));
-  }, [boons]);
+  const [boons, setBoons] = useCloudStorage<any[]>("v5_boons", []);
 
   // Form State
   const [form, setForm] = useState({

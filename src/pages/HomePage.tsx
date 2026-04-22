@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useCloudStorage } from "@/hooks/useCloudStorage";
 import { BookOpen, Network, ShieldAlert, Sparkles, MapPin, ChevronRight, Skull, Pencil, Save, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -24,17 +25,9 @@ const DEFAULT_SETTINGS = {
 export default function HomePage() {
   const [isEditing, setIsEditing] = useState(false);
   
-  // Inicializar state pegando do localStorage (se existir)
-  const [settings, setSettings] = useState(() => {
-    const saved = localStorage.getItem("v5_homeSettings");
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) { return DEFAULT_SETTINGS; }
-    }
-    return DEFAULT_SETTINGS;
-  });
+  const [settings, setSettings] = useCloudStorage("v5_homeSettings", DEFAULT_SETTINGS);
 
   const handleSave = () => {
-    localStorage.setItem("v5_homeSettings", JSON.stringify(settings));
     setIsEditing(false);
     toast.success("Mundo salvo! As entidades notarão a diferença.");
   };
@@ -42,7 +35,6 @@ export default function HomePage() {
   const handleReset = () => {
     if (window.confirm("Deseja apagar sua customização e voltar para o layout Macabro padrão?")) {
       setSettings(DEFAULT_SETTINGS);
-      localStorage.removeItem("v5_homeSettings");
       toast.info("Layout restaurado ao padrão original.");
     }
   };

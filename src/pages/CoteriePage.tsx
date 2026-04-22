@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useCloudStorage } from "@/hooks/useCloudStorage";
 import { Plus, Crosshair, Sparkles, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HungerTracker } from "@/components/HungerTracker";
@@ -50,43 +51,7 @@ export default function CoteriePage() {
   const [editingPlayer, setEditingPlayer] = useState<any>(null);
   const [arsenal, setArsenal] = useState<any[]>([]);
 
-  const [players, setPlayers] = useState<any[]>(() => {
-    const saved = localStorage.getItem("v5_coterie");
-    if (saved) return JSON.parse(saved);
-    return [
-    {
-      id: "1",
-      character_name: "Lucien (O Belo)",
-      player_name: "João",
-      clan: "Toreador",
-      image_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400&auto=format&fit=crop",
-      hunger: 2,
-      humanity: 7,
-    },
-    {
-      id: "2",
-      character_name: "Viktoria",
-      player_name: "Ana",
-      clan: "Ventrue",
-      image_url: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=400&auto=format&fit=crop",
-      hunger: 4,
-      humanity: 5,
-    },
-    {
-      id: "3",
-      character_name: "Kaleb",
-      player_name: "Marcos",
-      clan: "Brujah",
-      image_url: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=400&auto=format&fit=crop",
-      hunger: 1,
-      humanity: 6,
-    }
-    ];
-  });
-
-  useEffect(() => {
-    localStorage.setItem("v5_coterie", JSON.stringify(players));
-  }, [players]);
+  const [players, setPlayers] = useCloudStorage<any[]>("v5_coterie", []);
 
   useEffect(() => {
     const savedArsenal = localStorage.getItem("v5_arsenal");
@@ -99,6 +64,17 @@ export default function CoteriePage() {
     mutate: ({ id, field, value }: { id: string; field: string; value: number }) => {
       setPlayers(prev => prev.map(p => p.id === id ? { ...p, [field]: value } : p));
     }
+  };
+
+  const savePlayer = (playerData: any) => {
+    setPlayers(prev => {
+      const exists = prev.find(p => p.id === playerData.id);
+      if (exists) {
+        return prev.map(p => p.id === playerData.id ? playerData : p);
+      }
+      return [...prev, playerData];
+    });
+    toast.success("Coterie atualizada na nuvem.");
   };
 
   const deletePlayer = {
@@ -236,6 +212,7 @@ export default function CoteriePage() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         player={editingPlayer}
+        onSave={savePlayer}
         onDelete={(id) => deletePlayer.mutate(id)}
       />
     </div>

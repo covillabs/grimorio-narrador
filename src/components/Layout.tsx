@@ -1,22 +1,19 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import { Outlet } from "react-router-dom";
+import { Outlet, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { useCloudStorage } from "@/hooks/useCloudStorage";
+import { useAuth } from "@/contexts/AuthContext";
 import { AlertTriangle, EyeOff, RadioTower } from "lucide-react";
 import { BeastWidget } from "@/components/BeastWidget";
 import { DiceRollerWidget } from "@/components/DiceRollerWidget";
 
 export function Layout() {
-  const [masqueradeLevel, setMasqueradeLevel] = useState(0);
-
-  useEffect(() => {
-    const saved = localStorage.getItem("v5_masquerade_level");
-    if (saved) setMasqueradeLevel(parseInt(saved, 10));
-  }, []);
+  const { user, loading, signOut } = useAuth();
+  const [masqueradeLevel, setMasqueradeLevel] = useCloudStorage<number>("v5_masquerade_level", 0);
 
   const handleSetLevel = (level: number) => {
     setMasqueradeLevel(level);
-    localStorage.setItem("v5_masquerade_level", level.toString());
   };
 
   const threatConfig = [
@@ -29,6 +26,16 @@ export function Layout() {
   ];
 
   const currentThreat = threatConfig[masqueradeLevel];
+
+  // Regra de Ouro: Só mestre autenticado pisa aqui.
+  if (!loading && !user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Prevenir flash da tela durante validação local do hook
+  if (loading) {
+     return <div className="min-h-screen bg-[#0a0a0a]"></div>;
+  }
 
   return (
     <SidebarProvider>
@@ -61,6 +68,14 @@ export function Layout() {
             {/* Termômetro da Máscara (World State) */}
             <div className="flex flex-col items-end mr-4">
               <div className="flex items-center gap-2 mb-1">
+                <button 
+                  onClick={signOut} 
+                  className="text-[10px] uppercase font-bold text-muted-foreground hover:text-white mr-4 transition-colors"
+                  title="Abandonar Sessão"
+                >
+                   {user?.email?.split('@')[0]} (Sair)
+                </button>
+
                 <span className={`text-[10px] uppercase tracking-widest font-bold ${currentThreat.color}`}>
                   Máscara: {currentThreat.title}
                 </span>

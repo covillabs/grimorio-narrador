@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useCloudStorage } from "@/hooks/useCloudStorage";
 import { Search, Crown, Sparkles, CheckSquare, Square, Target, AlertTriangle, ArrowRight, Plus, X, User, Filter, Calendar, Bookmark, BookmarkCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,26 +26,15 @@ export default function QuestsPage() {
   const [sessions, setSessions] = useState<any[]>([]);
   
   // Pistas Status Master Dictionary
-  const [clues, setClues] = useState<Record<string, boolean>>(() => {
-    const saved = localStorage.getItem("v5_clues");
-    return saved ? JSON.parse(saved) : {};
-  });
+  const [clues, setClues] = useCloudStorage<Record<string, boolean>>("v5_clues", {});
 
   // Quests Dictionary
-  const [quests, setQuests] = useState<any[]>(() => {
-    const saved = localStorage.getItem("v5_quests");
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [quests, setQuests] = useCloudStorage<any[]>("v5_quests", []);
 
   useEffect(() => {
     const savedSessions = localStorage.getItem("v5_sessions");
     if (savedSessions) setSessions(JSON.parse(savedSessions));
   }, []);
-
-  useEffect(() => {
-    localStorage.setItem("v5_quests", JSON.stringify(quests));
-    localStorage.setItem("v5_clues", JSON.stringify(clues));
-  }, [quests, clues]);
 
   // Form State
   const [form, setForm] = useState({

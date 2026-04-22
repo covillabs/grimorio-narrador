@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useCloudStorage } from "@/hooks/useCloudStorage";
 import { Plus, Crosshair, Sparkles, ScrollText, UserSearch, AlertTriangle, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,46 +13,7 @@ export default function ArsenalPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [coterieNames, setCoterieNames] = useState<string[]>([]);
 
-  const [items, setItems] = useState<any[]>(() => {
-    const saved = localStorage.getItem("v5_arsenal");
-    if (saved) return JSON.parse(saved);
-    return [
-    {
-      id: "1",
-      name: "MAC-10 Silenciada (Fósforo)",
-      category: "Arma",
-      owner: "Kaleb (Coterie)",
-      modifier: "Dano +3 (Agravado em Vampiros)",
-      image_url: "https://images.unsplash.com/photo-1595590424283-b8f1784cb2c6?q=80&w=600&auto=format&fit=crop",
-      description: "Submetralhadora compacta altamente ilegal, modificada com um supressor caseiro. Os pentes atuais estão carregados com munição incendiária (Fósforo Branco), letal contra Membros da Família.",
-      mechanical_details: "Rolagem: Destreza + Armas de Fogo. Causa dano Agravado não reduzível por Fortitude comum. Risco extremo à Máscara pelo clarão."
-    },
-    {
-      id: "2",
-      name: "Cálice de Gelo Sangrento",
-      category: "Artefato",
-      owner: "Príncipe Sebastian",
-      modifier: "Potência de Sangue +1 (Temporário)",
-      image_url: "https://images.unsplash.com/photo-1574512214488-842261e469bb?q=80&w=600&auto=format&fit=crop",
-      description: "Uma relíquia de taça Tremere roubada nos anos 90. O sangue contido ali nunca coagula e permanece com o gosto do momento da Morte.",
-      mechanical_details: "Ritual: Beber vitae plena deste cálice aumenta a Potência de Sangue do usuário em 1 ponto pela noite inteira, ao custo de 1 ponto de Fome permanente na noite seguinte."
-    },
-    {
-      id: "3",
-      name: "Dossiê Projeto Crepúsculo",
-      category: "Documento",
-      owner: "Lucien (Coterie)",
-      modifier: "Bônus +2 em Investigação",
-      image_url: "https://images.unsplash.com/photo-1532153975070-2e9ab71f1b14?q=80&w=600&auto=format&fit=crop",
-      description: "Uma pasta grossa interceptada de um agente falecido da Segunda Inquisição. Possui fotos granuladas de reuniões do Elysium e algumas rotas de patrulha humana.",
-      mechanical_details: "Fornece Dados Bônus (+2) em qualquer rolagem de Política ou Investigação para prever movimentos da Segunda Inquisição. Pode comprometer portadores se descoberto."
-    }
-    ];
-  });
-
-  useEffect(() => {
-    localStorage.setItem("v5_arsenal", JSON.stringify(items));
-  }, [items]);
+  const [items, setItems] = useCloudStorage<any[]>("v5_arsenal", []);
 
   useEffect(() => {
     const savedCoterie = localStorage.getItem("v5_coterie");

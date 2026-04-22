@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useCloudStorage } from "@/hooks/useCloudStorage";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Skull, Shield, Search, Scale, ScrollText } from "lucide-react";
@@ -14,67 +15,7 @@ export default function NpcsPage() {
   const [editingNpc, setEditingNpc] = useState<any>(null);
   const [filter, setFilter] = useState("");
   const [combatMode, setCombatMode] = useState<Record<string, boolean>>({});
-  const [npcs, setNpcs] = useState<any[]>(() => {
-    const saved = localStorage.getItem("v5_npcs");
-    if (saved) return JSON.parse(saved);
-    return [
-      {
-        id: "1",
-        name: "Príncipe Sebastian Van Der Meer",
-        species_faction: "Camarilla",
-        clan: "Ventrue",
-        status: "Ativo",
-        appearance: "Um senhor de idade aparentemente nos seus 50 anos mortais, sempre vestido com ternos impecáveis. Seus olhos são frios e calculistas.",
-        image_url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=400&auto=format&fit=crop",
-        physical_pool: 5,
-        social_pool: 9,
-        mental_pool: 8,
-        health: 6,
-        blood_potency: 4,
-        disciplines: "Dominação 4, Fortitude 3, Presença 3",
-        specialties: "Liderança, Manipulação de Mercado",
-        secrets: "Ele está secretamente financiando uma facção Anarch rival para enfraquecer o Barão Zora sem se envolver diretamente."
-      },
-      {
-        id: "2",
-        name: "Baronesa Zora",
-        species_faction: "Anarch",
-        clan: "Brujah",
-        status: "Ativo",
-        appearance: "Elegante e intensa, usa joias douradas pesadas. Constantemente desafia as tradições, mas mantém controle estrito em seu domínio.",
-        image_url: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=400&auto=format&fit=crop",
-        physical_pool: 8,
-        social_pool: 6,
-        mental_pool: 5,
-        health: 8,
-        blood_potency: 3,
-        disciplines: "Rapidez 3, Potência 4, Presença 2",
-        specialties: "Intimidação, Combate Desarmado",
-        secrets: 'Zora deve um "Boon de Sangue" ("Life Debt") a um ancião Tremere, algo que ela esconde a todo custo dos outros Anarchs.'
-      },
-      {
-        id: "3",
-        name: "O Algoz (The Scourge)",
-        species_faction: "Camarilla",
-        clan: "Desconhecido",
-        status: "Ativo",
-        appearance: "Rosto oculto sob capuz pesado, age apenas nas sombras a mando do Príncipe.",
-        image_url: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=400&auto=format&fit=crop",
-        physical_pool: 10,
-        social_pool: 2,
-        mental_pool: 6,
-        health: 9,
-        blood_potency: 5,
-        disciplines: "Ofuscação 5, Rapidez 4, Potência 3",
-        specialties: "Furtividade, Assassinato",
-        secrets: "Ele é na verdade um carniçal ancestral superpoderoso, não um vampiro."
-      }
-    ];
-  });
-
-  useEffect(() => {
-    localStorage.setItem("v5_npcs", JSON.stringify(npcs));
-  }, [npcs]);
+  const [npcs, setNpcs] = useCloudStorage<any[]>("v5_npcs", []);
 
   const isLoading = false;
 

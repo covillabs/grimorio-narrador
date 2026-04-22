@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useCloudStorage } from "@/hooks/useCloudStorage";
 import { BookOpen, Droplets, Skull, FlaskConical, Flame, ShieldAlert, Cross, Sparkles, Plus, Trash2 } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
@@ -80,63 +81,9 @@ export default function OcultismoPage() {
     extra: "" // Usado para 'stains' no Oblivio ou 'distillation' e 'resonance' na Alquimia
   });
 
-  const [rituals, setRituals] = useState<any[]>(() => {
-    const saved = localStorage.getItem("v5_rituals");
-    if (saved) return JSON.parse(saved);
-    return [
-    {
-      name: "Proteção de Sangue (Ward)",
-      level: 3,
-      rouse_cost: 1,
-      time: "1 hora",
-      ingredients: "Um punhado de cinzas de um cadáver queimado, misturado com a Vitae do conjurador.",
-      system: "Rolagem: Inteligência + Feitiçaria de Sangue (Dificuldade 4). Qualquer criatura sobrenatural tocando o objeto sofre uma penalidade de dados e pode queimar em dano Agravado.",
-    },
-    {
-      name: "Guardião de Sangue",
-      level: 4,
-      rouse_cost: 2,
-      time: "Uma noite inteira",
-      ingredients: "Restos de uma estátua profanada, banhada em 2 Rouse Checks de Vitae.",
-      system: "Rolagem: Inteligência + Feitiçaria de Sangue (Dificuldade 5). Cria um homúnculo animado que defende o Haven. Tem 10 de Vitalidade e ignora dano de balas.",
-    }
-    ];
-  });
-
-  const [oblivion, setOblivion] = useState<any[]>(() => {
-    const saved = localStorage.getItem("v5_oblivion");
-    if (saved) return JSON.parse(saved);
-    return [
-      {
-        name: "O Chamado das Sombras",
-        level: 2,
-        rouse_cost: 1,
-        stains: "Sim (Em resultado 1 ou 10 em dados de Fome)",
-        time: "10 minutos",
-        ingredients: "Sangue humano resfriado e cera de velório.",
-        system: "Rolagem: Inteligência + Oblívio (Dificuldade 3). Invoca uma sombra tangível que pode apagar fontes de luz ou atacar sorrateiramente.",
-        danger: "Críticos Bagunçados causam Máculas diretas na Trilha de Humanidade."
-      }
-    ];
-  });
-
-  const [alchemy, setAlchemy] = useState<any[]>(() => {
-    const saved = localStorage.getItem("v5_alchemy");
-    if (saved) return JSON.parse(saved);
-    return [
-      {
-        name: "Proficiência Nebulosa",
-        level: 2,
-        distillation: "Calcinatio (No próprio sangue do criador)",
-        resonance: "Sanguínea (Desejo/Exaltação)",
-        system: "Rolagem: Vigor + Alquimia (Dificuldade 3). Concede Rapidez 1 ao alquimista. A validade do sangue estabilizado no sistema é de uma noite.",
-      }
-    ];
-  });
-
-  useEffect(() => { localStorage.setItem("v5_rituals", JSON.stringify(rituals)); }, [rituals]);
-  useEffect(() => { localStorage.setItem("v5_oblivion", JSON.stringify(oblivion)); }, [oblivion]);
-  useEffect(() => { localStorage.setItem("v5_alchemy", JSON.stringify(alchemy)); }, [alchemy]);
+  const [rituals, setRituals] = useCloudStorage<any[]>("v5_rituals", []);
+  const [oblivion, setOblivion] = useCloudStorage<any[]>("v5_oblivion", []);
+  const [alchemy, setAlchemy] = useCloudStorage<any[]>("v5_alchemy", []);
 
   const handleSave = () => {
     if(!newEntry.name) { toast.error("O feitiço carece de um nome."); return; }

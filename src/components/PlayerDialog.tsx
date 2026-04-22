@@ -1,6 +1,4 @@
 import { useState, useEffect } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +16,7 @@ interface PlayerDialogProps {
   onOpenChange: (open: boolean) => void;
   player?: any;
   onDelete?: (id: string) => void;
+  onSave: (player: any) => void;
 }
 
 const defaultPlayer = {
@@ -27,9 +26,8 @@ const defaultPlayer = {
   disciplines: "", merits: "", flaws: "", image_url: "",
 };
 
-export function PlayerDialog({ open, onOpenChange, player, onDelete }: PlayerDialogProps) {
+export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: PlayerDialogProps) {
   const [form, setForm] = useState(defaultPlayer);
-  const queryClient = useQueryClient();
   const isEditing = !!player;
 
   useEffect(() => {
@@ -40,23 +38,21 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete }: PlayerDia
     }
   }, [player, open]);
 
-  const mutation = useMutation({
-    mutationFn: async (data: typeof form) => {
-      if (isEditing) {
-        const { error } = await supabase.from("players").update(data).eq("id", player.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("players").insert(data);
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["players"] });
-      toast.success(isEditing ? "Personagem atualizado." : "Personagem criado.");
-      onOpenChange(false);
-    },
-    onError: (e) => toast.error(e.message),
-  });
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.character_name) {
+      toast.error("Nome do personagem é obrigatório.");
+      return;
+    }
+
+    const playerData = {
+      ...form,
+      id: isEditing ? player.id : crypto.randomUUID(),
+    };
+
+    onSave(playerData);
+    onOpenChange(false);
+  };
 
   const set = (field: string, value: any) => setForm((prev) => ({ ...prev, [field]: value }));
 
@@ -69,7 +65,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete }: PlayerDia
           </DialogTitle>
         </DialogHeader>
         <ScrollArea className="max-h-[70vh] pr-4">
-          <form onSubmit={(e) => { e.preventDefault(); mutation.mutate(form); }} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="flex gap-4">
               <ImageUpload
                 currentUrl={form.image_url || null}
@@ -113,7 +109,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete }: PlayerDia
                 <HungerTracker value={form.hunger} onChange={(v) => set("hunger", v)} />
               </div>
               <div>
-                <Label className="text-gold">Humanidade ({form.humanity}/10)</Label>
+                <Label className="Gold">Humanidade ({form.humanity}/10)</Label>
                 <HumanityTracker value={form.humanity} onChange={(v) => set("humanity", v)} />
               </div>
             </div>
@@ -166,9 +162,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete }: PlayerDia
               ) : <div />}
               <div className="flex gap-2">
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                <Button type="submit" disabled={mutation.isPending}>
-                  {mutation.isPending ? "Salvando..." : "Salvar"}
-                </Button>
+                <Button type="submit">Salvar</Button>
               </div>
             </div>
           </form>

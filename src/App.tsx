@@ -3,7 +3,9 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { Layout } from "@/components/Layout";
+import LoginPage from "@/pages/LoginPage";
 import HomePage from "@/pages/HomePage";
 import CoteriePage from "@/pages/CoteriePage";
 import NpcsPage from "@/pages/NpcsPage";
@@ -25,9 +27,11 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route element={<Layout />}>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route element={<Layout />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/coterie" element={<CoteriePage />} />
             <Route path="/npcs" element={<NpcsPage />} />
@@ -41,9 +45,10 @@ const App = () => (
             <Route path="/combate" element={<CombatePage />} />
             <Route path="/escudo" element={<EscudoPage />} />
           </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
