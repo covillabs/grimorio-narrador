@@ -8,9 +8,8 @@ import { toast } from "sonner";
 import { Mail, Lock, LogIn, UserPlus } from "lucide-react";
 
 export default function LoginPage() {
-  const { user, loading, signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
+  const { user, loading, signInWithGoogle, signInWithEmail } = useAuth();
   
-  const [isLoginMode, setIsLoginMode] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -71,21 +70,15 @@ export default function LoginPage() {
           }
           setIsSubmitting(true);
           
-          if(isLoginMode) {
-             const { error } = await signInWithEmail(email, password);
-             if(error) toast.error(error.message || "Credenciais inválidas");
-             else toast.success("Despertar bem sucedido.");
-          } else {
-             const { error } = await signUpWithEmail(email, password);
-             if(error) toast.error(error.message || "Erro ao registrar");
-             else toast.success("Registro realizado. Verifique seu e-mail (ou faça login se não exigir verificação).");
-          }
+          const { error } = await signInWithEmail(email, password);
+          if(error) toast.error(error.message || "Credenciais inválidas");
+          else toast.success("Despertar bem sucedido.");
           
           setIsSubmitting(false);
         }} className="w-full mb-6 space-y-4 text-left">
           
           <div className="space-y-1">
-            <Label className="text-xs uppercase tracking-widest text-muted-foreground">E-mail Místico</Label>
+            <Label className="text-xs uppercase tracking-widest text-muted-foreground">E-mail</Label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input 
@@ -99,7 +92,7 @@ export default function LoginPage() {
           </div>
           
           <div className="space-y-1">
-            <Label className="text-xs uppercase tracking-widest text-muted-foreground">Senha de Sangue</Label>
+            <Label className="text-xs uppercase tracking-widest text-muted-foreground">Senha</Label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input 
@@ -117,17 +110,16 @@ export default function LoginPage() {
             disabled={isSubmitting}
             className="w-full h-12 text-sm font-bold tracking-[0.1em] uppercase bg-blood hover:bg-blood/80 text-white transition-all duration-300"
           >
-            {isSubmitting ? "Conectando..." : (isLoginMode ? <><LogIn className="w-4 h-4 mr-2"/> Entrar</> : <><UserPlus className="w-4 h-4 mr-2"/> Registrar-se</>)}
+            {isSubmitting ? "Conectando..." : <><LogIn className="w-4 h-4 mr-2"/> Entrar</>}
           </Button>
           
           <div className="text-center">
-            <button 
-              type="button" 
-              onClick={() => setIsLoginMode(!isLoginMode)}
-              className="text-xs text-muted-foreground hover:text-white transition-colors uppercase tracking-wider"
+            <Link 
+              to="/register"
+              className="text-xs text-muted-foreground hover:text-white transition-colors uppercase tracking-wider block mt-4"
             >
-              {isLoginMode ? "Não tem a marca? Crie uma conta" : "Já é um veterano? Entre agora"}
-            </button>
+              Não tem a marca? Crie uma conta
+            </Link>
           </div>
         </form>
 
