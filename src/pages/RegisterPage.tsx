@@ -12,6 +12,7 @@ export default function RegisterPage() {
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (loading) {
@@ -64,8 +65,12 @@ export default function RegisterPage() {
 
         <form onSubmit={async (e) => {
           e.preventDefault();
-          if(!email || !password) {
-            toast.error("Preencha e-mail e senha.");
+          if(!email || !password || !confirmPassword) {
+            toast.error("Preencha todos os campos.");
+            return;
+          }
+          if (password !== confirmPassword) {
+            toast.error("As senhas não coincidem.");
             return;
           }
           setIsSubmitting(true);
@@ -99,6 +104,20 @@ export default function RegisterPage() {
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
+                className="pl-9 bg-black/40 border-blood/20 focus-visible:ring-blood/50 placeholder:text-muted-foreground/30 h-12"
+                placeholder="••••••••"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs uppercase tracking-widest text-muted-foreground">Confirmar Senha</Label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input 
+                type="password"
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
                 className="pl-9 bg-black/40 border-blood/20 focus-visible:ring-blood/50 placeholder:text-muted-foreground/30 h-12"
                 placeholder="••••••••"
               />
