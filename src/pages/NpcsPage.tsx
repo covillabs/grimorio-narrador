@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { NpcDialog } from "@/components/NpcDialog";
 import { toast } from "sonner";
+import { getPrefixedKey } from "@/components/ChronicleSwitcher";
 
 export default function NpcsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -174,7 +175,7 @@ export default function NpcsPage() {
                       <Scale className="w-3 h-3"/> Dívidas e Favores Neste Códice
                     </h5>
                     {(() => {
-                      const savedBoons = localStorage.getItem("v5_boons");
+                      const savedBoons = localStorage.getItem(getPrefixedKey("v5_boons"));
                       const allBoons = savedBoons ? JSON.parse(savedBoons) : [];
                       const npcBoons = allBoons.filter((b: any) => 
                         (b.from.toLowerCase() === npc.name.toLowerCase() || b.to.toLowerCase() === npc.name.toLowerCase()) && !b.isResolved

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { getPrefixedKey } from "@/components/ChronicleSwitcher";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -32,7 +33,7 @@ export default function QuestsPage() {
   const [quests, setQuests] = useCloudStorage<any[]>("v5_quests", []);
 
   useEffect(() => {
-    const savedSessions = localStorage.getItem("v5_sessions");
+    const savedSessions = localStorage.getItem(getPrefixedKey("v5_sessions"));
     if (savedSessions) setSessions(JSON.parse(savedSessions));
   }, []);
 

@@ -1,0 +1,132 @@
+import { useState, useEffect } from "react";
+import { Check, ChevronsUpDown, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+export function getActiveChronicleId() {
+  return localStorage.getItem("v5_active_chronicle_id") || "default";
+}
+
+export function getPrefixedKey(baseKey: string) {
+  const prefix = getActiveChronicleId();
+  const isGlobalKey = baseKey.startsWith("v5_chronicles_list") || baseKey.startsWith("v5_active_chronicle_id");
+  return isGlobalKey ? baseKey : `${prefix}_${baseKey}`;
+}
+
+export function getChronicles() {
+  const stored = localStorage.getItem("v5_chronicles_list");
+  return stored ? JSON.parse(stored) : [{ id: "default", name: "Crônica Principal" }];
+}
+
+export function ChronicleSwitcher() {
+  const [open, setOpen] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [newChronicleName, setNewChronicleName] = useState("");
+  
+  const chronicles = getChronicles();
+  const activeId = getActiveChronicleId();
+  const activeChronicle = chronicles.find((c: any) => c.id === activeId) || chronicles[0];
+
+  const switchChronicle = (id: string) => {
+    localStorage.setItem("v5_active_chronicle_id", id);
+    window.location.reload();
+  };
+
+  const createChronicle = () => {
+    if (!newChronicleName.trim()) return;
+    const newId = "chr_" + Date.now();
+    const updated = [...chronicles, { id: newId, name: newChronicleName }];
+    localStorage.setItem("v5_chronicles_list", JSON.stringify(updated));
+    localStorage.setItem("v5_active_chronicle_id", newId);
+    window.location.reload();
+  };
+
+  return (
+    <>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-[200px] justify-between border-border bg-background/50 hover:bg-muted/50 hidden md:flex"
+          >
+            <span className="truncate">{activeChronicle.name}</span>
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[200px] p-0 border-border bg-zinc-950">
+          <Command>
+            <CommandList>
+              <CommandGroup heading="Suas Crônicas">
+                {chronicles.map((chronicle: any) => (
+                  <CommandItem
+                    key={chronicle.id}
+                    onSelect={() => {
+                      switchChronicle(chronicle.id);
+                      setOpen(false);
+                    }}
+                    className="cursor-pointer text-sm"
+                  >
+                    <Check
+                      className={`mr-2 h-4 w-4 ${
+                        activeId === chronicle.id ? "opacity-100 text-primary" : "opacity-0"
+                      }`}
+                    />
+                    {chronicle.name}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+              <CommandSeparator />
+              <CommandGroup>
+                <CommandItem
+                  onSelect={() => {
+                    setOpen(false);
+                    setDialogOpen(true);
+                  }}
+                  className="cursor-pointer text-primary"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Nova Crônica
+                </CommandItem>
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="font-serif">Criar Nova Crônica</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                Nome
+              </Label>
+              <Input
+                id="name"
+                value={newChronicleName}
+                onChange={(e) => setNewChronicleName(e.target.value)}
+                placeholder="Ex: Noites de Seattle"
+                className="col-span-3"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-2 text-center">
+              Criar uma nova crônica iniciará um grimório totalmente limpo. Você poderá alternar entre suas crônicas a qualquer momento sem perder os dados da atual.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={createChronicle} className="bg-blood hover:bg-blood/80 text-white">Iniciar Jogo</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}

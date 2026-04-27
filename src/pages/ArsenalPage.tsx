@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { ItemDialog } from "@/components/ItemDialog";
+import { getPrefixedKey } from "@/components/ChronicleSwitcher";
 
 const CATEGORIES = ["Arma", "Ferramenta", "Artefato", "Documento"];
 
@@ -19,7 +20,7 @@ export default function ArsenalPage() {
   const [items, setItems] = useCloudStorage<any[]>("v5_arsenal", []);
 
   useEffect(() => {
-    const savedCoterie = localStorage.getItem("v5_coterie");
+    const savedCoterie = localStorage.getItem(getPrefixedKey("v5_coterie"));
     if (savedCoterie) {
       const parsed = JSON.parse(savedCoterie);
       setCoterieNames(parsed.map((p: any) => p.character_name));
@@ -28,7 +29,7 @@ export default function ArsenalPage() {
       setCoterieNames(["Lucien (O Belo)", "Viktoria", "Kaleb"]);
     }
     
-    const savedNpcs = localStorage.getItem("v5_npcs");
+    const savedNpcs = localStorage.getItem(getPrefixedKey("v5_npcs"));
     if (savedNpcs) {
       setNpcs(JSON.parse(savedNpcs));
     }

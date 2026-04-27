@@ -5,6 +5,7 @@ import '@xyflow/react/dist/style.css';
 import { CharacterNode } from '@/components/Teia/CharacterNode';
 import { coterieNodes, coterieEdges, globalNodes, globalEdges } from '@/components/Teia/mockData';
 import { Button } from '@/components/ui/button';
+import { getPrefixedKey } from "@/components/ChronicleSwitcher";
 
 const nodeTypes = {
   character: CharacterNode,
@@ -27,7 +28,7 @@ export default function TeiaPage() {
       let dynamicNodes = [...globalNodes];
       
       try {
-        const savedBoons = localStorage.getItem("v5_boons");
+        const savedBoons = localStorage.getItem(getPrefixedKey("v5_boons"));
         if (savedBoons) {
           const boonsList = JSON.parse(savedBoons);
           

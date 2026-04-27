@@ -9,17 +9,18 @@ import { BeastWidget } from "@/components/BeastWidget";
 import { DiceRollerWidget } from "@/components/DiceRollerWidget";
 import { ProfileSetupModal } from "@/components/ProfileSetupModal";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { ChronicleSwitcher, getPrefixedKey } from "@/components/ChronicleSwitcher";
 
 export function Layout() {
   const { user, profile, loading, signOut } = useAuth();
   const [masqueradeLevel, setMasqueradeLevel] = useState(() => {
-    const saved = localStorage.getItem("v5_mascara_local");
+    const saved = localStorage.getItem(getPrefixedKey("v5_mascara_local"));
     return saved !== null ? parseInt(saved, 10) : 0;
   });
 
   const handleSetLevel = (level: number) => {
     setMasqueradeLevel(level);
-    localStorage.setItem("v5_mascara_local", level.toString());
+    localStorage.setItem(getPrefixedKey("v5_mascara_local"), level.toString());
   };
 
   const threatConfig = [
@@ -67,6 +68,7 @@ export function Layout() {
           <header className={`h-14 flex items-center justify-between border-b px-4 backdrop-blur-sm sticky top-0 z-50 transition-colors duration-500 ${currentThreat.glitch ? "border-red-900 bg-red-950/40" : "border-border bg-background/80"}`}>
             <div className="flex items-center gap-4">
               <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
+              <ChronicleSwitcher />
               
               {/* Alerta de Perigo Alto */}
               {currentThreat.glitch && (

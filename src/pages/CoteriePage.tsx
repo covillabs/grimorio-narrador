@@ -7,6 +7,7 @@ import { HumanityTracker } from "@/components/HumanityTracker";
 import { PlayerDialog } from "@/components/PlayerDialog";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { getPrefixedKey } from "@/components/ChronicleSwitcher";
 
 const CLAN_DISCIPLINES: Record<string, {name: string, desc: string}[]> = {
   "Brujah": [
@@ -54,7 +55,7 @@ export default function CoteriePage() {
   const [players, setPlayers] = useCloudStorage<any[]>("v5_coterie", []);
 
   useEffect(() => {
-    const savedArsenal = localStorage.getItem("v5_arsenal");
+    const savedArsenal = localStorage.getItem(getPrefixedKey("v5_arsenal"));
     if (savedArsenal) {
       setArsenal(JSON.parse(savedArsenal));
     }

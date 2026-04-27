@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { getPrefixedKey } from "@/components/ChronicleSwitcher";
 
-export function useCloudStorage<T>(key: string, initialValue: T): [T, (value: T | ((val: T) => T), immediate?: boolean) => void] {
+export function useCloudStorage<T>(baseKey: string, initialValue: T): [T, (value: T | ((val: T) => T), immediate?: boolean) => void] {
   const { user } = useAuth();
   
+  const key = getPrefixedKey(baseKey);
+
   // Initialize from local storage as quick fallback
   const [storedValue, setStoredValue] = useState<T>(() => {
     try {

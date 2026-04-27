@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { getPrefixedKey } from "@/components/ChronicleSwitcher";
 
 type Combatant = {
   id: string;
@@ -28,9 +29,9 @@ export default function CombatePage() {
   const [customName, setCustomName] = useState<string>("");
 
   useEffect(() => {
-    const p = localStorage.getItem("v5_coterie");
+    const p = localStorage.getItem(getPrefixedKey("v5_coterie"));
     if (p) setAvailablePlayers(JSON.parse(p));
-    const n = localStorage.getItem("v5_npcs");
+    const n = localStorage.getItem(getPrefixedKey("v5_npcs"));
     if (n) setAvailableNpcs(JSON.parse(n));
   }, []);
 
