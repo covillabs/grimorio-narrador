@@ -1,9 +1,19 @@
+import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { Mail, Lock, LogIn, UserPlus } from "lucide-react";
 
 export default function LoginPage() {
-  const { user, loading, signInWithGoogle } = useAuth();
+  const { user, loading, signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
+  
+  const [isLoginMode, setIsLoginMode] = useState(true);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (loading) {
     return (
@@ -49,9 +59,83 @@ export default function LoginPage() {
         </h1>
         <div className="w-16 h-0.5 bg-gradient-to-r from-transparent via-blood to-transparent mb-6"></div>
         
-        <p className="text-muted-foreground/80 text-sm leading-relaxed mb-10 tracking-wide">
-          Acesso restrito para Arquitetos de Crônicas. Seus Segredos, NPCs e Dívidas agora persistem pelas sombras e além.
+        <p className="text-muted-foreground/80 text-sm leading-relaxed mb-6 tracking-wide">
+          Acesso restrito para Arquitetos de Crônicas.
         </p>
+
+        <form onSubmit={async (e) => {
+          e.preventDefault();
+          if(!email || !password) {
+            toast.error("Preencha e-mail e senha.");
+            return;
+          }
+          setIsSubmitting(true);
+          
+          if(isLoginMode) {
+             const { error } = await signInWithEmail(email, password);
+             if(error) toast.error(error.message || "Credenciais inválidas");
+             else toast.success("Despertar bem sucedido.");
+          } else {
+             const { error } = await signUpWithEmail(email, password);
+             if(error) toast.error(error.message || "Erro ao registrar");
+             else toast.success("Registro realizado. Verifique seu e-mail (ou faça login se não exigir verificação).");
+          }
+          
+          setIsSubmitting(false);
+        }} className="w-full mb-6 space-y-4 text-left">
+          
+          <div className="space-y-1">
+            <Label className="text-xs uppercase tracking-widest text-muted-foreground">E-mail Místico</Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input 
+                type="email" 
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className="pl-9 bg-black/40 border-blood/20 focus-visible:ring-blood/50 placeholder:text-muted-foreground/30 h-12"
+                placeholder="arquitecto@dominio.com"
+              />
+            </div>
+          </div>
+          
+          <div className="space-y-1">
+            <Label className="text-xs uppercase tracking-widest text-muted-foreground">Senha de Sangue</Label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input 
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="pl-9 bg-black/40 border-blood/20 focus-visible:ring-blood/50 placeholder:text-muted-foreground/30 h-12"
+                placeholder="••••••••"
+              />
+            </div>
+          </div>
+
+          <Button 
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full h-12 text-sm font-bold tracking-[0.1em] uppercase bg-blood hover:bg-blood/80 text-white transition-all duration-300"
+          >
+            {isSubmitting ? "Conectando..." : (isLoginMode ? <><LogIn className="w-4 h-4 mr-2"/> Entrar</> : <><UserPlus className="w-4 h-4 mr-2"/> Registrar-se</>)}
+          </Button>
+          
+          <div className="text-center">
+            <button 
+              type="button" 
+              onClick={() => setIsLoginMode(!isLoginMode)}
+              className="text-xs text-muted-foreground hover:text-white transition-colors uppercase tracking-wider"
+            >
+              {isLoginMode ? "Não tem a marca? Crie uma conta" : "Já é um veterano? Entre agora"}
+            </button>
+          </div>
+        </form>
+
+        <div className="w-full flex items-center gap-4 mb-6">
+          <div className="h-px bg-border/50 flex-1"></div>
+          <span className="text-[10px] uppercase text-muted-foreground tracking-widest">Ou</span>
+          <div className="h-px bg-border/50 flex-1"></div>
+        </div>
 
         <Button 
           onClick={signInWithGoogle} 
