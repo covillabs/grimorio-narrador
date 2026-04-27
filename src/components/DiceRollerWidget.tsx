@@ -73,7 +73,7 @@ export function DiceRollerWidget() {
   };
 
   return (
-    <div className="fixed bottom-6 left-6 z-50 flex flex-col items-start">
+    <div className="fixed bottom-6 right-24 z-50 flex flex-col items-end">
       {isOpen && (
         <div className="mb-4 w-72 bg-zinc-950 border border-blood/40 rounded-lg shadow-2xl overflow-hidden animate-in slide-in-from-bottom-5">
            <div className="bg-blood/20 p-3 flex justify-between items-center border-b border-blood/30">

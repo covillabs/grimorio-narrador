@@ -1,6 +1,4 @@
 import { useState, useEffect } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +19,7 @@ interface ItemDialogProps {
   onDelete?: (id: string) => void;
   players: { id: string; character_name: string }[];
   npcs: { id: string; name: string }[];
+  onSave: (item: any) => void;
 }
 
 const defaultItem = {
@@ -28,9 +27,8 @@ const defaultItem = {
   owner_type: "" as string, owner_id: "" as string, image_url: "",
 };
 
-export function ItemDialog({ open, onOpenChange, item, onDelete, players, npcs }: ItemDialogProps) {
+export function ItemDialog({ open, onOpenChange, item, onDelete, players, npcs, onSave }: ItemDialogProps) {
   const [form, setForm] = useState(defaultItem);
-  const queryClient = useQueryClient();
   const isEditing = !!item;
 
   useEffect(() => {
@@ -38,28 +36,22 @@ export function ItemDialog({ open, onOpenChange, item, onDelete, players, npcs }
     else setForm(defaultItem);
   }, [item, open]);
 
-  const mutation = useMutation({
-    mutationFn: async (data: typeof form) => {
-      const payload = {
-        ...data,
-        owner_type: data.owner_type || null,
-        owner_id: data.owner_id || null,
-      };
-      if (isEditing) {
-        const { error } = await supabase.from("items").update(payload).eq("id", item.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("items").insert(payload);
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["items"] });
-      toast.success(isEditing ? "Item atualizado." : "Item criado.");
-      onOpenChange(false);
-    },
-    onError: (e) => toast.error(e.message),
-  });
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name) {
+      toast.error("Nome do item é obrigatório.");
+      return;
+    }
+
+    const payload = {
+      ...form,
+      id: isEditing ? item.id : "it_" + crypto.randomUUID(),
+      owner_type: form.owner_type || null,
+      owner_id: form.owner_id || null,
+    };
+    onSave(payload);
+    onOpenChange(false);
+  };
 
   const set = (field: string, value: any) => setForm((prev) => ({ ...prev, [field]: value }));
 
@@ -70,7 +62,7 @@ export function ItemDialog({ open, onOpenChange, item, onDelete, players, npcs }
           <DialogTitle className="font-serif">{isEditing ? "Editar Item" : "Novo Item"}</DialogTitle>
         </DialogHeader>
         <ScrollArea className="max-h-[70vh] pr-4">
-          <form onSubmit={(e) => { e.preventDefault(); mutation.mutate(form); }} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <ImageUpload currentUrl={form.image_url || null} folder="items" onUpload={(url) => set("image_url", url)} onRemove={() => set("image_url", "")} className="w-full h-40" />
             <div><Label>Nome *</Label><Input value={form.name} onChange={(e) => set("name", e.target.value)} required /></div>
             <div>
@@ -112,7 +104,7 @@ export function ItemDialog({ open, onOpenChange, item, onDelete, players, npcs }
               ) : <div />}
               <div className="flex gap-2">
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                <Button type="submit" disabled={mutation.isPending}>{mutation.isPending ? "Salvando..." : "Salvar"}</Button>
+                <Button type="submit">Salvar</Button>
               </div>
             </div>
           </form>

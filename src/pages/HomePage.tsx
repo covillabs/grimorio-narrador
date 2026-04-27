@@ -9,16 +9,16 @@ import { toast } from "sonner";
 
 const DEFAULT_SETTINGS = {
   subtitle: "Vampire: The Masquerade",
-  chronicleName: "Dança Macabra",
-  quote: '"A Besta que habito não pertence à noite. Ela dita como a noite deve se comportar."',
+  chronicleName: "Nova Crônica",
+  quote: '"Insira uma citação ou tema principal para a sua história..."',
   imageUrl: "https://images.unsplash.com/photo-1519074069444-1ba4fff66d16?q=80&w=1600&auto=format&fit=crop",
-  metaTitle: "Últimos Acontecimentos:",
-  metaText: "A Coterie descobriu que o Príncipe Sebastian está usando o porto para encobrir caixões... A Inquisição tem um alerta no distrito.",
+  metaTitle: "Resumo da Crônica:",
+  metaText: "A história começa aqui. Descreva brevemente o cenário atual do seu Domínio.",
   trackers: [
-    { id: 1, title: "Status de Fome", value: "CRÍTICO" },
-    { id: 2, title: "Máscara", value: "AMEAÇADA" },
-    { id: 3, title: "Próx. Sessão", value: "Sábado 20h" },
-    { id: 4, title: "Nível de XP", value: "Baixo (15)" }
+    { id: 1, title: "Status Geral", value: "Pacífico" },
+    { id: 2, title: "Máscara", value: "Intacta" },
+    { id: 3, title: "Próx. Sessão", value: "A definir" },
+    { id: 4, title: "XP Distribuído", value: "0" }
   ]
 };
 
@@ -28,13 +28,14 @@ export default function HomePage() {
   const [settings, setSettings] = useCloudStorage("v5_homeSettings", DEFAULT_SETTINGS);
 
   const handleSave = () => {
+    setSettings(settings, true); // Força salvamento imediato (bypassa o debounce)
     setIsEditing(false);
     toast.success("Mundo salvo! As entidades notarão a diferença.");
   };
 
   const handleReset = () => {
     if (window.confirm("Deseja apagar sua customização e voltar para o layout Macabro padrão?")) {
-      setSettings(DEFAULT_SETTINGS);
+      setSettings(DEFAULT_SETTINGS, true); // Salva na nuvem imediatamente
       toast.info("Layout restaurado ao padrão original.");
     }
   };

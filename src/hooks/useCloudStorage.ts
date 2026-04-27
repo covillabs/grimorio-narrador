@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
-export function useCloudStorage<T>(key: string, initialValue: T): [T, (value: T | ((val: T) => T)) => void] {
+export function useCloudStorage<T>(key: string, initialValue: T): [T, (value: T | ((val: T) => T), immediate?: boolean) => void] {
   const { user } = useAuth();
   
   // Initialize from local storage as quick fallback
@@ -27,6 +27,23 @@ export function useCloudStorage<T>(key: string, initialValue: T): [T, (value: T 
 
     const fetchCloudData = async () => {
       try {
+        const localItem = window.localStorage.getItem(key);
+
+        // Estratégia Local-First: Se o navegador já tem dados (você digitou e deu F5), 
+        // nós assumimos que ele é a versão mais recente e verdadeira.
+        if (localItem) {
+          // Apenas garantimos que a nuvem receba essa versão local atualizada
+          supabase.from("narrator_data").upsert({
+            user_id: user.id,
+            data_key: key,
+            data_value: JSON.parse(localItem),
+          }).then(({ error }) => {
+            if (error) console.error(`Erro ao espelhar [${key}] local para nuvem:`, error);
+          });
+          return; // Para aqui. Não deixa a nuvem sobrescrever o que está no local.
+        }
+
+        // Se o local está vazio (primeiro login num PC novo), aí sim puxamos da nuvem
         const { data, error } = await supabase
           .from("narrator_data")
           .select("data_value")
@@ -37,20 +54,9 @@ export function useCloudStorage<T>(key: string, initialValue: T): [T, (value: T 
         if (error) throw error;
 
         if (data && data.data_value !== undefined && data.data_value !== null) {
-          // Cloud TEM o dado e o usuário NÃO interagiu ainda nesta sessão
           if (!userHasInteracted.current) {
             setStoredValue(data.data_value as unknown as T);
             window.localStorage.setItem(key, JSON.stringify(data.data_value));
-          }
-        } else {
-          // Cloud NÃO TEM o dado. Subimos o local para a nuvem.
-          const localItem = window.localStorage.getItem(key);
-          if (localItem) {
-            await supabase.from("narrator_data").upsert({
-              user_id: user.id,
-              data_key: key,
-              data_value: JSON.parse(localItem),
-            });
           }
         }
       } catch (error) {
@@ -61,8 +67,10 @@ export function useCloudStorage<T>(key: string, initialValue: T): [T, (value: T 
     fetchCloudData();
   }, [user, key]);
 
-  // Save: Salva localmente E na nuvem IMEDIATAMENTE
-  const setValue = useCallback((value: T | ((val: T) => T)) => {
+  const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Save: Salva localmente IMEDIATAMENTE e na nuvem com DEBOUNCE (ou imediatamente se forçado)
+  const setValue = useCallback((value: T | ((val: T) => T), immediate: boolean = false) => {
     try {
       const valueToStore = value instanceof Function ? value(storedValue) : value;
       
@@ -74,17 +82,27 @@ export function useCloudStorage<T>(key: string, initialValue: T): [T, (value: T 
       // Salva offline instantâneo
       window.localStorage.setItem(key, JSON.stringify(valueToStore));
 
-      // Se logado, salva na nuvem IMEDIATAMENTE (sem debounce)
+      // Se logado, envia pra nuvem
       if (user) {
-        supabase.from("narrator_data").upsert({
-          user_id: user.id,
-          data_key: key,
-          data_value: valueToStore as any,
-        }).then(({ error }) => {
-          if (error) {
-            console.error(`Erro ao sincronizar [${key}] para a nuvem:`, error);
-          }
-        });
+        if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
+        
+        const saveToCloud = () => {
+          supabase.from("narrator_data").upsert({
+            user_id: user.id,
+            data_key: key,
+            data_value: valueToStore as any,
+          }).then(({ error }) => {
+            if (error) {
+              console.error(`Erro ao sincronizar [${key}] para a nuvem:`, error);
+            }
+          });
+        };
+
+        if (immediate) {
+          saveToCloud();
+        } else {
+          syncTimeoutRef.current = setTimeout(saveToCloud, 1500); // 1.5s de debounce
+        }
       }
     } catch (error) {
       console.warn(`Error setting key "${key}":`, error);

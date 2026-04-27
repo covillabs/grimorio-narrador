@@ -4,53 +4,26 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { toast } from "sonner";
+import { useCloudStorage } from "@/hooks/useCloudStorage";
+import { LocationDialog } from "@/components/LocationDialog";
 
 export default function AtlasPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState<any>(null);
 
-  // Mock Data for the V5 Atlas
-  const [mockLocations, setMockLocations] = useState([
-    {
-      id: "1",
-      name: "The Velvet Room",
-      type: "Elysium",
-      controller: "Príncipe Sebastian Van Der Meer",
-      faction: "Camarilla",
-      security_level: "Alto (Presença Ostensiva de Carniçais armados)",
-      resonance: "Melancólica / Sangue Frio",
-      image_url: "https://images.unsplash.com/photo-1543007630-9710e4a00a20?q=80&w=600&auto=format&fit=crop",
-      description_public: "Um clube noturno de alta classe, exclusivo e de luz fraca. Famoso na cidade como campo neutro. Ninguém pode derramar sangue ou usar disciplinas agressivas aqui sob pena de morte.",
-      master_secrets: "As paredes possuem escutas de prata para captar sussurros sensíveis. O Barman principal, 'Silas', é um Nosferatu disfarçado relatando tudo ao Príncipe.",
-    },
-    {
-      id: "2",
-      name: "Galpão 44",
-      type: "Haven da Coterie",
-      controller: "A Coterie",
-      faction: "Neutro",
-      security_level: "Médio (Trancas Clandestinas e Câmeras offline)",
-      resonance: "Colérica",
-      image_url: "https://images.unsplash.com/photo-1449844908441-8829872d2607?q=80&w=600&auto=format&fit=crop",
-      description_public: "Um antigo armazém portuário abandonado no distrito industrial. Foi reivindicado recentemente pela coterie após a queda da gangue anterior.",
-      master_secrets: "Há um porão não mapeado sob o piso principal que os antigos moradores utilizavam para rituais. Relíquias maculadas podem atrair a Segunda Inquisição.",
-    },
-    {
-      id: "3",
-      name: "Beco das Sombras (Zona de Combate)",
-      type: "Hunting Ground",
-      controller: "Baronesa Zora",
-      faction: "Anarch",
-      security_level: "Baixo (A lei do mais forte impera)",
-      resonance: "Sanguínea / Colérica",
-      image_url: "https://images.unsplash.com/photo-1502899576159-f224dc2349fa?q=80&w=600&auto=format&fit=crop",
-      description_public: "Uma teia de ruas desertas controladas por gangues de mortais sob o financiamento Brujah. Alimentação fácil, mas perigosa.",
-      master_secrets: "Lobismomens andam investigando a periferia desta região. Se qualquer um dos jogadores exagerar na 'Fome', será emboscado na próxima visita.",
-    }
-  ]);
+  const [locations, setLocations] = useCloudStorage<any[]>("v5_atlas", []);
 
-  const isLoading = false;
-  const locations = mockLocations;
+  const saveLocation = (locData: any) => {
+    setLocations(prev => {
+      const exists = prev.find(l => l.id === locData.id);
+      if (exists) return prev.map(l => l.id === locData.id ? locData : l);
+      return [...prev, locData];
+    });
+  };
+
+  const deleteLocation = (id: string) => {
+    setLocations(prev => prev.filter(l => l.id !== id));
+  };
 
   const getBadgeVariant = (type: string) => {
     switch(type) {
@@ -73,7 +46,7 @@ export default function AtlasPage() {
             <p className="text-muted-foreground mt-1 text-sm">Locais, Domínios e Segredos do tabuleiro geográfico</p>
           </div>
         </div>
-        <Button onClick={() => toast.info("Edição de mapas será liberada após integrar Supabase.")} className="gap-2">
+        <Button onClick={() => setDialogOpen(true)} className="gap-2">
           <Plus className="w-4 h-4" /> Novo Domínio
         </Button>
       </div>
@@ -154,6 +127,12 @@ export default function AtlasPage() {
           </div>
         ))}
       </div>
+      
+      <LocationDialog 
+        open={dialogOpen} 
+        onOpenChange={setDialogOpen} 
+        onSave={saveLocation} 
+      />
     </div>
   );
 }

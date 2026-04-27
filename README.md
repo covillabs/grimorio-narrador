@@ -24,9 +24,10 @@ Sistema avançado de gerenciamento para Mestres e Narradores de **Vampiro: A Má
 
 ## 🛠️ Tecnologias e Arquitetura
 - **Frontend**: React + Vite + TypeScript
+- **Frontend**: React + Vite + TypeScript
 - **Estilização**: Tailwind CSS + Shadcn UI (Visual rico, tema escuro "Blood" personalizado)
-- **Persistência**: `localStorage` nativo do navegador para rápida iteração, com módulos prontos para integração de nuvem.
-- **Autenticação**: Identidade do mestre protegida via login com o Supabase.
+- **Persistência (Local-First)**: Estratégia de sincronização avançada onde os dados são salvos instantaneamente no `localStorage` e espelhados automaticamente no **Supabase**. Isso garante performance offline e backup em nuvem.
+- **Autenticação**: Gerenciada via Supabase Auth, protegendo o acesso às crônicas do narrador.
 
 ## 🚀 Como Executar Localmente
 

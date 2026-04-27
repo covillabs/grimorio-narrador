@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { ItemDialog } from "@/components/ItemDialog";
 
 const CATEGORIES = ["Arma", "Ferramenta", "Artefato", "Documento"];
 
@@ -12,6 +13,8 @@ export default function ArsenalPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [coterieNames, setCoterieNames] = useState<string[]>([]);
+  const [coterie, setCoterie] = useState<any[]>([]);
+  const [npcs, setNpcs] = useState<any[]>([]);
 
   const [items, setItems] = useCloudStorage<any[]>("v5_arsenal", []);
 
@@ -20,10 +23,24 @@ export default function ArsenalPage() {
     if (savedCoterie) {
       const parsed = JSON.parse(savedCoterie);
       setCoterieNames(parsed.map((p: any) => p.character_name));
+      setCoterie(parsed);
     } else {
       setCoterieNames(["Lucien (O Belo)", "Viktoria", "Kaleb"]);
     }
+    
+    const savedNpcs = localStorage.getItem("v5_npcs");
+    if (savedNpcs) {
+      setNpcs(JSON.parse(savedNpcs));
+    }
   }, []);
+
+  const saveItem = (itemData: any) => {
+    setItems(prev => {
+      const exists = prev.find(i => i.id === itemData.id);
+      if (exists) return prev.map(i => i.id === itemData.id ? itemData : i);
+      return [...prev, itemData];
+    });
+  };
 
   const handleAssignOwner = (itemId: string, newOwner: string) => {
     setItems(prev => prev.map(item => item.id === itemId ? { ...item, owner: newOwner } : item));
@@ -62,7 +79,7 @@ export default function ArsenalPage() {
             <p className="text-muted-foreground mt-1 text-sm">Armamentos, artefatos e documentos vitais da Crônica</p>
           </div>
         </div>
-        <Button onClick={() => toast.info("Edição de inventário será liberada após integrar Supabase.")} className="gap-2">
+        <Button onClick={() => setDialogOpen(true)} className="gap-2">
           <Plus className="w-4 h-4" /> Novo Objeto
         </Button>
       </div>
@@ -168,6 +185,14 @@ export default function ArsenalPage() {
           </div>
         )}
       </div>
+
+      <ItemDialog 
+        open={dialogOpen} 
+        onOpenChange={setDialogOpen} 
+        onSave={saveItem}
+        players={coterie}
+        npcs={npcs}
+      />
     </div>
   );
 }

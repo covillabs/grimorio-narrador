@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ interface LocationDialogProps {
   onOpenChange: (open: boolean) => void;
   location?: any;
   onDelete?: (id: string) => void;
+  onSave: (location: any) => void;
 }
 
 const defaultLocation = {
@@ -26,9 +27,8 @@ const defaultLocation = {
   controller_npc_id: "" as string, image_url: "",
 };
 
-export function LocationDialog({ open, onOpenChange, location, onDelete }: LocationDialogProps) {
+export function LocationDialog({ open, onOpenChange, location, onDelete, onSave }: LocationDialogProps) {
   const [form, setForm] = useState(defaultLocation);
-  const queryClient = useQueryClient();
   const isEditing = !!location;
 
   const { data: npcs = [] } = useQuery({
@@ -44,24 +44,21 @@ export function LocationDialog({ open, onOpenChange, location, onDelete }: Locat
     else setForm(defaultLocation);
   }, [location, open]);
 
-  const mutation = useMutation({
-    mutationFn: async (data: typeof form) => {
-      const payload = { ...data, controller_npc_id: data.controller_npc_id || null };
-      if (isEditing) {
-        const { error } = await supabase.from("locations").update(payload).eq("id", location.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("locations").insert(payload);
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["locations"] });
-      toast.success(isEditing ? "Local atualizado." : "Local criado.");
-      onOpenChange(false);
-    },
-    onError: (e) => toast.error(e.message),
-  });
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name) {
+      toast.error("Nome do local é obrigatório.");
+      return;
+    }
+
+    const payload = { 
+      ...form, 
+      id: isEditing ? location.id : "loc_" + crypto.randomUUID(),
+      controller_npc_id: form.controller_npc_id || null 
+    };
+    onSave(payload);
+    onOpenChange(false);
+  };
 
   const set = (field: string, value: any) => setForm((prev) => ({ ...prev, [field]: value }));
 
@@ -72,7 +69,7 @@ export function LocationDialog({ open, onOpenChange, location, onDelete }: Locat
           <DialogTitle className="font-serif">{isEditing ? "Editar Local" : "Novo Local"}</DialogTitle>
         </DialogHeader>
         <ScrollArea className="max-h-[70vh] pr-4">
-          <form onSubmit={(e) => { e.preventDefault(); mutation.mutate(form); }} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <ImageUpload currentUrl={form.image_url || null} folder="locations" onUpload={(url) => set("image_url", url)} onRemove={() => set("image_url", "")} className="w-full h-40" />
             <div><Label>Nome *</Label><Input value={form.name} onChange={(e) => set("name", e.target.value)} required /></div>
             <div>
@@ -101,7 +98,7 @@ export function LocationDialog({ open, onOpenChange, location, onDelete }: Locat
               ) : <div />}
               <div className="flex gap-2">
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                <Button type="submit" disabled={mutation.isPending}>{mutation.isPending ? "Salvando..." : "Salvar"}</Button>
+                <Button type="submit">Salvar</Button>
               </div>
             </div>
           </form>
