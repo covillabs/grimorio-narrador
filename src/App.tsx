@@ -18,6 +18,7 @@ import DiarioPage from "@/pages/DiarioPage";
 import EscudoPage from "@/pages/EscudoPage";
 import BoonsPage from "@/pages/BoonsPage";
 import CombatePage from "@/pages/CombatePage";
+import OraclePage from "@/pages/OraclePage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,6 +45,7 @@ const App = () => (
             <Route path="/boons" element={<BoonsPage />} />
             <Route path="/combate" element={<CombatePage />} />
             <Route path="/escudo" element={<EscudoPage />} />
+            <Route path="/oracle" element={<OraclePage />} />
           </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

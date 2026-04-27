@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useCloudStorage } from "@/hooks/useCloudStorage";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Skull, Shield, Search, Scale, ScrollText } from "lucide-react";
+import { Plus, Skull, Shield, Search, Scale, ScrollText, Ghost } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -36,10 +36,15 @@ export default function NpcsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-serif font-bold">Galeria de NPCs</h1>
-          <p className="text-muted-foreground mt-1">Códice de personagens do narrador</p>
+      <div className="flex items-center justify-between mb-6 border-b border-border/50 pb-6">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+            <Ghost className="w-6 h-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-serif font-bold">Galeria de NPCs</h1>
+            <p className="text-muted-foreground mt-1 text-sm">Códice de personagens do narrador</p>
+          </div>
         </div>
         <Button onClick={() => { setEditingNpc(null); setDialogOpen(true); }} className="gap-2">
           <Plus className="w-4 h-4" /> Novo NPC

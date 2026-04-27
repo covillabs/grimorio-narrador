@@ -17,10 +17,15 @@ export default function DiarioPage() {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-serif font-bold text-blood-glow">Diário da Crônica</h1>
-          <p className="text-muted-foreground mt-1">Timeline de Sessões, Metatrama e Tracker de Experiência</p>
+      <div className="flex items-center justify-between mb-6 border-b border-border/50 pb-6">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-blood/10 rounded-lg border border-blood/20">
+            <BookOpen className="w-6 h-6 text-blood" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-serif font-bold text-blood-glow">Diário da Crônica</h1>
+            <p className="text-muted-foreground mt-1 text-sm">Timeline de Sessões, Metatrama e Tracker de Experiência</p>
+          </div>
         </div>
         <Button onClick={() => toast.info("Novos registros requerem banco de dados plugado.")} className="gap-2">
           <Plus className="w-4 h-4" /> Registrar Noite

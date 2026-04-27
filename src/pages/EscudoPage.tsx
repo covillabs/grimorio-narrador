@@ -29,14 +29,16 @@ export default function EscudoPage() {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12">
-      <div>
-        <h1 className="text-3xl font-serif font-bold text-primary mb-2 flex items-center">
-          <ShieldAlert className="mr-3 h-8 w-8" />
-          Escudo do Narrador
-        </h1>
-        <p className="text-muted-foreground">
-          Referência rápida das mecânicas da 5ª Edição de Vampiro: A Máscara.
-        </p>
+      <div className="border-b border-border/50 pb-6 mb-6">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-blood/10 rounded-lg border border-blood/20">
+            <ShieldAlert className="w-6 h-6 text-blood" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-serif font-bold text-primary">Escudo do Narrador</h1>
+            <p className="text-muted-foreground text-sm">Tabelas rápidas e geradores para a sessão ao vivo</p>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

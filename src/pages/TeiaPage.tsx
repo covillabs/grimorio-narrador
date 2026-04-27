@@ -81,10 +81,15 @@ export default function TeiaPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-6rem)]">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-3xl font-serif font-bold text-foreground">Teia de Intrigas</h1>
-          <p className="text-muted-foreground mt-1">O emaranhado político e social do Domínio</p>
+      <div className="flex items-center justify-between mb-4 border-b border-border/50 pb-4">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+            <Network className="w-6 h-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-serif font-bold text-foreground">Teia de Intrigas</h1>
+            <p className="text-muted-foreground mt-1 text-sm">O emaranhado político e social do Domínio</p>
+          </div>
         </div>
         
         <div className="flex bg-surface-container-high rounded-md p-1 border border-border">

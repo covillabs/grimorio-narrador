@@ -2,18 +2,24 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Outlet, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { useCloudStorage } from "@/hooks/useCloudStorage";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { AlertTriangle, EyeOff, RadioTower } from "lucide-react";
 import { BeastWidget } from "@/components/BeastWidget";
 import { DiceRollerWidget } from "@/components/DiceRollerWidget";
+import { ProfileSetupModal } from "@/components/ProfileSetupModal";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 export function Layout() {
-  const { user, loading, signOut } = useAuth();
-  const [masqueradeLevel, setMasqueradeLevel] = useCloudStorage<number>("v5_masquerade_level", 0);
+  const { user, profile, loading, signOut } = useAuth();
+  const [masqueradeLevel, setMasqueradeLevel] = useState(() => {
+    const saved = localStorage.getItem("v5_mascara_local");
+    return saved !== null ? parseInt(saved, 10) : 0;
+  });
 
   const handleSetLevel = (level: number) => {
     setMasqueradeLevel(level);
+    localStorage.setItem("v5_mascara_local", level.toString());
   };
 
   const threatConfig = [
@@ -25,7 +31,8 @@ export function Layout() {
     { level: 5, title: "PURGA TOTAL", color: "text-blood-glow", bg: "bg-blood", glitch: true, intense: true },
   ];
 
-  const currentThreat = threatConfig[masqueradeLevel];
+  const currentThreat = threatConfig[masqueradeLevel] || threatConfig[0];
+
 
   // Regra de Ouro: Só mestre autenticado pisa aqui.
   if (!loading && !user) {
@@ -37,10 +44,15 @@ export function Layout() {
      return <div className="min-h-screen bg-[#0a0a0a]"></div>;
   }
 
+  const needsProfileSetup = user && (!profile || !profile.username);
+
   return (
     <SidebarProvider>
       <div className={`min-h-screen flex w-full transition-all duration-1000 ${currentThreat.intense ? "bg-red-950/20" : ""}`}>
+
         
+        {needsProfileSetup && <ProfileSetupModal />}
+
         {/* Camada de Efeito Global de Glitch quando Nível Alto */}
         {currentThreat.glitch && (
           <div className="fixed inset-0 pointer-events-none z-[100] animate-pulse opacity-10">
@@ -68,13 +80,24 @@ export function Layout() {
             {/* Termômetro da Máscara (World State) */}
             <div className="flex flex-col items-end mr-4">
               <div className="flex items-center gap-2 mb-1">
-                <button 
-                  onClick={signOut} 
-                  className="text-[10px] uppercase font-bold text-muted-foreground hover:text-white mr-4 transition-colors"
-                  title="Abandonar Sessão"
-                >
-                   {user?.email?.split('@')[0]} (Sair)
-                </button>
+                <div className="flex items-center gap-2 mr-4 border-r border-border/50 pr-4">
+                  {profile && profile.username && (
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground/80 hidden sm:inline-block tracking-wider">
+                      {profile.username}
+                    </span>
+                  )}
+                  <Avatar className="w-6 h-6 border border-border/50">
+                    <AvatarImage src={profile?.avatar_url || user?.user_metadata?.avatar_url} />
+                    <AvatarFallback className="bg-zinc-800 text-[10px]">{profile?.username?.charAt(0) || user?.email?.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <button 
+                    onClick={signOut} 
+                    className="text-[10px] uppercase text-muted-foreground hover:text-red-400 transition-colors ml-2"
+                    title="Abandonar Sessão"
+                  >
+                     (Sair)
+                  </button>
+                </div>
 
                 <span className={`text-[10px] uppercase tracking-widest font-bold ${currentThreat.color}`}>
                   Máscara: {currentThreat.title}

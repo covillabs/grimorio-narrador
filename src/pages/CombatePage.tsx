@@ -106,12 +106,15 @@ export default function CombatePage() {
 
   return (
     <div className="h-full flex flex-col max-w-6xl mx-auto pb-10">
-      <div className="mb-6 flex justify-between items-center border-b border-blood/20 pb-4">
-        <div>
-          <h1 className="text-3xl font-serif font-bold text-blood-glow flex items-center gap-3">
-            <Sword className="w-8 h-8 opacity-80" /> A Arena de Sangue
-          </h1>
-          <p className="text-muted-foreground mt-1 text-sm border-l-2 border-blood/50 pl-2 ml-1">Painel Tático de Conflito em Turnos</p>
+      <div className="mb-6 flex justify-between items-center border-b border-blood/20 pb-6">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-blood/10 rounded-lg border border-blood/20">
+            <Sword className="w-6 h-6 text-blood" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-serif font-bold text-blood-glow">Arena de Sangue</h1>
+            <p className="text-muted-foreground mt-1 text-sm">Painel Tático de Conflito em Turnos</p>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="outline" onClick={clearArena} className="border-destructive text-destructive hover:bg-destructive hover:text-white h-9 text-xs">

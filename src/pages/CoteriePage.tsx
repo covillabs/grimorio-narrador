@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useCloudStorage } from "@/hooks/useCloudStorage";
-import { Plus, Crosshair, Sparkles, Zap } from "lucide-react";
+import { Plus, Crosshair, Sparkles, Zap, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HungerTracker } from "@/components/HungerTracker";
 import { HumanityTracker } from "@/components/HumanityTracker";
@@ -101,10 +101,15 @@ export default function CoteriePage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-serif font-bold text-foreground">A Coterie</h1>
-          <p className="text-muted-foreground mt-1">Seus personagens jogadores</p>
+      <div className="flex items-center justify-between mb-6 border-b border-border/50 pb-6">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+            <Users className="w-6 h-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-serif font-bold text-foreground">A Coterie</h1>
+            <p className="text-muted-foreground mt-1 text-sm">Gerenciar Fome, Humanidade e fichas dos Jogadores</p>
+          </div>
         </div>
         <Button onClick={() => { setEditingPlayer(null); setDialogOpen(true); }} className="gap-2">
           <Plus className="w-4 h-4" /> Novo Personagem

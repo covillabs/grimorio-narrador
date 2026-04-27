@@ -63,10 +63,15 @@ export default function AtlasPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-serif font-bold">Atlas Sombrio</h1>
-          <p className="text-muted-foreground mt-1">O tabuleiro geográfico da crônica (Locais, Domínios e Segredos)</p>
+      <div className="flex items-center justify-between mb-6 border-b border-border/50 pb-6">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+            <MapPin className="w-6 h-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-serif font-bold">Atlas Sombrio</h1>
+            <p className="text-muted-foreground mt-1 text-sm">Locais, Domínios e Segredos do tabuleiro geográfico</p>
+          </div>
         </div>
         <Button onClick={() => toast.info("Edição de mapas será liberada após integrar Supabase.")} className="gap-2">
           <Plus className="w-4 h-4" /> Novo Domínio

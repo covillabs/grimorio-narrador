@@ -1,7 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 
 export function useCloudStorage<T>(key: string, initialValue: T): [T, (value: T | ((val: T) => T)) => void] {
   const { user } = useAuth();
@@ -17,12 +16,14 @@ export function useCloudStorage<T>(key: string, initialValue: T): [T, (value: T 
     }
   });
 
-  const isInitialMount = useRef(true);
-  const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hasFetchedCloud = useRef(false);
+  const userHasInteracted = useRef(false);
 
-  // Efeito 1: Sincronização inicial da Nuvem para o Local no Momento do Login
+  // Efeito: Sincronização inicial da Nuvem (UMA VEZ após login)
+  // Não sobrescreve se o usuário já interagiu nesta sessão.
   useEffect(() => {
-    if (!user) return;
+    if (!user || hasFetchedCloud.current) return;
+    hasFetchedCloud.current = true;
 
     const fetchCloudData = async () => {
       try {
@@ -30,17 +31,19 @@ export function useCloudStorage<T>(key: string, initialValue: T): [T, (value: T 
           .from("narrator_data")
           .select("data_value")
           .eq("data_key", key)
+          .eq("user_id", user.id)
           .maybeSingle();
 
         if (error) throw error;
 
-        if (data && data.data_value) {
-          // Cloud TEM o dado. Sobrescrevemos o local.
-          setStoredValue(data.data_value as unknown as T);
-          window.localStorage.setItem(key, JSON.stringify(data.data_value));
+        if (data && data.data_value !== undefined && data.data_value !== null) {
+          // Cloud TEM o dado e o usuário NÃO interagiu ainda nesta sessão
+          if (!userHasInteracted.current) {
+            setStoredValue(data.data_value as unknown as T);
+            window.localStorage.setItem(key, JSON.stringify(data.data_value));
+          }
         } else {
-          // Cloud NÃO TEM o dado. Mas se tivermos algo no local persistido ANTES do login (ex: migração),
-          // precisamos subir pra nuvem agora.
+          // Cloud NÃO TEM o dado. Subimos o local para a nuvem.
           const localItem = window.localStorage.getItem(key);
           if (localItem) {
             await supabase.from("narrator_data").upsert({
@@ -48,7 +51,6 @@ export function useCloudStorage<T>(key: string, initialValue: T): [T, (value: T 
               data_key: key,
               data_value: JSON.parse(localItem),
             });
-            toast.success(`Dados locais de "${key}" sincronizados para a nuvem.`);
           }
         }
       } catch (error) {
@@ -59,11 +61,12 @@ export function useCloudStorage<T>(key: string, initialValue: T): [T, (value: T 
     fetchCloudData();
   }, [user, key]);
 
-  // Efeito 2: Qualquer mundança no state atualiza local e debouce pra Nuvem
-  const setValue = (value: T | ((val: T) => T)) => {
+  // Save: Salva localmente E na nuvem IMEDIATAMENTE
+  const setValue = useCallback((value: T | ((val: T) => T)) => {
     try {
-      // Allow value to be a function so we have same API as useState
       const valueToStore = value instanceof Function ? value(storedValue) : value;
+      
+      userHasInteracted.current = true;
       
       // Salva no state
       setStoredValue(valueToStore);
@@ -71,26 +74,22 @@ export function useCloudStorage<T>(key: string, initialValue: T): [T, (value: T 
       // Salva offline instantâneo
       window.localStorage.setItem(key, JSON.stringify(valueToStore));
 
-      // Se logado, debounce de 1 segundo para salvar na nuvem
+      // Se logado, salva na nuvem IMEDIATAMENTE (sem debounce)
       if (user) {
-        if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
-        
-        syncTimeoutRef.current = setTimeout(async () => {
-          const { error } = await supabase.from("narrator_data").upsert({
-            user_id: user.id,
-            data_key: key,
-            data_value: valueToStore as any,
-          });
-          
+        supabase.from("narrator_data").upsert({
+          user_id: user.id,
+          data_key: key,
+          data_value: valueToStore as any,
+        }).then(({ error }) => {
           if (error) {
-             console.error(`Erro ao sincronizar [${key}] para a nuvem:`, error);
+            console.error(`Erro ao sincronizar [${key}] para a nuvem:`, error);
           }
-        }, 1000); // 1s Debounce
+        });
       }
     } catch (error) {
       console.warn(`Error setting key "${key}":`, error);
     }
-  };
+  }, [storedValue, user, key]);
 
   return [storedValue, setValue];
 }

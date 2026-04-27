@@ -253,7 +253,7 @@ export default function HomePage() {
              </div>
              <div>
                <h4 className="font-bold font-serif text-foreground group-hover:text-blood-glow transition-colors">Escudo do Narrador</h4>
-               <p className="text-xs text-muted-foreground">Consultar regras da V5 na hora</p>
+               <p className="text-xs text-muted-foreground">Tabelas rápidas e geradores da sessão</p>
              </div>
           </Link>
 
@@ -274,6 +274,16 @@ export default function HomePage() {
              <div>
                <h4 className="font-bold font-serif text-foreground">Diário de Crônica</h4>
                <p className="text-xs text-muted-foreground">Log de Sessões e Scratchpad livre</p>
+             </div>
+          </Link>
+
+          <Link to="/oracle" className="bg-primary/5 border border-primary/20 p-4 rounded-lg group hover:bg-primary/10 transition-colors flex items-center gap-4 shadow-lg">
+             <div className="bg-primary/20 p-3 rounded border border-primary/30 text-primary animate-pulse">
+               <Sparkles className="w-6 h-6" />
+             </div>
+             <div>
+               <h4 className="font-bold font-serif text-foreground group-hover:text-primary transition-colors">Oráculo de Lore</h4>
+               <p className="text-xs text-muted-foreground">Perguntar à IA sobre regras e lore</p>
              </div>
           </Link>
 

@@ -109,10 +109,15 @@ export default function OcultismoPage() {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="mb-6 flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-serif font-bold text-blood-glow">Grimório Oculto</h1>
-          <p className="text-muted-foreground mt-1 text-sm border-b border-border pb-4 w-fit pr-10">Compêndio de Rituais, Artes Sombrias e Ameaças Sobrenaturais</p>
+      <div className="mb-6 flex justify-between items-center border-b border-border/50 pb-6">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-blood/10 rounded-lg border border-blood/20">
+            <BookOpen className="w-6 h-6 text-blood" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-serif font-bold text-blood-glow">Grimório Oculto</h1>
+            <p className="text-muted-foreground mt-1 text-sm">Compêndio de Rituais, Artes Sombrias e Ameaças Sobrenaturais</p>
+          </div>
         </div>
         <div className="flex gap-4">
            {activeTab !== "dangers" && (

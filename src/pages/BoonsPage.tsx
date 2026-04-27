@@ -57,13 +57,15 @@ export default function BoonsPage() {
     <div className="h-full flex flex-col space-y-6 animate-in fade-in duration-500">
       
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-serif font-bold text-blood-glow flex items-center gap-3">
-            <Scale className="w-8 h-8 text-blood opacity-80" />
-            Livro de Dívidas (Boons)
-          </h1>
-          <p className="text-muted-foreground mt-1">Economia de Favores e Débitos de Sangue</p>
+      <div className="flex items-center justify-between border-b border-border/50 pb-6">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-blood/10 rounded-lg border border-blood/20">
+            <Scale className="w-6 h-6 text-blood" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-serif font-bold text-blood-glow">Livro de Dívidas</h1>
+            <p className="text-muted-foreground mt-1 text-sm">Economia de Favores e Débitos de Sangue</p>
+          </div>
         </div>
         <Button onClick={() => setIsCreatorOpen(true)} className="bg-blood text-white gap-2">
           <Plus className="w-4 h-4"/> Novo Favor
