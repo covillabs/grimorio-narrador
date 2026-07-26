@@ -9,7 +9,7 @@ import { HungerTracker } from "@/components/HungerTracker";
 import { HumanityTracker } from "@/components/HumanityTracker";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, Plus, Sparkles, Award, BookOpen, ShieldAlert, Heart, Zap, ShieldCheck, Flame, Layers, Skull, Calculator } from "lucide-react";
+import { Trash2, Plus, Sparkles, Award, BookOpen, ShieldAlert, Heart, Zap, ShieldCheck, Flame, Layers, Skull } from "lucide-react";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -25,12 +25,6 @@ export interface PlayerAdvantage {
   nome: string;
   tipo: "Vantagem" | "Defeito" | "Antecedente";
   pontos: number;
-}
-
-export interface XPLogItem {
-  id: string;
-  motivo: string;
-  custo: number;
 }
 
 interface PlayerDialogProps {
@@ -379,7 +373,6 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
   const [form, setForm] = useState(defaultPlayer);
   const [disciplines, setDisciplines] = useState<PlayerDiscipline[]>([]);
   const [advantages, setAdvantages] = useState<PlayerAdvantage[]>([]);
-  const [xpLog, setXpLog] = useState<XPLogItem[]>([]);
 
   const isEditing = !!player;
 
@@ -417,13 +410,6 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       }
       setAdvantages(parsedAdvantages);
 
-      // 3. Parsing do Registro de Gastos de XP
-      let parsedXpLog: XPLogItem[] = [];
-      if (Array.isArray(player.xp_log)) {
-        parsedXpLog = player.xp_log;
-      }
-      setXpLog(parsedXpLog);
-
       setForm({
         ...defaultPlayer,
         ...player,
@@ -452,7 +438,6 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
         setDisciplines([]);
       }
       setAdvantages([]);
-      setXpLog([]);
     }
   }, [player, open]);
 
@@ -491,22 +476,33 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
   const calculatedHealthMax = passiveEffects.health_max;
   const calculatedWillpowerMax = passiveEffects.willpower_max;
 
-  // Lógica Simples e Direta de Gestão de XP:
-  // Se houver registros no log de XP, o XP Gasto é a soma deles.
-  // Caso contrário, utiliza o valor digitado diretamente pelo usuário no campo form.xp_spent.
-  const manualLogXPSpent = xpLog.reduce((acc, item) => acc + (Number(item.custo) || 0), 0);
-  const finalXPSpent = xpLog.length > 0 ? manualLogXPSpent : (form.xp_spent || 0);
-  
-  // XP Disponível = XP Total - XP Gasto (Ex: 15 Total - 5 Gasto = 10 Disponível)
-  const xpAvailable = Math.max(0, (form.xp_total || 0) - finalXPSpent);
-
   const handleGenerationChange = (gen: number) => {
     const lim = getV5BloodPotencyLimits(gen);
     const clampedBp = Math.max(lim.min, Math.min(lim.max, form.blood_potency || lim.min));
     setForm((prev) => ({ ...prev, generation: gen, blood_potency: clampedBp }));
   };
 
-  // Helper para Perícias + Especializações
+  // Handler de Atributos com Gasto Direto de XP
+  const setAttr = (field: string, newLevel: number) => {
+    const oldLevel = Number(form[field as keyof typeof form]) || 1;
+    if (newLevel !== oldLevel) {
+      let costDelta = 0;
+      if (newLevel > oldLevel) {
+        for (let lvl = oldLevel + 1; lvl <= newLevel; lvl++) costDelta += lvl * 5;
+      } else {
+        for (let lvl = newLevel + 1; lvl <= oldLevel; lvl++) costDelta -= lvl * 5;
+      }
+
+      setForm((prev) => ({
+        ...prev,
+        [field]: newLevel,
+        xp_total: Math.max(0, (prev.xp_total || 0) - costDelta),
+        xp_spent: Math.max(0, (prev.xp_spent || 0) + costDelta),
+      }));
+    }
+  };
+
+  // Helper para Perícias + Especializações com Gasto Direto de XP
   const getSkillData = (key: string) => {
     const raw = form.skills?.[key];
     if (typeof raw === "number") return { nivel: raw, especializacao: "" };
@@ -517,15 +513,27 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
     return { nivel: 0, especializacao: "" };
   };
 
-  const setSkillNivel = (key: string, nivel: number) => {
+  const setSkillNivel = (key: string, newLevel: number) => {
     const current = getSkillData(key);
-    setForm((prev) => ({
-      ...prev,
-      skills: {
-        ...(prev.skills || {}),
-        [key]: { nivel, especializacao: current.especializacao },
-      },
-    }));
+    const oldLevel = current.nivel;
+    if (newLevel !== oldLevel) {
+      let costDelta = 0;
+      if (newLevel > oldLevel) {
+        for (let lvl = oldLevel + 1; lvl <= newLevel; lvl++) costDelta += lvl * 3;
+      } else {
+        for (let lvl = newLevel + 1; lvl <= oldLevel; lvl++) costDelta -= lvl * 3;
+      }
+
+      setForm((prev) => ({
+        ...prev,
+        skills: {
+          ...(prev.skills || {}),
+          [key]: { nivel: newLevel, especializacao: current.especializacao },
+        },
+        xp_total: Math.max(0, (prev.xp_total || 0) - costDelta),
+        xp_spent: Math.max(0, (prev.xp_spent || 0) + costDelta),
+      }));
+    }
   };
 
   const setSkillSpec = (key: string, especializacao: string) => {
@@ -539,12 +547,24 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
     }));
   };
 
-  // Handlers de Disciplinas
+  // Handlers de Disciplinas com Gasto Direto de XP
   const handleAddDiscipline = () => {
+    const newDiscName = "Fortitude";
+    const clanInfo = V5_CLANS_DATA[form.clan];
+    const clanDiscSet = new Set((clanInfo?.disciplines || []).map((d) => d.toLowerCase()));
+    const isClan = clanDiscSet.has(newDiscName.toLowerCase());
+    const costDelta = isClan ? 5 : 7;
+
     setDisciplines((prev) => [
       ...prev,
-      { id: crypto.randomUUID(), nome: "Fortitude", nivel: 1, poderes: [""] },
+      { id: crypto.randomUUID(), nome: newDiscName, nivel: 1, poderes: [""] },
     ]);
+
+    setForm((prev) => ({
+      ...prev,
+      xp_total: Math.max(0, (prev.xp_total || 0) - costDelta),
+      xp_spent: Math.max(0, (prev.xp_spent || 0) + costDelta),
+    }));
   };
 
   const handleUpdateDisciplineName = (id: string, newNome: string) => {
@@ -559,14 +579,38 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
 
   const handleUpdateDisciplineNivel = (id: string, newNivel: number) => {
     const clamped = Math.max(1, Math.min(5, newNivel));
-    setDisciplines((prev) =>
-      prev.map((d) => {
-        if (d.id !== id) return d;
-        const currentPoderes = d.poderes || [];
-        const newPoderes = Array.from({ length: clamped }, (_, i) => currentPoderes[i] || "");
-        return { ...d, nivel: clamped, poderes: newPoderes };
-      })
-    );
+    const targetDisc = disciplines.find((d) => d.id === id);
+    if (!targetDisc) return;
+    const oldNivel = targetDisc.nivel;
+
+    if (clamped !== oldNivel) {
+      const clanInfo = V5_CLANS_DATA[form.clan];
+      const clanDiscSet = new Set((clanInfo?.disciplines || []).map((d) => d.toLowerCase()));
+      const isClan = clanDiscSet.has((targetDisc.nome || "").toLowerCase());
+      const multiplier = isClan ? 5 : 7;
+
+      let costDelta = 0;
+      if (clamped > oldNivel) {
+        for (let lvl = oldNivel + 1; lvl <= clamped; lvl++) costDelta += lvl * multiplier;
+      } else {
+        for (let lvl = clamped + 1; lvl <= oldNivel; lvl++) costDelta -= lvl * multiplier;
+      }
+
+      setDisciplines((prev) =>
+        prev.map((d) => {
+          if (d.id !== id) return d;
+          const currentPoderes = d.poderes || [];
+          const newPoderes = Array.from({ length: clamped }, (_, i) => currentPoderes[i] || "");
+          return { ...d, nivel: clamped, poderes: newPoderes };
+        })
+      );
+
+      setForm((prev) => ({
+        ...prev,
+        xp_total: Math.max(0, (prev.xp_total || 0) - costDelta),
+        xp_spent: Math.max(0, (prev.xp_spent || 0) + costDelta),
+      }));
+    }
   };
 
   const handleUpdateDisciplinePower = (id: string, powerIdx: number, val: string) => {
@@ -584,7 +628,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
     setDisciplines((prev) => prev.filter((d) => d.id !== id));
   };
 
-  // Handlers Vantagens/Defeitos/Antecedentes
+  // Handlers Vantagens/Defeitos/Antecedentes com Gasto Direto de XP
   const handleAddAdvantage = () => {
     setAdvantages((prev) => [
       ...prev,
@@ -593,6 +637,18 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
   };
 
   const handleUpdateAdvantage = (id: string, field: keyof PlayerAdvantage, value: any) => {
+    if (field === "pontos") {
+      const target = advantages.find((a) => a.id === id);
+      if (target && typeof value === "number") {
+        const oldPts = target.pontos || 1;
+        const costDelta = (value - oldPts) * 3;
+        setForm((prev) => ({
+          ...prev,
+          xp_total: Math.max(0, (prev.xp_total || 0) - costDelta),
+          xp_spent: Math.max(0, (prev.xp_spent || 0) + costDelta),
+        }));
+      }
+    }
     setAdvantages((prev) =>
       prev.map((a) => (a.id === id ? { ...a, [field]: value } : a))
     );
@@ -600,24 +656,6 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
 
   const handleRemoveAdvantage = (id: string) => {
     setAdvantages((prev) => prev.filter((a) => a.id !== id));
-  };
-
-  // Handlers de Registro de XP
-  const handleAddXPLogItem = () => {
-    setXpLog((prev) => [
-      ...prev,
-      { id: crypto.randomUUID(), motivo: "Melhorar Atributo", custo: 5 },
-    ]);
-  };
-
-  const handleUpdateXPLogItem = (id: string, field: keyof XPLogItem, value: any) => {
-    setXpLog((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
-    );
-  };
-
-  const handleRemoveXPLogItem = (id: string) => {
-    setXpLog((prev) => prev.filter((item) => item.id !== id));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -635,10 +673,8 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       willpower_max: calculatedWillpowerMax,
       health_current: Math.max(0, calculatedHealthMax - (form.sup_dmg || 0) - (form.agr_dmg || 0)),
       willpower_current: Math.max(0, calculatedWillpowerMax - (form.fw_sup || 0) - (form.fw_agr || 0)),
-      xp_spent: finalXPSpent,
       disciplines,
       advantages,
-      xp_log: xpLog,
     };
 
     onSave(playerData);
@@ -793,119 +829,42 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                 </div>
               </div>
 
-              {/* Experiência (XP Total, XP Gasto e XP Disponível Reativo) */}
+              {/* Experiência (XP Total Saldo e XP Gasto Acumulado) */}
               <div className="space-y-2 border-l border-border/40 pl-4">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
                     <Layers className="w-3.5 h-3.5 text-primary" /> Gestão de XP
                   </span>
                   <span className="text-[10px] text-muted-foreground font-mono">
-                    {xpLog.length > 0 ? "Soma de Gastos" : "Entrada Direta"}
+                    Gasto Direto Reativo
                   </span>
                 </div>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label className="text-[10px] font-bold">XP Total *</Label>
+                    <Label className="text-[10px] font-bold text-emerald-400">XP Total (Saldo) *</Label>
                     <Input
                       type="number"
                       min={0}
                       value={form.xp_total || 0}
                       onChange={(e) => set("xp_total", parseInt(e.target.value) || 0)}
-                      className="h-7 text-xs bg-background font-semibold"
+                      className="h-8 text-xs bg-emerald-950/20 border border-emerald-500/40 text-emerald-400 font-bold font-mono"
                     />
                   </div>
                   <div>
-                    <Label className="text-[10px] font-bold text-rose-400">XP Gasto</Label>
-                    {xpLog.length > 0 ? (
-                      <div className="h-7 text-xs bg-muted/30 border border-border rounded flex items-center justify-center font-bold font-mono text-rose-400">
-                        {finalXPSpent} XP
-                      </div>
-                    ) : (
-                      <Input
-                        type="number"
-                        min={0}
-                        value={form.xp_spent || 0}
-                        onChange={(e) => set("xp_spent", parseInt(e.target.value) || 0)}
-                        className="h-7 text-xs bg-background font-semibold text-rose-400"
-                      />
-                    )}
-                  </div>
-                  <div>
-                    <Label className="text-[10px] font-bold text-emerald-400">Disponível</Label>
-                    <div className="h-7 text-xs bg-emerald-950/20 border border-emerald-500/40 rounded flex items-center justify-center font-bold font-mono text-emerald-400">
-                      {xpAvailable} XP
-                    </div>
+                    <Label className="text-[10px] font-bold text-rose-400">XP Gasto (Acumulado) *</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={form.xp_spent || 0}
+                      onChange={(e) => set("xp_spent", parseInt(e.target.value) || 0)}
+                      className="h-8 text-xs bg-muted/30 border border-border text-rose-400 font-bold font-mono"
+                    />
                   </div>
                 </div>
-                <div className="text-[10px] text-muted-foreground italic flex items-center gap-1 pt-0.5">
-                  <Calculator className="w-3 h-3 text-primary" /> {form.xp_total || 0} (Total) - {finalXPSpent} (Gasto) = {xpAvailable} XP
-                </div>
+                <p className="text-[10px] text-muted-foreground italic pt-0.5">
+                  Elevações na ficha reduzem do XP Total (Saldo) e acumulam no XP Gasto.
+                </p>
               </div>
-            </div>
-
-            {/* Accordion de Registros Adicionais de Gastos de XP */}
-            <div className="border-t border-border/60 pt-4">
-              <Accordion type="single" collapsible className="border border-border/50 rounded-lg px-3 bg-muted/10">
-                <AccordionItem value="xp_log" className="border-none">
-                  <AccordionTrigger className="text-sm font-semibold hover:no-underline py-2">
-                    <span className="flex items-center gap-2 font-serif text-primary">
-                      <Calculator className="w-4 h-4" /> Registro de Gastos de XP ({xpLog.length})
-                    </span>
-                  </AccordionTrigger>
-                  <AccordionContent className="space-y-3 pt-1">
-                    <div className="flex items-center justify-between">
-                      <p className="text-[11px] text-muted-foreground">
-                        Adicione aprimoramentos (ex: "+5 para melhorar Atributo").
-                      </p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleAddXPLogItem}
-                        className="h-7 text-[11px] px-2 gap-1"
-                      >
-                        <Plus className="w-3 h-3" /> Registrar Gasto
-                      </Button>
-                    </div>
-
-                    {xpLog.length === 0 ? (
-                      <p className="text-[11px] text-muted-foreground italic">Nenhum gasto registrado. Você pode digitar o XP Gasto diretamente no campo acima.</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {xpLog.map((item) => (
-                          <div key={item.id} className="flex items-center gap-2 p-1.5 bg-background border border-border/40 rounded">
-                            <Input
-                              placeholder="Motivo (ex: +5 para melhorar Atributo)"
-                              value={item.motivo}
-                              onChange={(e) => handleUpdateXPLogItem(item.id, "motivo", e.target.value)}
-                              className="h-7 text-xs flex-1"
-                            />
-                            <div className="flex items-center gap-1 w-24">
-                              <Input
-                                type="number"
-                                min={0}
-                                value={item.custo}
-                                onChange={(e) => handleUpdateXPLogItem(item.id, "custo", parseInt(e.target.value) || 0)}
-                                className="h-7 text-xs text-center font-bold text-rose-400"
-                              />
-                              <span className="text-[10px] text-muted-foreground">XP</span>
-                            </div>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleRemoveXPLogItem(item.id)}
-                              className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
             </div>
 
             {/* Seção 1: Atributos V5 (9 Atributos Oficiais) */}
@@ -926,15 +885,15 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label className="text-xs">Força</Label>
-                      <DotRating value={form.forca || 1} min={1} onChange={(v) => set("forca", v)} />
+                      <DotRating value={form.forca || 1} min={1} onChange={(v) => setAttr("forca", v)} />
                     </div>
                     <div className="flex items-center justify-between">
                       <Label className="text-xs">Destreza</Label>
-                      <DotRating value={form.destreza || 1} min={1} onChange={(v) => set("destreza", v)} />
+                      <DotRating value={form.destreza || 1} min={1} onChange={(v) => setAttr("destreza", v)} />
                     </div>
                     <div className="flex items-center justify-between">
                       <Label className="text-xs">Vigor</Label>
-                      <DotRating value={form.vigor || 1} min={1} onChange={(v) => set("vigor", v)} />
+                      <DotRating value={form.vigor || 1} min={1} onChange={(v) => setAttr("vigor", v)} />
                     </div>
                   </div>
                 </div>
@@ -947,15 +906,15 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label className="text-xs">Carisma</Label>
-                      <DotRating value={form.carisma || 1} min={1} onChange={(v) => set("carisma", v)} />
+                      <DotRating value={form.carisma || 1} min={1} onChange={(v) => setAttr("carisma", v)} />
                     </div>
                     <div className="flex items-center justify-between">
                       <Label className="text-xs">Manipulação</Label>
-                      <DotRating value={form.manipulacao || 1} min={1} onChange={(v) => set("manipulacao", v)} />
+                      <DotRating value={form.manipulacao || 1} min={1} onChange={(v) => setAttr("manipulacao", v)} />
                     </div>
                     <div className="flex items-center justify-between">
                       <Label className="text-xs">Compostura</Label>
-                      <DotRating value={form.compostura || 1} min={1} onChange={(v) => set("compostura", v)} />
+                      <DotRating value={form.compostura || 1} min={1} onChange={(v) => setAttr("compostura", v)} />
                     </div>
                   </div>
                 </div>
@@ -968,15 +927,15 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label className="text-xs">Inteligência</Label>
-                      <DotRating value={form.inteligencia || 1} min={1} onChange={(v) => set("inteligencia", v)} />
+                      <DotRating value={form.inteligencia || 1} min={1} onChange={(v) => setAttr("inteligencia", v)} />
                     </div>
                     <div className="flex items-center justify-between">
                       <Label className="text-xs">Raciocínio</Label>
-                      <DotRating value={form.raciocinio || 1} min={1} onChange={(v) => set("raciocinio", v)} />
+                      <DotRating value={form.raciocinio || 1} min={1} onChange={(v) => setAttr("raciocinio", v)} />
                     </div>
                     <div className="flex items-center justify-between">
                       <Label className="text-xs">Perseverança</Label>
-                      <DotRating value={form.perseveranca || 1} min={1} onChange={(v) => set("perseveranca", v)} />
+                      <DotRating value={form.perseveranca || 1} min={1} onChange={(v) => setAttr("perseveranca", v)} />
                     </div>
                   </div>
                 </div>
