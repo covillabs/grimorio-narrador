@@ -14,19 +14,33 @@ interface AuthContextType {
   profile: UserProfile | null;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
-  signInWithEmail: (email: string, pass: string) => Promise<{error: any}>;
-  signUpWithEmail: (email: string, pass: string) => Promise<{error: any}>;
+  signInWithEmail: (email: string, pass: string) => Promise<{ error: any }>;
+  signUpWithEmail: (email: string, pass: string) => Promise<{ error: any }>;
+  loginAsGuest: () => void;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
+
+const GUEST_USER: User = {
+  id: "guest-narrator-id",
+  app_metadata: { provider: "guest" },
+  user_metadata: { username: "Narrador Convidado" },
+  aud: "authenticated",
+  created_at: new Date().toISOString(),
+  email: "narrador@grimorio.local",
+  phone: "",
+  role: "authenticated",
+  updated_at: new Date().toISOString(),
+} as User;
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   profile: null,
   loading: true,
   signInWithGoogle: async () => {},
-  signInWithEmail: async () => ({error: null}),
-  signUpWithEmail: async () => ({error: null}),
+  signInWithEmail: async () => ({ error: null }),
+  signUpWithEmail: async () => ({ error: null }),
+  loginAsGuest: () => {},
   signOut: async () => {},
   refreshProfile: async () => {},
 });
@@ -38,14 +52,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchProfile = async (userId: string) => {
     try {
+      if (userId === GUEST_USER.id) {
+        setProfile({ id: GUEST_USER.id, username: "Narrador Convidado", avatar_url: null });
+        return;
+      }
+
       const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
         .single();
-      
-      
-      if (error && error.code !== 'PGRST116') throw error; // Ignorar erro de 'não encontrado' temporariamente
+
+      if (error && error.code !== "PGRST116") throw error;
       setProfile(data || null);
     } catch (error) {
       console.error("Erro ao buscar perfil:", error);
@@ -58,20 +76,35 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const loginAsGuest = () => {
+    setUser(GUEST_USER);
+    setProfile({ id: GUEST_USER.id, username: "Narrador Convidado", avatar_url: null });
+    localStorage.setItem("v5_guest_mode", "true");
+    setLoading(false);
+    toast.success("Despertar bem sucedido (Modo Convidado).");
+  };
+
   useEffect(() => {
     let mounted = true;
 
     const initialize = async () => {
       try {
+        const isGuest = localStorage.getItem("v5_guest_mode") === "true";
+        if (isGuest) {
+          if (mounted) {
+            setUser(GUEST_USER);
+            setProfile({ id: GUEST_USER.id, username: "Narrador Convidado", avatar_url: null });
+            setLoading(false);
+          }
+          return;
+        }
+
         const { data: { session }, error } = await supabase.auth.getSession();
-        
         if (error) throw error;
-        
-        
+
         const currentUser = session?.user ?? null;
-        
         if (mounted) setUser(currentUser);
-        
+
         if (currentUser && mounted) {
           await fetchProfile(currentUser.id);
         }
@@ -85,25 +118,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     initialize();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'INITIAL_SESSION') return;
+      if (event === "INITIAL_SESSION") return;
+
+      const isGuest = localStorage.getItem("v5_guest_mode") === "true";
+      if (isGuest) return;
 
       const currentUser = session?.user ?? null;
       if (mounted) setUser(currentUser);
 
       if (currentUser && mounted) {
-        // Não vamos travar o loading principal por causa de uma mudança de auth
-        // apenas buscamos o perfil em background
         fetchProfile(currentUser.id);
       } else {
         if (mounted) setProfile(null);
       }
-      
+
       if (mounted && loading) {
-         setLoading(false);
+        setLoading(false);
       }
     });
 
-    // Timeout de segurança: Se o Supabase travar por rede, liberamos a tela após 3 segundos
     const fallbackTimer = setTimeout(() => {
       if (mounted && loading) {
         setLoading(false);
@@ -119,6 +152,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signInWithGoogle = async () => {
     try {
+      localStorage.removeItem("v5_guest_mode");
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
@@ -133,6 +167,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signInWithEmail = async (email: string, pass: string) => {
     try {
+      localStorage.removeItem("v5_guest_mode");
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password: pass,
@@ -146,6 +181,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signUpWithEmail = async (email: string, pass: string) => {
     try {
+      localStorage.removeItem("v5_guest_mode");
       const { data, error } = await supabase.auth.signUp({
         email,
         password: pass,
@@ -160,17 +196,33 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signOut = async () => {
     try {
       setLoading(true);
+      localStorage.removeItem("v5_guest_mode");
+      setUser(null);
+      setProfile(null);
       const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      if (error && !error.message?.includes("session_not_found")) throw error;
       toast.success("Desconectado com sucesso.");
     } catch (error: any) {
       toast.error(error.message || "Erro ao desconectar");
+    } finally {
       setLoading(false);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signInWithGoogle, signInWithEmail, signUpWithEmail, signOut, refreshProfile }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        profile,
+        loading,
+        signInWithGoogle,
+        signInWithEmail,
+        signUpWithEmail,
+        loginAsGuest,
+        signOut,
+        refreshProfile,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
