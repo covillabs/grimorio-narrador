@@ -414,12 +414,29 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
         ...defaultPlayer,
         ...player,
         clan: player.clan || "Ventrue",
-        clan_bane: player.clan_bane || (V5_CLANS_DATA[player.clan]?.bane || ""),
+        clan_bane: player.clan_bane || (V5_CLANS_DATA[player.clan]?.bane || V5_CLANS_DATA["Ventrue"].bane),
         skills: player.skills && typeof player.skills === "object" ? player.skills : {},
       });
     } else {
-      setForm(defaultPlayer);
-      setDisciplines([]);
+      const defaultClan = "Ventrue";
+      const clanInfo = V5_CLANS_DATA[defaultClan];
+      setForm({
+        ...defaultPlayer,
+        clan: defaultClan,
+        clan_bane: clanInfo?.bane || "",
+      });
+      if (clanInfo) {
+        setDisciplines(
+          clanInfo.disciplines.map((dName) => ({
+            id: crypto.randomUUID(),
+            nome: dName,
+            nivel: 1,
+            poderes: [""],
+          }))
+        );
+      } else {
+        setDisciplines([]);
+      }
       setAdvantages([]);
     }
   }, [player, open]);
@@ -435,8 +452,8 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       clan_bane: baneText,
     }));
 
-    // Se a lista de disciplinas estiver vazia, pré-carrega as 3 disciplinas inerentes do clã
-    if (clanInfo && clanInfo.disciplines.length > 0 && disciplines.length === 0) {
+    // Ao trocar de clã, atualiza a lista de disciplinas para as 3 disciplinas do novo clã selecionado
+    if (clanInfo && clanInfo.disciplines.length > 0) {
       const autoDisciplines: PlayerDiscipline[] = clanInfo.disciplines.map((dName) => ({
         id: crypto.randomUUID(),
         nome: dName,
@@ -444,7 +461,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
         poderes: [""],
       }));
       setDisciplines(autoDisciplines);
-      toast.info(`Disciplinas do Clã ${newClan} pré-carregadas: ${clanInfo.disciplines.join(", ")}`);
+      toast.info(`Disciplinas atualizadas para o Clã ${newClan}: ${clanInfo.disciplines.join(", ")}`);
     }
   };
 
