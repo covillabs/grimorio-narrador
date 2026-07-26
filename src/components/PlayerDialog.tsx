@@ -281,15 +281,16 @@ export function getV5BloodPotencyLimits(generation: number) {
   return { min: 0, max: 10 };
 }
 
-// Calculadora Automática de Custos Oficiais do V5 para a Ficha
+// Calculadora Automática de Custos Oficiais do V5 para a Ficha (Considerando orçamentos iniciais gratuitos)
 export function calculateV5SheetXPSpent(
   form: any,
   disciplines: PlayerDiscipline[],
   advantages: PlayerAdvantage[]
 ): number {
-  let totalSpent = 0;
+  let totalXP = 0;
 
-  // 1. Atributos (Custos V5: Nível x 5 XP para avanços acima de 1)
+  // 1. Atributos (Custos V5: Novo Nível x 5 XP para pontos acima do orçamento gratuito inicial)
+  let attrXP = 0;
   const attributes = [
     form.forca, form.destreza, form.vigor,
     form.carisma, form.manipulacao, form.compostura,
@@ -299,11 +300,15 @@ export function calculateV5SheetXPSpent(
   attributes.forEach((attrVal) => {
     const val = Number(attrVal) || 1;
     for (let lvl = 2; lvl <= val; lvl++) {
-      totalSpent += lvl * 5;
+      attrXP += lvl * 5;
     }
   });
+  // O orçamento inicial gratuito de criação V5 concede 22 pontos de atributos totais (~65 XP em elevações)
+  const freeAttrXPBaseline = 65;
+  totalXP += Math.max(0, attrXP - freeAttrXPBaseline);
 
-  // 2. Perícias (Nível x 3 XP) + Especializações (3 XP cada)
+  // 2. Perícias (Novo Nível x 3 XP) + Especializações (3 XP cada)
+  let skillXP = 0;
   if (form.skills && typeof form.skills === "object") {
     Object.values(form.skills).forEach((sData: any) => {
       let nivel = 0;
@@ -315,34 +320,44 @@ export function calculateV5SheetXPSpent(
       }
 
       for (let lvl = 1; lvl <= nivel; lvl++) {
-        totalSpent += lvl * 3;
+        skillXP += lvl * 3;
       }
       if (spec && spec.trim()) {
-        totalSpent += 3;
+        skillXP += 3;
       }
     });
   }
+  // O orçamento inicial gratuito de criação V5 concede 15 pontos de perícia + 1 especialização (~48 XP)
+  const freeSkillXPBaseline = 48;
+  totalXP += Math.max(0, skillXP - freeSkillXPBaseline);
 
-  // 3. Disciplinas (Nível x 5 XP se de clã, Nível x 7 se fora do clã)
+  // 3. Disciplinas (Novo Nível x 5 XP se for do clã, Novo Nível x 7 XP se for fora do clã)
   const clanInfo = V5_CLANS_DATA[form.clan];
   const clanDiscSet = new Set((clanInfo?.disciplines || []).map((d) => d.toLowerCase()));
 
+  let discXP = 0;
   disciplines.forEach((d) => {
     const isClan = clanDiscSet.has((d.nome || "").toLowerCase());
     const multiplier = isClan ? 5 : 7;
     for (let lvl = 1; lvl <= (d.nivel || 1); lvl++) {
-      totalSpent += lvl * multiplier;
+      discXP += lvl * multiplier;
     }
   });
+  // O orçamento inicial gratuito de criação V5 concede 2 pontos de disciplinas do clã (~10 XP)
+  const freeDiscXPBaseline = 10;
+  totalXP += Math.max(0, discXP - freeDiscXPBaseline);
 
-  // 4. Vantagens e Antecedentes (3 XP por ponto)
+  // 4. Vantagens e Antecedentes (3 XP por ponto acima do orçamento gratuito inicial de 7 pontos = 21 XP)
+  let advXP = 0;
   advantages.forEach((adv) => {
     if (adv.tipo === "Vantagem" || adv.tipo === "Antecedente") {
-      totalSpent += (adv.pontos || 1) * 3;
+      advXP += (adv.pontos || 1) * 3;
     }
   });
+  const freeAdvXPBaseline = 21;
+  totalXP += Math.max(0, advXP - freeAdvXPBaseline);
 
-  return totalSpent;
+  return totalXP;
 }
 
 const defaultPlayer = {
