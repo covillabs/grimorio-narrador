@@ -594,29 +594,29 @@ function CombatantCard({
 
             {isSimplifiedMode ? (
               /* Modo Simplificado: Contador Único de Dano Recebido */
-              <div className="flex justify-center py-1">
-                <div className="flex flex-col items-center bg-background p-2 rounded border border-amber-500/30 w-full max-w-[220px]">
-                  <span className="text-[10px] uppercase tracking-widest font-bold text-amber-400 mb-1">
-                    Dano Recebido
+              <div className="bg-background p-2 rounded border border-amber-500/30 flex items-center justify-between gap-2">
+                <span className="text-[10px] uppercase tracking-wider font-bold text-amber-400 shrink-0">
+                  Dano Recebido
+                </span>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={onSubSuperficial}
+                    className="w-6 h-6 flex items-center justify-center bg-muted rounded hover:bg-destructive/30 hover:text-white transition-colors font-bold text-xs"
+                  >
+                    -
+                  </button>
+                  <span className="font-mono font-extrabold text-sm whitespace-nowrap text-amber-400 min-w-[45px] text-center">
+                    {totalDamage} / {c.max_hp}
                   </span>
-                  <div className="flex items-center gap-4">
-                    <button
-                      onClick={onSubSuperficial}
-                      className="w-7 h-7 flex items-center justify-center bg-muted rounded hover:bg-destructive/30 hover:text-white transition-colors font-bold text-sm"
-                    >
-                      -
-                    </button>
-                    <span className="font-mono font-extrabold text-lg w-12 text-center text-amber-400">
-                      {totalDamage} / {c.max_hp}
-                    </span>
-                    <button
-                      onClick={onAddSuperficial}
-                      disabled={isDefeated}
-                      className="w-7 h-7 flex items-center justify-center bg-muted rounded hover:bg-blood hover:text-white transition-colors font-bold text-sm disabled:opacity-30 disabled:cursor-not-allowed"
-                    >
-                      +
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={onAddSuperficial}
+                    disabled={isDefeated}
+                    className="w-6 h-6 flex items-center justify-center bg-muted rounded hover:bg-blood hover:text-white transition-colors font-bold text-xs disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    +
+                  </button>
                 </div>
               </div>
             ) : (
@@ -641,7 +641,7 @@ function CombatantCard({
             )}
           </div>
 
-          {/* Vontade */}
+          {/* Trilha de Vontade (Modo Simplificado vs V5 Completo) */}
           <div
             className={`bg-surface-container-low p-2 rounded border transition-colors ${
               c.fw_sup + c.fw_agr >= c.max_wp
@@ -651,7 +651,7 @@ function CombatantCard({
           >
             <div className="flex items-center justify-between mb-2">
               <h4 className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1">
-                <Brain className="w-3 h-3" /> Trilha de Vontade
+                <Brain className="w-3 h-3 text-blue-400" /> Trilha de Vontade {isSimplifiedMode ? "(Rápida)" : "(V5)"}
               </h4>
               <div className="flex items-center gap-1">
                 <button
@@ -669,24 +669,55 @@ function CombatantCard({
                 </button>
               </div>
             </div>
-            <div className="flex gap-2 justify-center relative">
-              {c.fw_sup + c.fw_agr >= c.max_wp && (
-                <div className="absolute inset-0 bg-destructive/10 pointer-events-none rounded"></div>
-              )}
-              <DmgBlock
-                label="Superficial"
-                value={c.fw_sup}
-                onAdd={() => onUpdateWp("fw_sup", 1)}
-                onSub={() => onUpdateWp("fw_sup", -1)}
-              />
-              <DmgBlock
-                label="Agravado"
-                value={c.fw_agr}
-                onAdd={() => onUpdateWp("fw_agr", 1)}
-                onSub={() => onUpdateWp("fw_agr", -1)}
-                isAgr
-              />
-            </div>
+
+            {isSimplifiedMode ? (
+              /* Modo Simplificado: Contador Único de Vontade Gasta / Dano */
+              <div className="bg-background p-2 rounded border border-blue-500/30 flex items-center justify-between gap-2">
+                <span className="text-[10px] uppercase tracking-wider font-bold text-blue-400 shrink-0">
+                  Vontade Gasta
+                </span>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => onUpdateWp("fw_sup", -1)}
+                    className="w-6 h-6 flex items-center justify-center bg-muted rounded hover:bg-destructive/30 hover:text-white transition-colors font-bold text-xs"
+                  >
+                    -
+                  </button>
+                  <span className="font-mono font-extrabold text-sm whitespace-nowrap text-blue-400 min-w-[45px] text-center">
+                    {c.fw_sup + c.fw_agr} / {c.max_wp}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onUpdateWp("fw_sup", 1)}
+                    disabled={c.fw_sup + c.fw_agr >= c.max_wp}
+                    className="w-6 h-6 flex items-center justify-center bg-muted rounded hover:bg-blue-600 hover:text-white transition-colors font-bold text-xs disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* Modo Completo V5: Superficial e Agravado */
+              <div className="flex gap-2 justify-center relative">
+                {c.fw_sup + c.fw_agr >= c.max_wp && (
+                  <div className="absolute inset-0 bg-destructive/10 pointer-events-none rounded"></div>
+                )}
+                <DmgBlock
+                  label="Superficial"
+                  value={c.fw_sup}
+                  onAdd={() => onUpdateWp("fw_sup", 1)}
+                  onSub={() => onUpdateWp("fw_sup", -1)}
+                />
+                <DmgBlock
+                  label="Agravado"
+                  value={c.fw_agr}
+                  onAdd={() => onUpdateWp("fw_agr", 1)}
+                  onSub={() => onUpdateWp("fw_agr", -1)}
+                  isAgr
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
