@@ -667,6 +667,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
   const [advantages, setAdvantages] = useState<PlayerAdvantage[]>([]);
   const [convictions, setConvictions] = useState<PlayerConviction[]>([]);
   const [spcs, setSpcs] = useCloudStorage<any[]>("v5_spcs", []);
+  const [relMap, setRelMap] = useCloudStorage<any[]>("v5_relationship_map", []);
 
   const isEditing = !!player;
 
@@ -1250,7 +1251,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
     setAdvantages((prev) => prev.filter((a) => a.id !== id));
   };
 
-  // Handlers de Convicções e Pilares (V5) com Seletor Duplo de NPCs
+  // Handlers de Convicções e Pilares (V5) com Integração em 3 Frentes (Convicção, Galeria de NPCs e Teia de Intrigas)
   const handleAddConviction = () => {
     setConvictions((prev) => [
       ...prev,
@@ -1272,6 +1273,25 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
     const npcName = targetNpc.name || targetNpc.nome || "NPC";
     const npcDesc = targetNpc.description || targetNpc.concept || targetNpc.conceito || "Pilar do Vampiro";
 
+    // Injeta/sincroniza nó na Teia de Intrigas (v5_relationship_map)
+    const existingRel = (relMap || []).find(
+      (r) => r && r.target_id === npcId && r.source_id === (form.id || player?.id)
+    );
+
+    if (!existingRel) {
+      const newRelNode = {
+        id: crypto.randomUUID(),
+        source_id: form.id || player?.id || "player_active",
+        source_name: form.character_name || player?.character_name || "Vampiro",
+        target_id: npcId,
+        target_name: npcName,
+        relation_type: "Touchstone",
+        label: `Pilar de Humanidade (${npcDesc})`,
+        status: targetNpc.status || "active",
+      };
+      setRelMap((prev) => [...(prev || []), newRelNode]);
+    }
+
     setConvictions((prev) =>
       prev.map((c) => {
         if (c.id !== convictionId) return c;
@@ -1285,45 +1305,67 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
         };
       })
     );
-    toast.success(`Pilar vinculado ao NPC "${npcName}".`);
+    toast.success(`Pilar vinculado ao NPC "${npcName}" e integrado à Teia de Intrigas!`);
   };
 
-  const handleCreateNewNpcForTouchstone = (cId: string, name: string, relation: string, initialStatus: "active" | "damaged" | "destroyed") => {
+  const handleCreateNewNpcForTouchstone = (
+    cId: string,
+    name: string,
+    relation: string,
+    initialStatus: "active" | "damaged" | "destroyed"
+  ) => {
     if (!name.trim()) {
       toast.error("Nome do Pilar/NPC é obrigatório.");
       return;
     }
 
     const newNpcId = crypto.randomUUID();
+    const cleanName = name.trim();
+    const cleanRelation = relation.trim() || "Pilar Mortal de Humanidade";
+
+    // 1. Injeção na Galeria Central de NPCs da Crônica (v5_spcs)
     const newNpc = {
       id: newNpcId,
-      name: name.trim(),
-      nome: name.trim(),
+      name: cleanName,
+      nome: cleanName,
       concept: "Pilar de Humanidade (Touchstone)",
-      description: relation.trim() || "Pilar Mortal de Humanidade",
+      description: cleanRelation,
       status: initialStatus || "active",
       is_touchstone: true,
+      player_id: form.id || player?.id,
+      player_name: form.character_name || player?.character_name || "Vampiro",
     };
-
-    // Salva o novo NPC na crônica
     setSpcs((prev) => [...(prev || []), newNpc]);
 
-    // Atualiza a convicção atrelando o npc_id
+    // 2. Injeção na Teia de Intrigas / Mapa de Relacionamento (v5_relationship_map)
+    const newRelNode = {
+      id: crypto.randomUUID(),
+      source_id: form.id || player?.id || "player_active",
+      source_name: form.character_name || player?.character_name || "Vampiro",
+      target_id: newNpcId,
+      target_name: cleanName,
+      relation_type: "Touchstone",
+      label: `Pilar de Humanidade (${cleanRelation})`,
+      status: initialStatus || "active",
+    };
+    setRelMap((prev) => [...(prev || []), newRelNode]);
+
+    // 3. Injeção no Objeto de Convicção da Ficha (convictions)
     setConvictions((prev) =>
       prev.map((c) => {
         if (c.id !== cId) return c;
         return {
           ...c,
           npc_id: newNpcId,
-          touchstone_name: name.trim(),
-          touchstone_relation: relation.trim(),
+          touchstone_name: cleanName,
+          touchstone_relation: cleanRelation,
           status: initialStatus,
           touchstone_type: "new",
         };
       })
     );
 
-    toast.success(`Novo NPC "${name.trim()}" criado na crônica e vinculado como Pilar!`);
+    toast.success(`NPC "${cleanName}" injetado na Galeria, na Teia de Intrigas e vinculado como Pilar!`);
   };
 
   const handleUpdateConviction = (id: string, field: keyof PlayerConviction, value: any) => {
@@ -1344,6 +1386,9 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
           setSpcs((spcList) =>
             (spcList || []).map((npc) => (npc && npc.id === c.npc_id ? { ...npc, status: value } : npc))
           );
+          setRelMap((relList) =>
+            (relList || []).map((r) => (r && r.target_id === c.npc_id ? { ...r, status: value } : r))
+          );
         }
         return updated;
       })
@@ -1351,6 +1396,10 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
   };
 
   const handleRemoveConviction = (id: string) => {
+    const targetConviction = convictions.find((c) => c.id === id);
+    if (targetConviction && targetConviction.npc_id) {
+      setRelMap((prev) => (prev || []).filter((r) => r.target_id !== targetConviction.npc_id));
+    }
     setConvictions((prev) => prev.filter((c) => c.id !== id));
   };
 
