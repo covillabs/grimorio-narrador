@@ -224,7 +224,7 @@ export const V5_DISCIPLINE_POWERS: Record<string, Record<number, string[]>> = {
   },
 };
 
-// Lista das 27 Perícias Oficiais V5
+// Lista Oficial das 27 Perícias Oficiais V5 (Divididas em 3 Blocos de 9)
 export const V5_SKILLS_LIST = {
   fisicas: [
     { key: "atletismo", label: "Atletismo" },
@@ -235,30 +235,37 @@ export const V5_SKILLS_LIST = {
     { key: "armas_brancas", label: "Armas Brancas" },
     { key: "oficios", label: "Ofícios" },
     { key: "sobrevivencia", label: "Sobrevivência" },
-    { key: "ladragem", label: "Ladragem" },
+    { key: "larcenia", label: "Larcênia" },
   ],
   sociais: [
     { key: "empatia", label: "Empatia" },
-    { key: "expressao", label: "Expressão" },
+    { key: "etiqueta", label: "Etiqueta" },
     { key: "intimidacao", label: "Intimidação" },
     { key: "lideranca", label: "Liderança" },
     { key: "manha", label: "Manha" },
-    { key: "labia", label: "Lábia" },
     { key: "performance", label: "Performance" },
     { key: "persuasao", label: "Persuasão" },
+    { key: "subterfugio", label: "Subterfúgio" },
     { key: "trato_animais", label: "Trato c/ Animais" },
   ],
   mentais: [
+    { key: "academismo", label: "Academismo" },
     { key: "ciencias", label: "Ciências" },
-    { key: "erudicao", label: "Erudição" },
     { key: "financas", label: "Finanças" },
     { key: "investigacao", label: "Investigação" },
     { key: "medicina", label: "Medicina" },
     { key: "ocultismo", label: "Ocultismo" },
-    { key: "tecnologia", label: "Tecnologia" },
     { key: "percepcao", label: "Percepção" },
     { key: "politica", label: "Política" },
+    { key: "tecnologia", label: "Tecnologia" },
   ],
+};
+
+const SKILL_KEY_ALIASES: Record<string, string> = {
+  ladragem: "larcenia",
+  expressao: "etiqueta",
+  labia: "subterfugio",
+  erudicao: "academismo",
 };
 
 // Limites Oficiais de Potência de Sangue por Geração (V5)
@@ -533,9 +540,10 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
     }
   };
 
-  // Helper para Perícias + Especializações com Gasto Direto de XP (Novo Nível x 3 XP / Especialização = 3 XP)
+  // Helper para Perícias + Especializações com Compatibilidade Retroativa e Gasto Direto de XP
   const getSkillData = (key: string) => {
-    const raw = form.skills?.[key];
+    const aliasKey = SKILL_KEY_ALIASES[key] || key;
+    const raw = form.skills?.[key] || form.skills?.[aliasKey];
     if (typeof raw === "number") return { nivel: raw, especializacao: "" };
     if (raw && typeof raw === "object") {
       const spec = Array.isArray(raw.especializacao) ? raw.especializacao.join(", ") : raw.especializacao || "";
@@ -935,7 +943,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
             <div className="border-t border-border/60 pt-4 space-y-3">
               <div className="flex items-center justify-between">
                 <Label className="text-sm font-semibold flex items-center gap-1.5 font-serif text-primary">
-                  <Sparkles className="w-4 h-4" /> Atributos (V5)
+                  <Sparkles className="w-4 h-4" /> Atributos Oficiais V5 (3 Categorias de 3)
                 </Label>
                 <span className="text-[11px] text-muted-foreground italic">1 a 5 pontos</span>
               </div>
@@ -1060,7 +1068,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                     <Zap className="w-3.5 h-3.5" /> Vontade (Máx: {calculatedWillpowerMax})
                   </Label>
                   <span className="text-[10px] font-mono text-muted-foreground">
-                    (Comp {form.compostura || 1} + Pers {form.perseveranca || 1})
+                    (Compostura {form.compostura || 1} + Perseverança {form.perseveranca || 1})
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
@@ -1211,13 +1219,13 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
               )}
             </div>
 
-            {/* Seção 2: Perícias V5 + Especializações */}
+            {/* Seção 2: Perícias V5 + Especializações (27 Perícias Oficiais em 3 Blocos de 9) */}
             <div className="border-t border-border/60 pt-4">
               <Accordion type="single" collapsible className="border border-border/50 rounded-lg px-3 bg-muted/10">
                 <AccordionItem value="skills" className="border-none">
                   <AccordionTrigger className="text-sm font-semibold hover:no-underline py-3">
                     <span className="flex items-center gap-2 font-serif text-primary">
-                      <Award className="w-4 h-4" /> Perícias Oficiais V5 & Especializações (27 Perícias)
+                      <Award className="w-4 h-4" /> Perícias Oficiais V5 & Especializações (27 Perícias: 9 Físicas, 9 Sociais, 9 Mentais)
                     </span>
                   </AccordionTrigger>
                   <AccordionContent className="pt-2">
@@ -1225,7 +1233,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                       {/* Físicas */}
                       <div className="space-y-3">
                         <span className="text-xs font-bold text-blood uppercase tracking-wider block border-b border-blood/20 pb-1">
-                          Perícias Físicas
+                          Perícias Físicas (9)
                         </span>
                         {V5_SKILLS_LIST.fisicas.map((s) => {
                           const skillData = getSkillData(s.key);
@@ -1256,7 +1264,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                       {/* Sociais */}
                       <div className="space-y-3">
                         <span className="text-xs font-bold text-amber-400 uppercase tracking-wider block border-b border-amber-400/20 pb-1">
-                          Perícias Sociais
+                          Perícias Sociais (9)
                         </span>
                         {V5_SKILLS_LIST.sociais.map((s) => {
                           const skillData = getSkillData(s.key);
@@ -1287,7 +1295,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                       {/* Mentais */}
                       <div className="space-y-3">
                         <span className="text-xs font-bold text-blue-400 uppercase tracking-wider block border-b border-blue-400/20 pb-1">
-                          Perícias Mentais
+                          Perícias Mentais (9)
                         </span>
                         {V5_SKILLS_LIST.mentais.map((s) => {
                           const skillData = getSkillData(s.key);
