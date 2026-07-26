@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useCloudStorage } from "@/hooks/useCloudStorage";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +10,7 @@ import { HungerTracker } from "@/components/HungerTracker";
 import { HumanityTracker } from "@/components/HumanityTracker";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, Plus, Sparkles, Award, BookOpen, ShieldAlert, Heart, Zap, ShieldCheck, Flame, Layers, Skull, Crosshair } from "lucide-react";
+import { Trash2, Plus, Sparkles, Award, BookOpen, ShieldAlert, Heart, Zap, ShieldCheck, Flame, Layers, Skull, Crosshair, UserCheck, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -35,6 +36,8 @@ export interface PlayerConviction {
   touchstone_name: string;
   touchstone_relation: string;
   status: "active" | "damaged" | "destroyed";
+  npc_id?: string;
+  touchstone_type?: "existing" | "new";
 }
 
 export interface V5MeritCatalogItem {
@@ -663,6 +666,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
   const [disciplines, setDisciplines] = useState<PlayerDiscipline[]>([]);
   const [advantages, setAdvantages] = useState<PlayerAdvantage[]>([]);
   const [convictions, setConvictions] = useState<PlayerConviction[]>([]);
+  const [spcs, setSpcs] = useCloudStorage<any[]>("v5_spcs", []);
 
   const isEditing = !!player;
 
@@ -700,7 +704,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       }
       setAdvantages(parsedAdvantages);
 
-      // 3. Parsing de Convicções e Pilares (V5)
+      // 3. Parsing de Convicções e Pilares (V5) com npc_id
       let parsedConvictions: PlayerConviction[] = [];
       if (Array.isArray(player.convictions)) {
         parsedConvictions = player.convictions.map((c: any) => ({
@@ -709,6 +713,8 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
           touchstone_name: c.touchstone_name || c.pilar_nome || "",
           touchstone_relation: c.touchstone_relation || c.pilar_relacao || "",
           status: c.status || "active",
+          npc_id: c.npc_id,
+          touchstone_type: c.touchstone_type || (c.npc_id ? "existing" : "new"),
         }));
       }
       setConvictions(parsedConvictions);
@@ -1244,7 +1250,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
     setAdvantages((prev) => prev.filter((a) => a.id !== id));
   };
 
-  // Handlers de Convicções e Pilares (V5)
+  // Handlers de Convicções e Pilares (V5) com Seletor Duplo de NPCs
   const handleAddConviction = () => {
     setConvictions((prev) => [
       ...prev,
@@ -1254,8 +1260,70 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
         touchstone_name: "",
         touchstone_relation: "",
         status: "active",
+        touchstone_type: (spcs || []).length > 0 ? "existing" : "new",
       },
     ]);
+  };
+
+  const handleSelectExistingNpcForTouchstone = (convictionId: string, npcId: string) => {
+    const targetNpc = (spcs || []).find((n) => n && n.id === npcId);
+    if (!targetNpc) return;
+
+    const npcName = targetNpc.name || targetNpc.nome || "NPC";
+    const npcDesc = targetNpc.description || targetNpc.concept || targetNpc.conceito || "Pilar do Vampiro";
+
+    setConvictions((prev) =>
+      prev.map((c) => {
+        if (c.id !== convictionId) return c;
+        return {
+          ...c,
+          npc_id: targetNpc.id,
+          touchstone_name: npcName,
+          touchstone_relation: npcDesc,
+          status: targetNpc.status || c.status || "active",
+          touchstone_type: "existing",
+        };
+      })
+    );
+    toast.success(`Pilar vinculado ao NPC "${npcName}".`);
+  };
+
+  const handleCreateNewNpcForTouchstone = (cId: string, name: string, relation: string, initialStatus: "active" | "damaged" | "destroyed") => {
+    if (!name.trim()) {
+      toast.error("Nome do Pilar/NPC é obrigatório.");
+      return;
+    }
+
+    const newNpcId = crypto.randomUUID();
+    const newNpc = {
+      id: newNpcId,
+      name: name.trim(),
+      nome: name.trim(),
+      concept: "Pilar de Humanidade (Touchstone)",
+      description: relation.trim() || "Pilar Mortal de Humanidade",
+      status: initialStatus || "active",
+      is_touchstone: true,
+    };
+
+    // Salva o novo NPC na crônica
+    setSpcs((prev) => [...(prev || []), newNpc]);
+
+    // Atualiza a convicção atrelando o npc_id
+    setConvictions((prev) =>
+      prev.map((c) => {
+        if (c.id !== cId) return c;
+        return {
+          ...c,
+          npc_id: newNpcId,
+          touchstone_name: name.trim(),
+          touchstone_relation: relation.trim(),
+          status: initialStatus,
+          touchstone_type: "new",
+        };
+      })
+    );
+
+    toast.success(`Novo NPC "${name.trim()}" criado na crônica e vinculado como Pilar!`);
   };
 
   const handleUpdateConviction = (id: string, field: keyof PlayerConviction, value: any) => {
@@ -1269,7 +1337,16 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       }
     }
     setConvictions((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, [field]: value } : c))
+      prev.map((c) => {
+        if (c.id !== id) return c;
+        const updated = { ...c, [field]: value };
+        if (field === "status" && c.npc_id) {
+          setSpcs((spcList) =>
+            (spcList || []).map((npc) => (npc && npc.id === c.npc_id ? { ...npc, status: value } : npc))
+          );
+        }
+        return updated;
+      })
     );
   };
 
@@ -2321,38 +2398,149 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                                 : "bg-surface-container-low border-border/50"
                             }`}
                           >
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                              <div>
-                                <Label className="text-[10px] text-muted-foreground font-semibold">Convicção (Moral)</Label>
-                                <Input
-                                  placeholder="Ex: Nunca ferir um inocente..."
-                                  value={c.conviction}
-                                  onChange={(e) => handleUpdateConviction(c.id, "conviction", e.target.value)}
-                                  className="h-7 text-xs bg-background"
-                                />
-                              </div>
-                              <div>
-                                <Label className="text-[10px] text-muted-foreground font-semibold">Pilar (Mortal Âncora)</Label>
-                                <Input
-                                  placeholder="Ex: Maria (Irmã) - Enfermeira..."
-                                  value={c.touchstone_name}
-                                  onChange={(e) => handleUpdateConviction(c.id, "touchstone_name", e.target.value)}
-                                  className="h-7 text-xs bg-background"
-                                />
-                              </div>
+                            {/* Campo de Convicção Moral */}
+                            <div>
+                              <Label className="text-[10px] text-muted-foreground font-semibold">Convicção (Moral)</Label>
+                              <Input
+                                placeholder="Ex: Nunca ferir um inocente..."
+                                value={c.conviction}
+                                onChange={(e) => handleUpdateConviction(c.id, "conviction", e.target.value)}
+                                className="h-7 text-xs bg-background"
+                              />
                             </div>
 
-                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pt-1 border-t border-border/30">
-                              <div className="flex-1 w-full">
-                                <Input
-                                  placeholder="Relação / Notas do Pilar..."
-                                  value={c.touchstone_relation}
-                                  onChange={(e) => handleUpdateConviction(c.id, "touchstone_relation", e.target.value)}
-                                  className="h-6 text-[10px] bg-background"
-                                />
+                            {/* Seletor Duplo de Pilar: Selecionar Existente vs Criar Novo NPC */}
+                            <div className="p-2 bg-background/60 border border-border/30 rounded space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[11px] font-bold text-amber-400 flex items-center gap-1 font-serif">
+                                  <UserCheck className="w-3.5 h-3.5" /> Pilar / Âncora Mortal (NPC)
+                                </span>
+                                <div className="flex items-center gap-1 text-[10px]">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setConvictions((prev) =>
+                                        prev.map((item) =>
+                                          item.id === c.id ? { ...item, touchstone_type: "existing" } : item
+                                        )
+                                      )
+                                    }
+                                    className={`px-2 py-0.5 rounded font-semibold transition-colors ${
+                                      c.touchstone_type !== "new"
+                                        ? "bg-primary text-primary-foreground font-bold"
+                                        : "bg-muted/40 text-muted-foreground hover:bg-muted"
+                                    }`}
+                                  >
+                                    Selecionar Existente
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setConvictions((prev) =>
+                                        prev.map((item) =>
+                                          item.id === c.id ? { ...item, touchstone_type: "new" } : item
+                                        )
+                                      )
+                                    }
+                                    className={`px-2 py-0.5 rounded font-semibold transition-colors ${
+                                      c.touchstone_type === "new"
+                                        ? "bg-primary text-primary-foreground font-bold"
+                                        : "bg-muted/40 text-muted-foreground hover:bg-muted"
+                                    }`}
+                                  >
+                                    Criar Novo NPC
+                                  </button>
+                                </div>
                               </div>
 
-                              <div className="flex items-center gap-2 self-end sm:self-auto">
+                              {c.touchstone_type !== "new" ? (
+                                <div className="space-y-1.5">
+                                  <Select
+                                    value={c.npc_id || ""}
+                                    onValueChange={(npcId) => handleSelectExistingNpcForTouchstone(c.id, npcId)}
+                                  >
+                                    <SelectTrigger className="h-7 text-xs bg-background font-semibold w-full">
+                                      <SelectValue placeholder="Vincular a NPC existente da crônica..." />
+                                    </SelectTrigger>
+                                    <SelectContent className="max-h-44">
+                                      {(spcs || []).length === 0 ? (
+                                        <SelectItem value="none" disabled className="text-xs">
+                                          Nenhum NPC cadastrado na crônica
+                                        </SelectItem>
+                                      ) : (
+                                        (spcs || []).map((npc) => (
+                                          <SelectItem key={npc.id} value={npc.id} className="text-xs">
+                                            👥 {npc.name || npc.nome} ({npc.concept || npc.description || "NPC"})
+                                          </SelectItem>
+                                        ))
+                                      )}
+                                    </SelectContent>
+                                  </Select>
+
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <Input
+                                      placeholder="Nome do Pilar..."
+                                      value={c.touchstone_name}
+                                      onChange={(e) => handleUpdateConviction(c.id, "touchstone_name", e.target.value)}
+                                      className="h-6 text-[10px] bg-background"
+                                    />
+                                    <Input
+                                      placeholder="Relação / Papel no jogo..."
+                                      value={c.touchstone_relation}
+                                      onChange={(e) => handleUpdateConviction(c.id, "touchstone_relation", e.target.value)}
+                                      className="h-6 text-[10px] bg-background"
+                                    />
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="space-y-2">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <div>
+                                      <Label className="text-[10px] text-muted-foreground font-semibold">Nome do Novo NPC</Label>
+                                      <Input
+                                        placeholder="Ex: Maria (Irmã mortal)..."
+                                        value={c.touchstone_name}
+                                        onChange={(e) => handleUpdateConviction(c.id, "touchstone_name", e.target.value)}
+                                        className="h-7 text-xs bg-background"
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label className="text-[10px] text-muted-foreground font-semibold">Relação com o Vampiro</Label>
+                                      <Input
+                                        placeholder="Ex: Enfermeira do hospital..."
+                                        value={c.touchstone_relation}
+                                        onChange={(e) => handleUpdateConviction(c.id, "touchstone_relation", e.target.value)}
+                                        className="h-7 text-xs bg-background"
+                                      />
+                                    </div>
+                                  </div>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() =>
+                                      handleCreateNewNpcForTouchstone(
+                                        c.id,
+                                        c.touchstone_name,
+                                        c.touchstone_relation,
+                                        c.status || "active"
+                                      )
+                                    }
+                                    className="h-6 text-[10px] bg-background border-amber-500/40 text-amber-300 font-semibold gap-1"
+                                  >
+                                    <UserPlus className="w-3 h-3 text-amber-400" /> Cadastrar NPC na Crônica & Vincular
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Status e Ações */}
+                            <div className="flex items-center justify-between pt-1 border-t border-border/30">
+                              <span className="text-[10px] text-muted-foreground font-semibold">
+                                Status de Integridade:
+                              </span>
+
+                              <div className="flex items-center gap-2">
                                 <Select
                                   value={c.status || "active"}
                                   onValueChange={(val) => handleUpdateConviction(c.id, "status", val)}
