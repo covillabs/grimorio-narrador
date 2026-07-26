@@ -56,6 +56,21 @@ export interface V5SkillProfileInfo {
   description: string;
 }
 
+// Chaves Oficiais dos 9 Atributos V5
+export const V5_ATTRIBUTE_KEYS = [
+  "forca", "destreza", "vigor",
+  "carisma", "manipulacao", "compostura",
+  "inteligencia", "raciocinio", "perseveranca",
+] as const;
+
+// Limites Oficiais de Distribuição de Atributos V5 na Criação (1x4, 3x3, 4x2, 1x1)
+export const V5_ATTRIBUTE_LIMITS: Record<number, { max: number; label: string }> = {
+  4: { max: 1, label: "Melhor (4 Pts)" },
+  3: { max: 3, label: "Bons (3 Pts)" },
+  2: { max: 4, label: "Médios (2 Pts)" },
+  1: { max: 1, label: "Pior (1 Pt)" },
+};
+
 // Perfis Oficiais de Distribuição de Perícias V5 na Criação
 export const V5_SKILL_PROFILES: Record<string, V5SkillProfileInfo> = {
   JackOfAllTrades: {
@@ -484,6 +499,7 @@ const defaultPlayer = {
   hunger: 0, humanity: 7, stains: 0, blood_potency: 1,
   xp_total: 0, xp_spent: 0, clan_bane: "", predator_type: "", predator_specialty: "",
   skill_distribution_profile: "Balanced",
+  enforce_attr_limits: true,
   forca: 1, destreza: 1, vigor: 1,
   carisma: 1, manipulacao: 1, compostura: 1,
   inteligencia: 1, raciocinio: 1, perseveranca: 1,
@@ -724,6 +740,20 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
     return { nivel: 0, especializacao: "" };
   }
 
+  // Helper de Contagem Reativa de Distribuição de Atributos V5
+  function getAttributeDistributionCounts() {
+    const counts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    V5_ATTRIBUTE_KEYS.forEach((key) => {
+      const val = Number(form[key as keyof typeof form]) || 1;
+      if (val >= 1 && val <= 5) {
+        counts[val] = (counts[val] || 0) + 1;
+      }
+    });
+    return counts;
+  }
+
+  const attrDistributionCounts = getAttributeDistributionCounts();
+
   // Helper de Contagem Reativa de Distribuição de Perícias
   function getSkillDistributionCounts() {
     const counts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
@@ -763,10 +793,30 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
     }
   };
 
-  // Handler de Atributos com Gasto Direto de XP (Novo Nível x 5 XP)
+  // Handler de Atributos com Validação de Criação V5 e Gasto Direto de XP (Novo Nível x 5 XP)
   const setAttr = (field: string, newLevel: number) => {
     const oldLevel = Number(form[field as keyof typeof form]) || 1;
     if (newLevel !== oldLevel) {
+      if (form.enforce_attr_limits && newLevel > oldLevel && newLevel > 0) {
+        const currentCounts = getAttributeDistributionCounts();
+        const projectedCounts = { ...currentCounts };
+        if (oldLevel > 0) projectedCounts[oldLevel] = Math.max(0, (projectedCounts[oldLevel] || 0) - 1);
+        projectedCounts[newLevel] = (projectedCounts[newLevel] || 0) + 1;
+
+        if (newLevel === 5) {
+          toast.error("Na criação oficial do V5, nenhum atributo pode iniciar no Nível 5.");
+          return;
+        }
+
+        const limitInfo = V5_ATTRIBUTE_LIMITS[newLevel];
+        if (limitInfo && projectedCounts[newLevel] > limitInfo.max) {
+          toast.error(
+            `Limite do V5 atingido! Você só pode ter até ${limitInfo.max} atributo(s) no patamar "${limitInfo.label}".`
+          );
+          return;
+        }
+      }
+
       let costDelta = 0;
       if (newLevel > oldLevel) {
         for (let lvl = oldLevel + 1; lvl <= newLevel; lvl++) costDelta += lvl * 5;
@@ -1336,14 +1386,59 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
               </div>
             </div>
 
-            {/* Seção 1: Atributos V5 (9 Atributos Oficiais) */}
+            {/* Seção 1: Atributos V5 (9 Atributos Oficiais + Trava de Criação V5) */}
             <div className="border-t border-border/60 pt-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <Label className="text-sm font-semibold flex items-center gap-1.5 font-serif text-primary">
-                  <Sparkles className="w-4 h-4" /> Atributos Oficiais V5 (3 Categorias de 3)
-                </Label>
-                <span className="text-[11px] text-muted-foreground italic">1 a 5 pontos</span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <Label className="text-sm font-semibold flex items-center gap-1.5 font-serif text-primary">
+                    <Sparkles className="w-4 h-4" /> Atributos Oficiais V5 (3 Categorias de 3)
+                  </Label>
+                  <p className="text-[11px] text-muted-foreground">
+                    Criação V5: 1x4 (Melhor), 3x3 (Bons), 4x2 (Médios), 1x1 (Pior).
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant={form.enforce_attr_limits ? "secondary" : "outline"}
+                  size="sm"
+                  onClick={() => set("enforce_attr_limits", !form.enforce_attr_limits)}
+                  className="h-7 text-[10px] font-semibold uppercase tracking-wider"
+                >
+                  {form.enforce_attr_limits ? "Trava Criação V5: Ativa" : "Modo Livre / XP"}
+                </Button>
               </div>
+
+              {/* Resumo Dinâmico dos Limites de Atributos V5 */}
+              {form.enforce_attr_limits && (
+                <div className="p-2.5 bg-background/60 border border-border/40 rounded-lg grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[4, 3, 2, 1].map((lvl) => {
+                    const limitInfo = V5_ATTRIBUTE_LIMITS[lvl];
+                    const currentCount = attrDistributionCounts[lvl] || 0;
+                    const isFull = currentCount === limitInfo.max;
+                    const isOver = currentCount > limitInfo.max;
+
+                    return (
+                      <div
+                        key={lvl}
+                        className={`p-1.5 rounded text-center border text-xs ${
+                          isOver
+                            ? "bg-rose-950/30 border-rose-500/50 text-rose-400 font-bold"
+                            : isFull
+                            ? "bg-emerald-950/20 border-emerald-500/40 text-emerald-400 font-semibold"
+                            : "bg-muted/30 border-border/30 text-muted-foreground"
+                        }`}
+                      >
+                        <span className="text-[10px] block uppercase tracking-wider font-mono">
+                          {limitInfo.label}
+                        </span>
+                        <span className="text-xs font-bold font-mono">
+                          {currentCount} / {limitInfo.max}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/10 p-3 rounded-lg border border-border/40">
                 {/* Físicos */}
