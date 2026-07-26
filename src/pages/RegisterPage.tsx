@@ -91,7 +91,7 @@ export default function RegisterPage() {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 className="pl-9 bg-black/40 border-blood/20 focus-visible:ring-blood/50 placeholder:text-muted-foreground/30 h-12"
-                placeholder="arquitecto@dominio.com"
+                placeholder="email@google.com"
               />
             </div>
           </div>
@@ -137,13 +137,13 @@ export default function RegisterPage() {
               to="/login"
               className="text-xs text-muted-foreground hover:text-white transition-colors uppercase tracking-wider block mt-4"
             >
-              Já é um veterano? Entre agora
+              Já tem conta? Entre agora
             </Link>
           </div>
         </form>
 
         <p className="mt-8 text-[9px] uppercase tracking-[0.3em] text-muted-foreground/40 font-mono">
-          Guiado pelas Sombras • Nunca perdido
+         By COVIL LABS © 2026
         </p>
       </div>
     </div>

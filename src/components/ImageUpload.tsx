@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { Upload, X } from "lucide-react";
 import { uploadImage } from "@/lib/supabase-helpers";
+import { toast } from "sonner";
 
 interface ImageUploadProps {
   currentUrl?: string | null;
@@ -20,15 +21,20 @@ export function ImageUpload({ currentUrl, folder, onUpload, onRemove, className 
 
     setUploading(true);
     const url = await uploadImage(file, folder);
-    if (url) onUpload(url);
+    if (url) {
+      onUpload(url);
+      toast.success("Imagem enviada com sucesso!");
+    } else {
+      toast.error("Erro ao enviar imagem. Verifique se o Supabase está configurado corretamente.");
+    }
     setUploading(false);
   };
 
   return (
     <div className={`relative group ${className}`}>
       {currentUrl ? (
-        <div className="relative">
-          <img src={currentUrl} alt="" className="w-full h-full object-cover rounded-md" />
+        <div className="relative w-full h-full overflow-hidden rounded-md flex items-center justify-center bg-black/50 border border-border/40">
+          <img src={currentUrl} alt="" className="w-full h-full object-contain p-1 rounded-md" />
           <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 rounded-md">
             <button
               type="button"

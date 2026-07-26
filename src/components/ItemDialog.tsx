@@ -43,9 +43,21 @@ export function ItemDialog({ open, onOpenChange, item, onDelete, players, npcs, 
       return;
     }
 
+    let ownerName = form.owner || "";
+    if (form.owner_type === "player" && form.owner_id) {
+      const p = players.find((x) => x.id === form.owner_id);
+      if (p) ownerName = p.character_name;
+    } else if (form.owner_type === "npc" && form.owner_id) {
+      const n = npcs.find((x) => x.id === form.owner_id);
+      if (n) ownerName = n.name;
+    } else if (!form.owner_type) {
+      ownerName = "Ninguém";
+    }
+
     const payload = {
       ...form,
       id: isEditing ? item.id : "it_" + crypto.randomUUID(),
+      owner: ownerName,
       owner_type: form.owner_type || null,
       owner_id: form.owner_id || null,
     };

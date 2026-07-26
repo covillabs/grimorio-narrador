@@ -17,16 +17,43 @@ interface NpcDialogProps {
   onOpenChange: (open: boolean) => void;
   npc?: any;
   onDelete?: (id: string) => void;
+  onSave?: (data: any) => void;
 }
 
+const CATEGORY_OPTIONS = [
+  "Camarilla",
+  "Sabá",
+  "Anarquistas",
+  "Independentes",
+  "Humanos",
+  "Carniçais",
+  "Lupinos",
+  "Outro"
+];
+
+const ROLE_OPTIONS = [
+  "Nenhum",
+  "Príncipe / Arcebispo",
+  "Senescal",
+  "Primogênito",
+  "Xerife / Templário",
+  "Harpia",
+  "Algoz / Carrasco",
+  "Guardião do Elysium",
+  "Barão",
+  "Membro Comum",
+  "Sangue Fraco",
+];
+
 const defaultNpc = {
-  name: "", species_faction: "", clan: "", status: "Vivo" as const,
+  name: "", category: "Camarilla", role: "Nenhum", clan: "", status: "Vivo" as const,
   appearance: "", history: "", motivations: "", master_secrets: "",
   physical_pool: 4, social_pool: 4, mental_pool: 4, specialties: "",
   blood_potency: 0, disciplines: "", health: 7, image_url: "",
+  species_faction: "", // backward compatibility
 };
 
-export function NpcDialog({ open, onOpenChange, npc, onDelete }: NpcDialogProps) {
+export function NpcDialog({ open, onOpenChange, npc, onDelete, onSave }: NpcDialogProps) {
   const [form, setForm] = useState(defaultNpc);
   const queryClient = useQueryClient();
   const isEditing = !!npc;
@@ -38,6 +65,10 @@ export function NpcDialog({ open, onOpenChange, npc, onDelete }: NpcDialogProps)
 
   const mutation = useMutation({
     mutationFn: async (data: typeof form) => {
+      if (onSave) {
+        onSave(data);
+        return;
+      }
       if (isEditing) {
         const { error } = await supabase.from("npcs").update(data).eq("id", npc.id);
         if (error) throw error;
@@ -47,9 +78,11 @@ export function NpcDialog({ open, onOpenChange, npc, onDelete }: NpcDialogProps)
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["npcs"] });
-      toast.success(isEditing ? "NPC atualizado." : "NPC criado.");
-      onOpenChange(false);
+      if (!onSave) {
+        queryClient.invalidateQueries({ queryKey: ["npcs"] });
+        toast.success(isEditing ? "NPC atualizado." : "NPC criado.");
+        onOpenChange(false);
+      }
     },
     onError: (e) => toast.error(e.message),
   });
@@ -58,7 +91,7 @@ export function NpcDialog({ open, onOpenChange, npc, onDelete }: NpcDialogProps)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh]">
+      <DialogContent className="max-w-3xl max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="font-serif">{isEditing ? "Editar NPC" : "Novo NPC"}</DialogTitle>
         </DialogHeader>
@@ -67,14 +100,30 @@ export function NpcDialog({ open, onOpenChange, npc, onDelete }: NpcDialogProps)
             <div className="flex gap-4">
               <ImageUpload currentUrl={form.image_url || null} folder="npcs" onUpload={(url) => set("image_url", url)} onRemove={() => set("image_url", "")} className="w-24 h-24 flex-shrink-0" />
               <div className="flex-1 space-y-3">
-                <div>
-                  <Label>Nome *</Label>
-                  <Input value={form.name} onChange={(e) => set("name", e.target.value)} required />
-                </div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label>Espécie/Facção</Label>
-                    <Input value={form.species_faction} onChange={(e) => set("species_faction", e.target.value)} />
+                    <Label>Nome *</Label>
+                    <Input value={form.name} onChange={(e) => set("name", e.target.value)} required />
+                  </div>
+                  <div>
+                    <Label>Categoria / Seita</Label>
+                    <Select value={form.category || "Camarilla"} onValueChange={(v) => set("category", v)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {CATEGORY_OPTIONS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-4 gap-3">
+                  <div className="col-span-2">
+                    <Label>Cargo / Título</Label>
+                    <Select value={form.role || "Nenhum"} onValueChange={(v) => set("role", v)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {ROLE_OPTIONS.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
                     <Label>Clã</Label>
@@ -90,6 +139,11 @@ export function NpcDialog({ open, onOpenChange, npc, onDelete }: NpcDialogProps)
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+                {/* Facção antiga opcional, para não quebrar compatibilidade ou permitir texto livre extra */}
+                <div>
+                  <Label>Detalhes (Ex: Raça, Alcunha, Faccão Específica)</Label>
+                  <Input value={form.species_faction} onChange={(e) => set("species_faction", e.target.value)} placeholder="Ex: Criança da Noite, Algoz de Prince..." />
                 </div>
               </div>
             </div>

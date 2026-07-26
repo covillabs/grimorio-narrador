@@ -59,7 +59,7 @@ export default function LoginPage() {
         <div className="w-16 h-0.5 bg-gradient-to-r from-transparent via-blood to-transparent mb-6"></div>
         
         <p className="text-muted-foreground/80 text-sm leading-relaxed mb-6 tracking-wide">
-          Acesso restrito para Arquitetos de Crônicas.
+          Acesso restrito para Narradores.
         </p>
 
         <form onSubmit={async (e) => {
@@ -86,7 +86,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 className="pl-9 bg-black/40 border-blood/20 focus-visible:ring-blood/50 placeholder:text-muted-foreground/30 h-12"
-                placeholder="arquitecto@dominio.com"
+                placeholder="email@google.com"
               />
             </div>
           </div>

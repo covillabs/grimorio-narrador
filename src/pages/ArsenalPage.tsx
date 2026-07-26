@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useCloudStorage } from "@/hooks/useCloudStorage";
-import { Plus, Crosshair, Sparkles, ScrollText, UserSearch, AlertTriangle, UserPlus } from "lucide-react";
+import { Plus, Crosshair, Sparkles, ScrollText, UserSearch, AlertTriangle, UserPlus, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -8,10 +8,11 @@ import { toast } from "sonner";
 import { ItemDialog } from "@/components/ItemDialog";
 import { getPrefixedKey } from "@/components/ChronicleSwitcher";
 
-const CATEGORIES = ["Arma", "Ferramenta", "Artefato", "Documento"];
+const CATEGORIES = ["Arma", "Ferramenta de Investigação", "Artefato Místico", "Documento"];
 
 export default function ArsenalPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<any | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [coterieNames, setCoterieNames] = useState<string[]>([]);
   const [coterie, setCoterie] = useState<any[]>([]);
@@ -41,6 +42,7 @@ export default function ArsenalPage() {
       if (exists) return prev.map(i => i.id === itemData.id ? itemData : i);
       return [...prev, itemData];
     });
+    toast.success(editingItem ? "Item atualizado com sucesso!" : "Novo item criado!");
   };
 
   const handleAssignOwner = (itemId: string, newOwner: string) => {
@@ -48,11 +50,34 @@ export default function ArsenalPage() {
     toast.success(`Artefato transferido para ${newOwner}`);
   };
 
+  const getOwnerDisplay = (item: any) => {
+    if (item.owner && item.owner !== "Ninguém") return item.owner;
+    if (item.owner_type === "player" && item.owner_id) {
+      const p = coterie.find((c) => c.id === item.owner_id);
+      if (p) return p.character_name;
+    }
+    if (item.owner_type === "npc" && item.owner_id) {
+      const n = npcs.find((n) => n.id === item.owner_id);
+      if (n) return n.name;
+    }
+    return item.owner || "Ninguém";
+  };
+
+  const allOwnerOptions = Array.from(
+    new Set([
+      "Ninguém",
+      ...coterieNames,
+      ...coterie.map((p) => p.character_name).filter(Boolean),
+      ...npcs.map((n) => n.name).filter(Boolean),
+    ])
+  );
+
   const filtered = items.filter((item) => categoryFilter === "all" || item.category === categoryFilter);
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
       case "Arma": return <Crosshair className="w-3 h-3 mr-1" />;
+      case "Artefato Místico":
       case "Artefato": return <Sparkles className="w-3 h-3 mr-1" />;
       case "Documento": return <ScrollText className="w-3 h-3 mr-1" />;
       default: return null;
@@ -62,6 +87,7 @@ export default function ArsenalPage() {
   const getBadgeVariant = (category: string) => {
     switch (category) {
       case "Arma": return "destructive";
+      case "Artefato Místico":
       case "Artefato": return "default";
       case "Documento": return "secondary";
       default: return "outline";
@@ -80,7 +106,7 @@ export default function ArsenalPage() {
             <p className="text-muted-foreground mt-1 text-sm">Armamentos, artefatos e documentos vitais da Crônica</p>
           </div>
         </div>
-        <Button onClick={() => setDialogOpen(true)} className="gap-2">
+        <Button onClick={() => { setEditingItem(null); setDialogOpen(true); }} className="gap-2">
           <Plus className="w-4 h-4" /> Novo Objeto
         </Button>
       </div>
@@ -98,87 +124,106 @@ export default function ArsenalPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filtered.map((item) => (
-          <div
-            key={item.id}
-            className="bg-card border border-border rounded-lg overflow-hidden hover:border-primary/50 transition-colors group flex flex-col relative"
-          >
-            {/* Header Image */}
-            <div className="h-48 bg-muted relative overflow-hidden">
-              <img 
-                src={item.image_url} 
-                alt={item.name} 
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent"></div>
-              
-              <div className="absolute top-3 left-3">
-                <Badge variant={getBadgeVariant(item.category)} className="text-[10px] uppercase tracking-widest shadow-lg flex items-center">
-                  {getCategoryIcon(item.category)}
-                  {item.category}
-                </Badge>
-              </div>
-            </div>
-
-            {/* Content Body */}
-            <div className="p-5 flex-1 flex flex-col space-y-4 relative -mt-6">
-              
-              <h3 className="font-serif font-bold text-xl tracking-wide">{item.name}</h3>
-
-              <p className="text-sm text-muted-foreground leading-relaxed flex-1">
-                {item.description}
-              </p>
-
-              {/* Stats Box */}
-              <div className="bg-surface-container-low border border-border/50 rounded p-3 space-y-3">
+        {filtered.map((item) => {
+          const ownerDisplay = getOwnerDisplay(item);
+          return (
+            <div
+              key={item.id}
+              className="bg-card border border-border rounded-lg overflow-hidden hover:border-primary/50 transition-colors group flex flex-col relative"
+            >
+              {/* Header Image */}
+              <div className="h-48 bg-muted relative overflow-hidden flex items-center justify-center">
+                {item.image_url ? (
+                  <img 
+                    src={item.image_url} 
+                    alt={item.name} 
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                  />
+                ) : (
+                  <Crosshair className="w-12 h-12 text-muted-foreground/30" />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent"></div>
                 
-                {/* Mechanical Modifier */}
-                <div className="flex items-start gap-2">
-                  <AlertTriangle className="w-4 h-4 text-blood mt-0.5 opacity-80" />
-                  <div>
-                    <span className="block text-[10px] uppercase tracking-widest text-muted-foreground">Efeito Mecânico (V5)</span>
-                    <span className="text-xs font-bold text-blood tracking-wide">{item.modifier}</span>
-                    <p className="text-[10px] text-muted-foreground mt-1 hidden group-hover:block transition-all opacity-0 group-hover:opacity-100 animate-in fade-in">
-                      {item.mechanical_details}
-                    </p>
-                  </div>
+                <div className="absolute top-3 left-3">
+                  <Badge variant={getBadgeVariant(item.category)} className="text-[10px] uppercase tracking-widest shadow-lg flex items-center">
+                    {getCategoryIcon(item.category)}
+                    {item.category}
+                  </Badge>
                 </div>
 
-                <div className="h-[1px] w-full bg-border/40"></div>
+                {/* Edit Button */}
+                <div className="absolute top-3 right-3 z-10">
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="h-7 w-7 bg-background/80 hover:bg-background text-foreground backdrop-blur-sm border border-border/50"
+                    onClick={() => {
+                      setEditingItem(item);
+                      setDialogOpen(true);
+                    }}
+                    title="Editar Objeto"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              </div>
 
-                {/* Ownership */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <UserSearch className="w-4 h-4 text-primary opacity-80" />
+              {/* Content Body */}
+              <div className="p-5 flex-1 flex flex-col space-y-4 relative -mt-6">
+                
+                <h3 className="font-serif font-bold text-xl tracking-wide">{item.name}</h3>
+
+                <p className="text-sm text-muted-foreground leading-relaxed flex-1">
+                  {item.description || "Sem descrição."}
+                </p>
+
+                {/* Stats Box */}
+                <div className="bg-surface-container-low border border-border/50 rounded p-3 space-y-3">
+                  
+                  {/* Mechanical Modifier */}
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-blood mt-0.5 opacity-80" />
                     <div>
-                      <span className="block text-[10px] uppercase tracking-widest text-muted-foreground">Em Posse Atual de</span>
-                      <span className="text-xs font-semibold text-foreground">{item.owner}</span>
+                      <span className="block text-[10px] uppercase tracking-widest text-muted-foreground">Efeito Mecânico (V5)</span>
+                      <span className="text-xs font-bold text-blood tracking-wide">
+                        {item.rules_bonus || item.modifier || "Sem efeito mecânico registrado"}
+                      </span>
                     </div>
                   </div>
-                  
-                  {/* Select for Assignment */}
-                  <Select value={item.owner} onValueChange={(val) => handleAssignOwner(item.id, val)}>
-                    <SelectTrigger className="w-[110px] h-7 text-[10px] border-border bg-background">
-                       <UserPlus className="w-3 h-3 mr-1" /> Reatribuir
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Ninguém">Ninguém</SelectItem>
-                      <SelectItem value="Príncipe Sebastian">Príncipe Sebastian</SelectItem>
-                      <SelectItem value="Barão Zora">Barão Zora</SelectItem>
-                      {coterieNames.map(name => (
-                         <SelectItem key={name} value={name}>{name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
 
+                  <div className="h-[1px] w-full bg-border/40"></div>
+
+                  {/* Ownership */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <UserSearch className="w-4 h-4 text-primary opacity-80" />
+                      <div>
+                        <span className="block text-[10px] uppercase tracking-widest text-muted-foreground">Em Posse Atual de</span>
+                        <span className="text-xs font-semibold text-foreground">{ownerDisplay}</span>
+                      </div>
+                    </div>
+                    
+                    {/* Select for Assignment */}
+                    <Select value={ownerDisplay} onValueChange={(val) => handleAssignOwner(item.id, val)}>
+                      <SelectTrigger className="w-[110px] h-7 text-[10px] border-border bg-background">
+                         <UserPlus className="w-3 h-3 mr-1" /> Reatribuir
+                      </SelectTrigger>
+                      <SelectContent>
+                        {allOwnerOptions.map(name => (
+                           <SelectItem key={name} value={name}>{name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                </div>
               </div>
+              
+              {/* Ambient edge glow effect */}
+              <div className="absolute inset-0 border-2 border-transparent group-hover:border-primary/20 pointer-events-none rounded-lg transition-colors"></div>
             </div>
-            
-            {/* Ambient edge glow effect */}
-            <div className="absolute inset-0 border-2 border-transparent group-hover:border-primary/20 pointer-events-none rounded-lg transition-colors"></div>
-          </div>
-        ))}
+          );
+        })}
         
         {filtered.length === 0 && (
           <div className="col-span-full py-12 text-center">
@@ -190,6 +235,11 @@ export default function ArsenalPage() {
       <ItemDialog 
         open={dialogOpen} 
         onOpenChange={setDialogOpen} 
+        item={editingItem}
+        onDelete={(id) => {
+          setItems(prev => prev.filter(i => i.id !== id));
+          toast.success("Objeto removido com sucesso!");
+        }}
         onSave={saveItem}
         players={coterie}
         npcs={npcs}
