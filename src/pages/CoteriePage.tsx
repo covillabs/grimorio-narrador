@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useCloudStorage } from "@/hooks/useCloudStorage";
-import { Plus, Crosshair, Sparkles, Zap, Users } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Plus, Crosshair, Sparkles, Zap, Users, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HungerTracker } from "@/components/HungerTracker";
 import { HumanityTracker } from "@/components/HumanityTracker";
@@ -67,6 +68,30 @@ export default function CoteriePage() {
     }
   };
 
+  // Função para Atualização Rápida de Fome no Supabase (Quick Update)
+  const handleQuickHungerUpdate = async (playerId: string, newHunger: number) => {
+    // 1. Atualiza estado local instantaneamente
+    setPlayers((prev) =>
+      prev.map((p) => (p.id === playerId ? { ...p, hunger: newHunger } : p))
+    );
+
+    // 2. Dispara UPDATE assíncrono para o Supabase
+    try {
+      const { error } = await supabase
+        .from("players")
+        .update({ hunger: newHunger })
+        .eq("id", playerId);
+
+      if (error) {
+        console.error("Erro ao atualizar Fome no Supabase:", error);
+      } else {
+        toast.success(`Fome alterada para ${newHunger}.`);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const savePlayer = (playerData: any) => {
     setPlayers(prev => {
       const exists = prev.find(p => p.id === playerData.id);
@@ -93,7 +118,7 @@ export default function CoteriePage() {
     }
     const result = Math.floor(Math.random() * 10) + 1;
     if (result <= 5) {
-      updateTracker.mutate({ id: playerId, field: "hunger", value: currentHunger + 1 });
+      handleQuickHungerUpdate(playerId, currentHunger + 1);
       toast.error(`Falha! Tirou ${result} no Despertar. Fome aumentou.`);
     } else {
       toast.success(`Êxito! Tirou ${result}. O Sangue se manteve domado.`);
@@ -147,21 +172,9 @@ export default function CoteriePage() {
                   <p className="text-sm text-muted-foreground mb-2">
                     {[player.clan, player.player_name && `(${player.player_name})`].filter(Boolean).join(" ")}
                   </p>
-                  {/* Disciplines Container */}
-                  <div className="flex flex-wrap gap-1 mb-2">
-                    {CLAN_DISCIPLINES[player.clan]?.map((disc, idx) => (
-                      <div key={idx} className="group relative">
-                        <Badge variant="outline" className="text-[10px] cursor-help border-blood/50 text-blood hover:bg-blood hover:text-white transition-colors">
-                          {disc.name}
-                        </Badge>
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-[160px] p-2 bg-zinc-950 border border-blood rounded text-[10px] text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-[100] shadow-2xl">
-                          <Zap className="w-3 h-3 text-blood mb-1" />
-                          {disc.desc}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
                 </div>
+
+                {/* Trackers de Fome e Humanidade com Quick Update */}
                 <div className="flex items-center justify-between" onClick={(e) => e.stopPropagation()}>
                   <div>
                     <div className="flex items-center gap-2 mb-1">
@@ -173,7 +186,7 @@ export default function CoteriePage() {
                     <HungerTracker
                       value={player.hunger}
                       size="sm"
-                      onChange={(v) => updateTracker.mutate({ id: player.id, field: "hunger", value: v })}
+                      onChange={(v) => handleQuickHungerUpdate(player.id, v)}
                     />
                   </div>
                   <div>
@@ -186,8 +199,65 @@ export default function CoteriePage() {
                   </div>
                 </div>
 
+                {/* Métricas Vitais Discretas: Vitalidade e Vontade */}
+                <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-2 border-t border-border/30">
+                  <div className="flex items-center gap-1 font-mono">
+                    <Heart className="w-3 h-3 text-blood/80" />
+                    <span>Vitalidade:</span>
+                    <span className="font-bold text-foreground">
+                      {player.health_current ?? 7}/{player.health_max ?? 7}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 font-mono">
+                    <Brain className="w-3 h-3 text-blue-400/80" />
+                    <span>Vontade:</span>
+                    <span className="font-bold text-foreground">
+                      {player.willpower_current ?? 5}/{player.willpower_max ?? 5}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Seção de Disciplinas (Tags JSONB com Nome e Nível) */}
+                <div className="pt-2 border-t border-border/40 space-y-1.5">
+                  <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground block flex items-center gap-1">
+                    <Zap className="w-3 h-3 text-primary" /> Disciplinas
+                  </span>
+                  <div className="flex flex-wrap gap-1">
+                    {Array.isArray(player.disciplines) && player.disciplines.length > 0 ? (
+                      player.disciplines.map((disc: any, idx: number) => (
+                        <Badge
+                          key={disc.id || idx}
+                          variant="outline"
+                          className="text-[10px] bg-background/60 border-blood/40 text-blood font-semibold py-0.5 px-2"
+                        >
+                          {disc.nome || disc.name} {disc.nivel !== undefined ? disc.nivel : ""}
+                        </Badge>
+                      ))
+                    ) : CLAN_DISCIPLINES[player.clan]?.length ? (
+                      CLAN_DISCIPLINES[player.clan].map((disc, idx) => (
+                        <Badge
+                          key={idx}
+                          variant="outline"
+                          className="text-[10px] bg-background/60 border-border/60 text-muted-foreground py-0.5 px-2"
+                        >
+                          {disc.name}
+                        </Badge>
+                      ))
+                    ) : typeof player.disciplines === "string" && player.disciplines ? (
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] bg-background/60 border-blood/40 text-blood py-0.5 px-2"
+                      >
+                        {player.disciplines}
+                      </Badge>
+                    ) : (
+                      <span className="text-[10px] text-muted-foreground italic">Nenhuma disciplina cadastrada.</span>
+                    )}
+                  </div>
+                </div>
+
                 {/* Inventário do Jogador puxado do Arsenal */}
-                <div className="pt-3 border-t border-border mt-3">
+                <div className="pt-2 border-t border-border/40 mt-3">
                   <h4 className="text-[10px] uppercase font-bold text-muted-foreground mb-2 flex items-center gap-1">
                     <Sparkles className="w-3 h-3" /> Inventário Físico
                   </h4>
@@ -222,5 +292,27 @@ export default function CoteriePage() {
         onDelete={(id) => deletePlayer.mutate(id)}
       />
     </div>
+  );
+}
+
+function Brain(props: any) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z" />
+      <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z" />
+      <path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4" />
+      <path d="M17.599 6.5a3 3 0 0 0 .399-1.375" />
+    </svg>
   );
 }
