@@ -38,6 +38,9 @@ export interface PlayerConviction {
   status: "active" | "damaged" | "destroyed";
   npc_id?: string;
   touchstone_type?: "existing" | "new";
+  touchstone_seita?: string;
+  touchstone_clan?: string;
+  touchstone_title?: string;
 }
 
 export interface V5MeritCatalogItem {
@@ -1415,7 +1418,10 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
     cId: string,
     name: string,
     relation: string,
-    initialStatus: "active" | "damaged" | "destroyed"
+    initialStatus: "active" | "damaged" | "destroyed",
+    seita: string = "Mortal",
+    clan: string = "Mortal",
+    title: string = "Pilar"
   ) => {
     if (!name.trim()) {
       toast.error("Nome do Pilar/NPC é obrigatório.");
@@ -1425,13 +1431,20 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
     const newNpcId = crypto.randomUUID();
     const cleanName = name.trim();
     const cleanRelation = relation.trim() || "Pilar Mortal de Humanidade";
+    const cleanSeita = seita || "Mortal";
+    const cleanClan = clan || "Mortal";
+    const cleanTitle = title.trim() || "Pilar";
 
-    // 1. Injeção na Galeria Central de NPCs da Crônica (v5_spcs)
+    // 1. Injeção na Galeria Central de NPCs da Crônica (v5_spcs) com Estrutura Completa Simplificada
     const newNpc = {
       id: newNpcId,
       name: cleanName,
       nome: cleanName,
-      concept: "Pilar de Humanidade (Touchstone)",
+      seita: cleanSeita,
+      clan: cleanClan,
+      title: cleanTitle,
+      cargo: cleanTitle,
+      concept: `${cleanTitle} - Pilar de Humanidade`,
       description: cleanRelation,
       status: initialStatus || "active",
       is_touchstone: true,
@@ -1448,7 +1461,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       target_id: newNpcId,
       target_name: cleanName,
       relation_type: "Touchstone",
-      label: `Pilar de Humanidade (${cleanRelation})`,
+      label: `Pilar (${cleanTitle}: ${cleanRelation})`,
       status: initialStatus || "active",
     };
     setRelMap((prev) => [...(prev || []), newRelNode]);
@@ -1462,13 +1475,16 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
           npc_id: newNpcId,
           touchstone_name: cleanName,
           touchstone_relation: cleanRelation,
+          touchstone_seita: cleanSeita,
+          touchstone_clan: cleanClan,
+          touchstone_title: cleanTitle,
           status: initialStatus,
           touchstone_type: "new",
         };
       })
     );
 
-    toast.success(`NPC "${cleanName}" injetado na Galeria, na Teia de Intrigas e vinculado como Pilar!`);
+    toast.success(`NPC "${cleanName}" (${cleanClan}/${cleanSeita}) salvo na Galeria, na Teia de Intrigas e vinculado!`);
   };
 
   const handleUpdateConviction = (id: string, field: keyof PlayerConviction, value: any) => {
@@ -2668,27 +2684,81 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                                   </div>
                                 </div>
                               ) : (
-                                <div className="space-y-2">
+                                <div className="space-y-2.5 pt-1">
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     <div>
-                                      <Label className="text-[10px] text-muted-foreground font-semibold">Nome do Novo NPC</Label>
+                                      <Label className="text-[10px] text-muted-foreground font-semibold">Nome do NPC *</Label>
                                       <Input
-                                        placeholder="Ex: Maria (Irmã mortal)..."
+                                        placeholder="Ex: Maria Ramos..."
                                         value={c.touchstone_name}
                                         onChange={(e) => handleUpdateConviction(c.id, "touchstone_name", e.target.value)}
                                         className="h-7 text-xs bg-background"
                                       />
                                     </div>
                                     <div>
-                                      <Label className="text-[10px] text-muted-foreground font-semibold">Relação com o Vampiro</Label>
+                                      <Label className="text-[10px] text-muted-foreground font-semibold">Cargo / Título</Label>
                                       <Input
-                                        placeholder="Ex: Enfermeira do hospital..."
-                                        value={c.touchstone_relation}
-                                        onChange={(e) => handleUpdateConviction(c.id, "touchstone_relation", e.target.value)}
+                                        placeholder="Ex: Enfermeira Chefe / Contato..."
+                                        value={c.touchstone_title || ""}
+                                        onChange={(e) => handleUpdateConviction(c.id, "touchstone_title", e.target.value)}
                                         className="h-7 text-xs bg-background"
                                       />
                                     </div>
                                   </div>
+
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <div>
+                                      <Label className="text-[10px] text-muted-foreground font-semibold">Categoria / Seita</Label>
+                                      <Select
+                                        value={c.touchstone_seita || "Mortal"}
+                                        onValueChange={(val) => handleUpdateConviction(c.id, "touchstone_seita", val)}
+                                      >
+                                        <SelectTrigger className="h-7 text-xs bg-background font-semibold">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="Mortal" className="text-xs">Mortal</SelectItem>
+                                          <SelectItem value="Camarilla" className="text-xs">Camarilla</SelectItem>
+                                          <SelectItem value="Anarch" className="text-xs">Anarch</SelectItem>
+                                          <SelectItem value="Sabá" className="text-xs">Sabá</SelectItem>
+                                          <SelectItem value="Autárquico" className="text-xs">Autárquico</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                    <div>
+                                      <Label className="text-[10px] text-muted-foreground font-semibold">Clã / Tipo</Label>
+                                      <Select
+                                        value={c.touchstone_clan || "Mortal"}
+                                        onValueChange={(val) => handleUpdateConviction(c.id, "touchstone_clan", val)}
+                                      >
+                                        <SelectTrigger className="h-7 text-xs bg-background font-semibold">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="max-h-44">
+                                          <SelectItem value="Mortal" className="text-xs">Mortal</SelectItem>
+                                          <SelectItem value="Ghoul" className="text-xs">Ghoul / Lacaio</SelectItem>
+                                          <SelectItem value="Ventrue" className="text-xs">Ventrue</SelectItem>
+                                          <SelectItem value="Toreador" className="text-xs">Toreador</SelectItem>
+                                          <SelectItem value="Brujah" className="text-xs">Brujah</SelectItem>
+                                          <SelectItem value="Nosferatu" className="text-xs">Nosferatu</SelectItem>
+                                          <SelectItem value="Malkavian" className="text-xs">Malkavian</SelectItem>
+                                          <SelectItem value="Tremere" className="text-xs">Tremere</SelectItem>
+                                          <SelectItem value="Gangrel" className="text-xs">Gangrel</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  </div>
+
+                                  <div>
+                                    <Label className="text-[10px] text-muted-foreground font-semibold">Breve Descrição / Papel na Vida</Label>
+                                    <Input
+                                      placeholder="Ex: Irmã mortal que lembra o personagem de sua humanidade perdida..."
+                                      value={c.touchstone_relation}
+                                      onChange={(e) => handleUpdateConviction(c.id, "touchstone_relation", e.target.value)}
+                                      className="h-7 text-xs bg-background"
+                                    />
+                                  </div>
+
                                   <Button
                                     type="button"
                                     size="sm"
@@ -2698,12 +2768,15 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                                         c.id,
                                         c.touchstone_name,
                                         c.touchstone_relation,
-                                        c.status || "active"
+                                        c.status || "active",
+                                        c.touchstone_seita || "Mortal",
+                                        c.touchstone_clan || "Mortal",
+                                        c.touchstone_title || "Pilar"
                                       )
                                     }
-                                    className="h-6 text-[10px] bg-background border-amber-500/40 text-amber-300 font-semibold gap-1"
+                                    className="h-7 text-xs bg-background border-amber-500/40 text-amber-300 font-semibold gap-1.5 w-full justify-center"
                                   >
-                                    <UserPlus className="w-3 h-3 text-amber-400" /> Cadastrar NPC na Crônica & Vincular
+                                    <UserPlus className="w-3.5 h-3.5 text-amber-400" /> Salvar NPC na Galeria & Teia de Intrigas
                                   </Button>
                                 </div>
                               )}
