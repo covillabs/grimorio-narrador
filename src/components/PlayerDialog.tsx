@@ -1036,9 +1036,60 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
     }
   };
 
-  // Handlers de Disciplinas com Gasto Direto de XP (Clã = Nível x 5 / Caitiff ou Sangue-Fraco = Nível x 6 / Fora = Nível x 7)
+  // Helper de Cálculo de Orçamento Rígido de Disciplinas (V5: 2 Pts em Disciplinas do Clã, Máx Nível 2)
+  const getDisciplineBudgetSummary = () => {
+    const clanInfo = V5_CLANS_DATA[form.clan] || V5_CLANS_DATA["Ventrue"];
+    const clanDisciplines = clanInfo?.disciplines || [];
+    const isSpecialClan = form.clan === "Caitiff" || form.clan === "Sangue-Fraco";
+
+    let totalPointsSpent = 0;
+    let inClanPointsSpent = 0;
+    let outOfClanPointsSpent = 0;
+
+    disciplines.forEach((d) => {
+      const pts = d.nivel || 1;
+      totalPointsSpent += pts;
+      const isInClan = isSpecialClan || clanDisciplines.includes(d.nome);
+      if (isInClan) {
+        inClanPointsSpent += pts;
+      } else {
+        outOfClanPointsSpent += pts;
+      }
+    });
+
+    const maxCreationBudget = 2;
+    const remainingCreationBudget = maxCreationBudget - totalPointsSpent;
+
+    return {
+      totalPointsSpent,
+      inClanPointsSpent,
+      outOfClanPointsSpent,
+      maxCreationBudget,
+      remainingCreationBudget,
+      clanDisciplines,
+      isSpecialClan,
+    };
+  };
+
+  const discBudget = getDisciplineBudgetSummary();
+
+  // Handlers de Disciplinas com Trava de Criação V5 (2 Pts de Clã, Máx Nível 2)
   const handleAddDiscipline = () => {
-    const newDiscName = "Fortitude";
+    if (form.enforce_attr_limits !== false) {
+      if (discBudget.remainingCreationBudget <= 0) {
+        toast.error(
+          `Limite de Disciplinas de criação V5 atingido! Você possui 2 pontos de criação inicial (Já alocado: ${discBudget.totalPointsSpent}/2 Pts).`
+        );
+        return;
+      }
+    }
+
+    const clanInfo = V5_CLANS_DATA[form.clan] || V5_CLANS_DATA["Ventrue"];
+    const availableClanDisc = clanInfo?.disciplines?.find(
+      (cd) => !disciplines.some((d) => d.nome === cd)
+    );
+    const newDiscName = availableClanDisc || clanInfo?.disciplines?.[0] || "Fortitude";
+
     const multiplier = getV5DisciplineMultiplier(form.clan, newDiscName);
     const costDelta = 1 * multiplier;
 
@@ -1047,14 +1098,34 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       { id: crypto.randomUUID(), nome: newDiscName, nivel: 1, poderes: [""] },
     ]);
 
-    setForm((prev) => ({
-      ...prev,
-      xp_total: Math.max(0, (prev.xp_total || 0) - costDelta),
-      xp_spent: Math.max(0, (prev.xp_spent || 0) + costDelta),
-    }));
+    if (form.enforce_attr_limits === false) {
+      setForm((prev) => ({
+        ...prev,
+        xp_total: Math.max(0, (prev.xp_total || 0) - costDelta),
+        xp_spent: Math.max(0, (prev.xp_spent || 0) + costDelta),
+      }));
+    }
   };
 
   const handleUpdateDisciplineName = (id: string, newNome: string) => {
+    const targetDisc = disciplines.find((d) => d.id === id);
+    if (!targetDisc) return;
+
+    if (form.enforce_attr_limits !== false) {
+      const clanInfo = V5_CLANS_DATA[form.clan] || V5_CLANS_DATA["Ventrue"];
+      const isSpecialClan = form.clan === "Caitiff" || form.clan === "Sangue-Fraco";
+      const isInClan = isSpecialClan || (clanInfo?.disciplines || []).includes(newNome);
+
+      if (!isInClan) {
+        toast.error(
+          `Na criação inicial do V5, os 2 pontos de Disciplina devem ser gastos exclusivamente nas Disciplinas do seu Clã (${(
+            clanInfo?.disciplines || []
+          ).join(", ")}).`
+        );
+        return;
+      }
+    }
+
     setDisciplines((prev) =>
       prev.map((d) => {
         if (d.id !== id) return d;
@@ -1071,6 +1142,36 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
     const oldNivel = targetDisc.nivel;
 
     if (clamped !== oldNivel) {
+      if (form.enforce_attr_limits !== false) {
+        const clanInfo = V5_CLANS_DATA[form.clan] || V5_CLANS_DATA["Ventrue"];
+        const isSpecialClan = form.clan === "Caitiff" || form.clan === "Sangue-Fraco";
+        const isInClan = isSpecialClan || (clanInfo?.disciplines || []).includes(targetDisc.nome);
+
+        if (!isInClan && clamped > oldNivel) {
+          toast.error(
+            `Na criação inicial do V5, apenas Disciplinas do Clã (${(
+              clanInfo?.disciplines || []
+            ).join(", ")}) podem receber pontos.`
+          );
+          return;
+        }
+
+        if (clamped > 2) {
+          toast.error(
+            `Trava V5: Na criação inicial do V5, nenhuma disciplina pode ultrapassar o Nível 2.`
+          );
+          return;
+        }
+
+        const deltaNivel = clamped - oldNivel;
+        if (deltaNivel > 0 && discBudget.totalPointsSpent + deltaNivel > 2) {
+          toast.error(
+            `Estouro do Orçamento de Disciplinas V5! Orçamento inicial é de 2 pontos (Já alocado: ${discBudget.totalPointsSpent}/2 Pts).`
+          );
+          return;
+        }
+      }
+
       const multiplier = getV5DisciplineMultiplier(form.clan, targetDisc.nome);
 
       let costDelta = 0;
@@ -1089,11 +1190,13 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
         })
       );
 
-      setForm((prev) => ({
-        ...prev,
-        xp_total: Math.max(0, (prev.xp_total || 0) - costDelta),
-        xp_spent: Math.max(0, (prev.xp_spent || 0) + costDelta),
-      }));
+      if (form.enforce_attr_limits === false) {
+        setForm((prev) => ({
+          ...prev,
+          xp_total: Math.max(0, (prev.xp_total || 0) - costDelta),
+          xp_spent: Math.max(0, (prev.xp_spent || 0) + costDelta),
+        }));
+      }
     }
   };
 
@@ -2025,7 +2128,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
 
             {/* Field Array: Disciplinas Oficiais V5 */}
             <div className="border-t border-border/60 pt-4 space-y-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <Label className="text-sm font-semibold flex items-center gap-1.5 font-serif text-primary">
                   <Sparkles className="w-4 h-4" /> Disciplinas & Poderes Vampíricos (V5)
                 </Label>
@@ -2038,6 +2141,29 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                 >
                   <Plus className="w-3.5 h-3.5" /> Adicionar Disciplina
                 </Button>
+              </div>
+
+              {/* Resumo Dinâmico do Orçamento de Disciplinas V5 */}
+              <div className="p-2.5 bg-background/60 border border-border/40 rounded-lg flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div className="flex items-center gap-3">
+                  <span className="text-[11px] text-muted-foreground">
+                    Disciplinas do Clã ({form.clan}):{" "}
+                    <span className="font-bold text-amber-400">
+                      {form.clan === "Caitiff" || form.clan === "Sangue-Fraco"
+                        ? "Livre (Qualquer)"
+                        : (V5_CLANS_DATA[form.clan]?.disciplines || []).join(", ")}
+                    </span>
+                  </span>
+                  <span className="text-[11px] text-emerald-400">
+                    Pontos Iniciais:{" "}
+                    <span className="font-bold">
+                      {discBudget.totalPointsSpent} / {discBudget.maxCreationBudget} Pts
+                    </span>
+                  </span>
+                </div>
+                <div className="text-[11px] font-bold font-mono px-2 py-0.5 rounded bg-muted/40 border border-border/40">
+                  Teto Máximo Criação: <span className="text-amber-400">Nível 2</span>
+                </div>
               </div>
 
               {disciplines.length === 0 ? (
