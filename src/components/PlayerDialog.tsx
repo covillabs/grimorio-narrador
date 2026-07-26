@@ -281,89 +281,10 @@ export function getV5BloodPotencyLimits(generation: number) {
   return { min: 0, max: 10 };
 }
 
-// Calculadora Automática de Custos Oficiais do V5 para a Ficha (Considerando orçamentos iniciais gratuitos)
-export function calculateV5SheetXPSpent(
-  form: any,
-  disciplines: PlayerDiscipline[],
-  advantages: PlayerAdvantage[]
-): number {
-  let totalXP = 0;
-
-  // 1. Atributos (Custos V5: Novo Nível x 5 XP para pontos acima do orçamento gratuito inicial)
-  let attrXP = 0;
-  const attributes = [
-    form.forca, form.destreza, form.vigor,
-    form.carisma, form.manipulacao, form.compostura,
-    form.inteligencia, form.raciocinio, form.perseveranca,
-  ];
-
-  attributes.forEach((attrVal) => {
-    const val = Number(attrVal) || 1;
-    for (let lvl = 2; lvl <= val; lvl++) {
-      attrXP += lvl * 5;
-    }
-  });
-  // O orçamento inicial gratuito de criação V5 concede 22 pontos de atributos totais (~65 XP em elevações)
-  const freeAttrXPBaseline = 65;
-  totalXP += Math.max(0, attrXP - freeAttrXPBaseline);
-
-  // 2. Perícias (Novo Nível x 3 XP) + Especializações (3 XP cada)
-  let skillXP = 0;
-  if (form.skills && typeof form.skills === "object") {
-    Object.values(form.skills).forEach((sData: any) => {
-      let nivel = 0;
-      let spec = "";
-      if (typeof sData === "number") nivel = sData;
-      else if (sData && typeof sData === "object") {
-        nivel = sData.nivel || 0;
-        spec = sData.especializacao || "";
-      }
-
-      for (let lvl = 1; lvl <= nivel; lvl++) {
-        skillXP += lvl * 3;
-      }
-      if (spec && spec.trim()) {
-        skillXP += 3;
-      }
-    });
-  }
-  // O orçamento inicial gratuito de criação V5 concede 15 pontos de perícia + 1 especialização (~48 XP)
-  const freeSkillXPBaseline = 48;
-  totalXP += Math.max(0, skillXP - freeSkillXPBaseline);
-
-  // 3. Disciplinas (Novo Nível x 5 XP se for do clã, Novo Nível x 7 XP se for fora do clã)
-  const clanInfo = V5_CLANS_DATA[form.clan];
-  const clanDiscSet = new Set((clanInfo?.disciplines || []).map((d) => d.toLowerCase()));
-
-  let discXP = 0;
-  disciplines.forEach((d) => {
-    const isClan = clanDiscSet.has((d.nome || "").toLowerCase());
-    const multiplier = isClan ? 5 : 7;
-    for (let lvl = 1; lvl <= (d.nivel || 1); lvl++) {
-      discXP += lvl * multiplier;
-    }
-  });
-  // O orçamento inicial gratuito de criação V5 concede 2 pontos de disciplinas do clã (~10 XP)
-  const freeDiscXPBaseline = 10;
-  totalXP += Math.max(0, discXP - freeDiscXPBaseline);
-
-  // 4. Vantagens e Antecedentes (3 XP por ponto acima do orçamento gratuito inicial de 7 pontos = 21 XP)
-  let advXP = 0;
-  advantages.forEach((adv) => {
-    if (adv.tipo === "Vantagem" || adv.tipo === "Antecedente") {
-      advXP += (adv.pontos || 1) * 3;
-    }
-  });
-  const freeAdvXPBaseline = 21;
-  totalXP += Math.max(0, advXP - freeAdvXPBaseline);
-
-  return totalXP;
-}
-
 const defaultPlayer = {
   character_name: "", player_name: "", clan: "Ventrue", sire: "", generation: 13,
   hunger: 0, humanity: 7, stains: 0, blood_potency: 1,
-  xp_total: 0, clan_bane: "",
+  xp_total: 0, xp_spent: 0, clan_bane: "",
   forca: 1, destreza: 1, vigor: 1,
   carisma: 1, manipulacao: 1, compostura: 1,
   inteligencia: 1, raciocinio: 1, perseveranca: 1,
@@ -570,13 +491,14 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
   const calculatedHealthMax = passiveEffects.health_max;
   const calculatedWillpowerMax = passiveEffects.willpower_max;
 
-  // Automação Reativa de XP Gasto e Disponível
+  // Lógica Simples e Direta de Gestão de XP:
+  // Se houver registros no log de XP, o XP Gasto é a soma deles.
+  // Caso contrário, utiliza o valor digitado diretamente pelo usuário no campo form.xp_spent.
   const manualLogXPSpent = xpLog.reduce((acc, item) => acc + (Number(item.custo) || 0), 0);
-  const autoCalculatedSheetXPSpent = calculateV5SheetXPSpent(form, disciplines, advantages);
+  const finalXPSpent = xpLog.length > 0 ? manualLogXPSpent : (form.xp_spent || 0);
   
-  // XP Gasto Final (Soma do Log Manual + Custo Automático da Ficha)
-  const calculatedXPSpent = manualLogXPSpent + autoCalculatedSheetXPSpent;
-  const xpAvailable = Math.max(0, (form.xp_total || 0) - calculatedXPSpent);
+  // XP Disponível = XP Total - XP Gasto (Ex: 15 Total - 5 Gasto = 10 Disponível)
+  const xpAvailable = Math.max(0, (form.xp_total || 0) - finalXPSpent);
 
   const handleGenerationChange = (gen: number) => {
     const lim = getV5BloodPotencyLimits(gen);
@@ -684,7 +606,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
   const handleAddXPLogItem = () => {
     setXpLog((prev) => [
       ...prev,
-      { id: crypto.randomUUID(), motivo: "Evolução / Poder", custo: 5 },
+      { id: crypto.randomUUID(), motivo: "Melhorar Atributo", custo: 5 },
     ]);
   };
 
@@ -713,7 +635,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       willpower_max: calculatedWillpowerMax,
       health_current: Math.max(0, calculatedHealthMax - (form.sup_dmg || 0) - (form.agr_dmg || 0)),
       willpower_current: Math.max(0, calculatedWillpowerMax - (form.fw_sup || 0) - (form.fw_agr || 0)),
-      xp_spent: calculatedXPSpent,
+      xp_spent: finalXPSpent,
       disciplines,
       advantages,
       xp_log: xpLog,
@@ -871,14 +793,14 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                 </div>
               </div>
 
-              {/* Experiência (XP Total Manual, XP Gasto Reativo e XP Disponível) */}
+              {/* Experiência (XP Total, XP Gasto e XP Disponível Reativo) */}
               <div className="space-y-2 border-l border-border/40 pl-4">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                    <Layers className="w-3.5 h-3.5 text-primary" /> Gestão de XP (V5)
+                    <Layers className="w-3.5 h-3.5 text-primary" /> Gestão de XP
                   </span>
                   <span className="text-[10px] text-muted-foreground font-mono">
-                    Auto-calculado
+                    {xpLog.length > 0 ? "Soma de Gastos" : "Entrada Direta"}
                   </span>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
@@ -893,20 +815,30 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                     />
                   </div>
                   <div>
-                    <Label className="text-[10px] text-muted-foreground">XP Gasto</Label>
-                    <div className="h-7 text-xs bg-muted/30 border border-border rounded flex items-center justify-center font-bold font-mono text-rose-400">
-                      {calculatedXPSpent} XP
-                    </div>
+                    <Label className="text-[10px] font-bold text-rose-400">XP Gasto</Label>
+                    {xpLog.length > 0 ? (
+                      <div className="h-7 text-xs bg-muted/30 border border-border rounded flex items-center justify-center font-bold font-mono text-rose-400">
+                        {finalXPSpent} XP
+                      </div>
+                    ) : (
+                      <Input
+                        type="number"
+                        min={0}
+                        value={form.xp_spent || 0}
+                        onChange={(e) => set("xp_spent", parseInt(e.target.value) || 0)}
+                        className="h-7 text-xs bg-background font-semibold text-rose-400"
+                      />
+                    )}
                   </div>
                   <div>
-                    <Label className="text-[10px] text-muted-foreground">XP Disponível</Label>
+                    <Label className="text-[10px] font-bold text-emerald-400">Disponível</Label>
                     <div className="h-7 text-xs bg-emerald-950/20 border border-emerald-500/40 rounded flex items-center justify-center font-bold font-mono text-emerald-400">
                       {xpAvailable} XP
                     </div>
                   </div>
                 </div>
                 <div className="text-[10px] text-muted-foreground italic flex items-center gap-1 pt-0.5">
-                  <Calculator className="w-3 h-3 text-primary" /> Ficha ({autoCalculatedSheetXPSpent} XP) + Log Manual ({manualLogXPSpent} XP)
+                  <Calculator className="w-3 h-3 text-primary" /> {form.xp_total || 0} (Total) - {finalXPSpent} (Gasto) = {xpAvailable} XP
                 </div>
               </div>
             </div>
@@ -917,13 +849,13 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                 <AccordionItem value="xp_log" className="border-none">
                   <AccordionTrigger className="text-sm font-semibold hover:no-underline py-2">
                     <span className="flex items-center gap-2 font-serif text-primary">
-                      <Calculator className="w-4 h-4" /> Registro Manual de Gastos de XP ({xpLog.length})
+                      <Calculator className="w-4 h-4" /> Registro de Gastos de XP ({xpLog.length})
                     </span>
                   </AccordionTrigger>
                   <AccordionContent className="space-y-3 pt-1">
                     <div className="flex items-center justify-between">
                       <p className="text-[11px] text-muted-foreground">
-                        Adicione evoluções narrativas ou rituais adquiridos com XP.
+                        Adicione aprimoramentos (ex: "+5 para melhorar Atributo").
                       </p>
                       <Button
                         type="button"
@@ -937,13 +869,13 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                     </div>
 
                     {xpLog.length === 0 ? (
-                      <p className="text-[11px] text-muted-foreground italic">Nenhum gasto extra registrado.</p>
+                      <p className="text-[11px] text-muted-foreground italic">Nenhum gasto registrado. Você pode digitar o XP Gasto diretamente no campo acima.</p>
                     ) : (
                       <div className="space-y-2">
                         {xpLog.map((item) => (
                           <div key={item.id} className="flex items-center gap-2 p-1.5 bg-background border border-border/40 rounded">
                             <Input
-                              placeholder="Motivo (ex: Aprendizado de Ritual de Nível 2)"
+                              placeholder="Motivo (ex: +5 para melhorar Atributo)"
                               value={item.motivo}
                               onChange={(e) => handleUpdateXPLogItem(item.id, "motivo", e.target.value)}
                               className="h-7 text-xs flex-1"
