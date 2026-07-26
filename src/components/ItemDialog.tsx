@@ -6,11 +6,19 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ImageUpload } from "@/components/ImageUpload";
-import { Trash2 } from "lucide-react";
+import { Trash2, Plus, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 const CATEGORIES = ["Arma", "Ferramenta de Investigação", "Artefato Místico", "Documento"];
+const RULE_TYPES = ["PASSIVO", "REATIVO", "GATILHO", "AÇÃO", "BÔNUS"] as const;
+
+export interface ItemRule {
+  id: string;
+  type: typeof RULE_TYPES[number];
+  title: string;
+  description: string;
+}
 
 interface ItemDialogProps {
   open: boolean;
@@ -23,18 +31,63 @@ interface ItemDialogProps {
 }
 
 const defaultItem = {
-  name: "", category: "Artefato Místico", description: "", rules_bonus: "",
+  name: "", category: "Artefato Místico", description: "",
   owner_type: "" as string, owner_id: "" as string, image_url: "",
 };
 
 export function ItemDialog({ open, onOpenChange, item, onDelete, players, npcs, onSave }: ItemDialogProps) {
   const [form, setForm] = useState(defaultItem);
+  const [rules, setRules] = useState<ItemRule[]>([]);
   const isEditing = !!item;
 
   useEffect(() => {
-    if (item) setForm({ ...defaultItem, ...item, owner_type: item.owner_type || "", owner_id: item.owner_id || "" });
-    else setForm(defaultItem);
+    if (item) {
+      let parsedRules: ItemRule[] = [];
+      if (Array.isArray(item.rules_bonus)) {
+        parsedRules = item.rules_bonus;
+      } else if (typeof item.rules_bonus === "string" && item.rules_bonus.trim()) {
+        try {
+          const json = JSON.parse(item.rules_bonus);
+          if (Array.isArray(json)) parsedRules = json;
+          else throw new Error();
+        } catch {
+          parsedRules = [{
+            id: crypto.randomUUID(),
+            type: "PASSIVO",
+            title: "Efeito Mecânico",
+            description: item.rules_bonus
+          }];
+        }
+      }
+      setRules(parsedRules);
+      setForm({ ...defaultItem, ...item, owner_type: item.owner_type || "", owner_id: item.owner_id || "" });
+    } else {
+      setForm(defaultItem);
+      setRules([]);
+    }
   }, [item, open]);
+
+  const handleAddRule = () => {
+    setRules((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        type: "PASSIVO",
+        title: "",
+        description: "",
+      },
+    ]);
+  };
+
+  const handleUpdateRule = (id: string, field: keyof ItemRule, value: string) => {
+    setRules((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, [field]: value } : r))
+    );
+  };
+
+  const handleRemoveRule = (id: string) => {
+    setRules((prev) => prev.filter((r) => r.id !== id));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +110,7 @@ export function ItemDialog({ open, onOpenChange, item, onDelete, players, npcs, 
     const payload = {
       ...form,
       id: isEditing ? item.id : "it_" + crypto.randomUUID(),
+      rules_bonus: rules,
       owner: ownerName,
       owner_type: form.owner_type || null,
       owner_id: form.owner_id || null,
@@ -85,7 +139,106 @@ export function ItemDialog({ open, onOpenChange, item, onDelete, players, npcs, 
               </Select>
             </div>
             <div><Label>Descrição</Label><Textarea value={form.description} onChange={(e) => set("description", e.target.value)} rows={3} /></div>
-            <div><Label>Regras / Bônus</Label><Textarea value={form.rules_bonus} onChange={(e) => set("rules_bonus", e.target.value)} rows={2} /></div>
+
+            {/* Field Array / Repeater para Regras & Bônus */}
+            <div className="space-y-3 pt-2 border-t border-border/50">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-semibold flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-primary" /> Regras & Efeitos Mecânicos (V5)
+                </Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAddRule}
+                  className="h-8 text-xs gap-1"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Adicionar Regra
+                </Button>
+              </div>
+
+              {rules.length === 0 ? (
+                <div className="p-4 border border-dashed border-border rounded-lg text-center bg-muted/20">
+                  <p className="text-xs text-muted-foreground">Nenhuma regra ou bônus mecânico adicionado.</p>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleAddRule}
+                    className="mt-2 text-xs text-primary hover:text-primary"
+                  >
+                    + Criar primeira regra
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {rules.map((rule, index) => (
+                    <div
+                      key={rule.id}
+                      className="p-3 bg-surface-container-low border border-border/60 rounded-md space-y-3 relative group"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                          Regra #{index + 1}
+                        </span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveRule(rule.id)}
+                          className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                          title="Remover Regra"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <Label className="text-[11px]">Tipo (Tag)</Label>
+                          <Select
+                            value={rule.type}
+                            onValueChange={(val) => handleUpdateRule(rule.id, "type", val as any)}
+                          >
+                            <SelectTrigger className="h-8 text-xs bg-background">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {RULE_TYPES.map((t) => (
+                                <SelectItem key={t} value={t} className="text-xs">
+                                  {t}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="col-span-2">
+                          <Label className="text-[11px]">Nome da Regra</Label>
+                          <Input
+                            value={rule.title}
+                            onChange={(e) => handleUpdateRule(rule.id, "title", e.target.value)}
+                            placeholder="Ex: Imunidade Mágica"
+                            className="h-8 text-xs bg-background"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="text-[11px]">Efeitos / Descrição</Label>
+                        <Textarea
+                          value={rule.description}
+                          onChange={(e) => handleUpdateRule(rule.id, "description", e.target.value)}
+                          placeholder="- Insira os efeitos em tópicos ou texto livre..."
+                          rows={2}
+                          className="text-xs bg-background min-h-[60px]"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Posse (tipo)</Label>

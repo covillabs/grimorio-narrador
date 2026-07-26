@@ -94,6 +94,16 @@ export default function ArsenalPage() {
     }
   };
 
+  const getRuleTagVariant = (type: string) => {
+    switch (type) {
+      case "AÇÃO": return "destructive";
+      case "GATILHO": return "default";
+      case "REATIVO": return "secondary";
+      case "BÔNUS": return "outline";
+      default: return "outline";
+    }
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6 border-b border-border/50 pb-6">
@@ -180,15 +190,40 @@ export default function ArsenalPage() {
                 {/* Stats Box */}
                 <div className="bg-surface-container-low border border-border/50 rounded p-3 space-y-3">
                   
-                  {/* Mechanical Modifier */}
-                  <div className="flex items-start gap-2">
-                    <AlertTriangle className="w-4 h-4 text-blood mt-0.5 opacity-80" />
-                    <div>
-                      <span className="block text-[10px] uppercase tracking-widest text-muted-foreground">Efeito Mecânico (V5)</span>
-                      <span className="text-xs font-bold text-blood tracking-wide">
-                        {item.rules_bonus || item.modifier || "Sem efeito mecânico registrado"}
-                      </span>
-                    </div>
+                  {/* Mechanical Rules (Field Array) */}
+                  <div className="space-y-2">
+                    <span className="block text-[10px] uppercase tracking-widest text-muted-foreground flex items-center gap-1">
+                      <AlertTriangle className="w-3.5 h-3.5 text-blood opacity-80" /> Efeitos Mecânicos (V5)
+                    </span>
+                    {Array.isArray(item.rules_bonus) && item.rules_bonus.length > 0 ? (
+                      <div className="space-y-2">
+                        {item.rules_bonus.map((rule: any, idx: number) => (
+                          <div key={rule.id || idx} className="bg-background/60 p-2.5 rounded border border-border/40 text-xs space-y-1">
+                            <div className="flex items-center gap-2">
+                              <Badge variant={getRuleTagVariant(rule.type)} className="text-[9px] px-1.5 py-0 uppercase tracking-wider">
+                                {rule.type || "PASSIVO"}
+                              </Badge>
+                              {rule.title && <span className="font-bold text-foreground">{rule.title}</span>}
+                            </div>
+                            {rule.description && (
+                              <p className="text-[11px] text-muted-foreground whitespace-pre-line leading-relaxed pl-1 border-l-2 border-primary/30 mt-1">
+                                {rule.description}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : typeof item.rules_bonus === "string" && item.rules_bonus ? (
+                      <div className="bg-background/60 p-2 rounded border border-border/40 text-xs">
+                        <span className="text-xs font-bold text-blood tracking-wide">{item.rules_bonus}</span>
+                      </div>
+                    ) : item.modifier ? (
+                      <div className="bg-background/60 p-2 rounded border border-border/40 text-xs">
+                        <span className="text-xs font-bold text-blood tracking-wide">{item.modifier}</span>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground italic block">Sem efeitos registrados.</span>
+                    )}
                   </div>
 
                   <div className="h-[1px] w-full bg-border/40"></div>
