@@ -25,6 +25,8 @@ export interface PlayerAdvantage {
   nome: string;
   tipo: "Vantagem" | "Defeito" | "Antecedente";
   pontos: number;
+  isPredatorBonus?: boolean;
+  isHomebrew?: boolean;
 }
 
 export interface PlayerConviction {
@@ -35,25 +37,43 @@ export interface PlayerConviction {
   status: "active" | "damaged" | "destroyed";
 }
 
-interface PlayerDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  player?: any;
-  onDelete?: (id: string) => void;
-  onSave: (player: any) => void;
+export interface V5MeritCatalogItem {
+  nome: string;
+  tipo: "Vantagem" | "Defeito" | "Antecedente";
+  pontosDefault: number;
+  descricao: string;
 }
 
-export interface V5ClanInfo {
-  name: string;
-  disciplines: string[];
-  bane: string;
-}
+export const V5_MERITS_CATALOG: V5MeritCatalogItem[] = [
+  // Antecedentes
+  { nome: "Aliados (Allies)", tipo: "Antecedente", pontosDefault: 1, descricao: "Mortais que apoiam e ajudam o personagem." },
+  { nome: "Contatos (Contacts)", tipo: "Antecedente", pontosDefault: 1, descricao: "Fontes de informação no mundo mortal ou vampírico." },
+  { nome: "Fama (Fame)", tipo: "Antecedente", pontosDefault: 1, descricao: "Reconhecimento no mundo mortal." },
+  { nome: "Mawla (Mentor)", tipo: "Antecedente", pontosDefault: 1, descricao: "Membro mais antigo que orienta e protege o personagem." },
+  { nome: "Rebanho (Herd)", tipo: "Antecedente", pontosDefault: 1, descricao: "Vítimas mortais dedicadas para alimentação segura." },
+  { nome: "Recursos (Resources)", tipo: "Antecedente", pontosDefault: 1, descricao: "Riqueza, dinheiro e patrimônio mensal." },
+  { nome: "Refúgio (Haven)", tipo: "Antecedente", pontosDefault: 1, descricao: "Local seguro para dormir durante o dia." },
+  { nome: "Status (Camarilla/Anarquistas)", tipo: "Antecedente", pontosDefault: 1, descricao: "Respeito e posição na sociedade da noite." },
+
+  // Vantagens Físicas/Sociais
+  { nome: "Aparência Deslumbrante (Beautiful)", tipo: "Vantagem", pontosDefault: 2, descricao: "+2 dados em interações baseadas em atração." },
+  { nome: "Digestão Eficiente (Iron Gullet)", tipo: "Vantagem", pontosDefault: 3, descricao: "Consegue ingerir sangue frio ou râncido." },
+  { nome: "Sono Leve (Unbondable)", tipo: "Vantagem", pontosDefault: 2, descricao: "Dificuldade menor para despertar de dia." },
+
+  // Defeitos
+  { nome: "Alimentação Restrita (Farmer / Blood Leech)", tipo: "Defeito", pontosDefault: 1, descricao: "Só consegue se alimentar de fontes específicas." },
+  { nome: "Estigma Noturno (Repulsion)", tipo: "Defeito", pontosDefault: 1, descricao: "Aversão folclórica (alho, crucifixos, etc)." },
+  { nome: "Inimigo (Enemy)", tipo: "Defeito", pontosDefault: 1, descricao: "Rival mortal ou vampiro que busca prejudicar o personagem." },
+  { nome: "Segredo Sombrio (Dark Secret)", tipo: "Defeito", pontosDefault: 1, descricao: "Um segredo que, se revelado, causará caçada ou ruína." },
+  { nome: "Incapaz de Beijar (No Bite)", tipo: "Defeito", pontosDefault: 1, descricao: "Não possui presas funcionais." },
+];
 
 export interface V5PredatorTypeInfo {
   name: string;
   label: string;
   specialtyOptions: Array<{ skill: string; skillLabel: string; name: string }>;
   disciplineOptions: string[];
+  meritsAndFlaws: Array<{ nome: string; tipo: "Vantagem" | "Defeito" | "Antecedente"; pontos: number }>;
   description: string;
 }
 
@@ -196,6 +216,10 @@ export const V5_PREDATOR_TYPES: Record<string, V5PredatorTypeInfo> = {
       { skill: "briga", skillLabel: "Briga", name: "Imobilização / Grappling" },
     ],
     disciplineOptions: ["Potência", "Rapidez"],
+    meritsAndFlaws: [
+      { nome: "Fumaça do Sangue / Capanga", tipo: "Vantagem", pontos: 1 },
+      { nome: "Segredo Sombrio (Criminoso)", tipo: "Defeito", pontos: 1 },
+    ],
     description: "Você toma o sangue à força através de violência direta ou emboscadas em becos escuros.",
   },
   Bagger: {
@@ -206,6 +230,10 @@ export const V5_PREDATOR_TYPES: Record<string, V5PredatorTypeInfo> = {
       { skill: "manha", skillLabel: "Manha", name: "Mercado Negro de Sangue" },
     ],
     disciplineOptions: ["Feitiçaria de Sangue", "Ofuscação"],
+    meritsAndFlaws: [
+      { nome: "Contatos (Banco de Sangue)", tipo: "Antecedente", pontos: 1 },
+      { nome: "Alimentação Restrita (Sangue Frio)", tipo: "Defeito", pontos: 1 },
+    ],
     description: "Você compra ou rouba bolsas de sangue preservadas de hospitais e bancos de sangue.",
   },
   BloodLeech: {
@@ -216,6 +244,10 @@ export const V5_PREDATOR_TYPES: Record<string, V5PredatorTypeInfo> = {
       { skill: "subterfugio", skillLabel: "Subterfúgio", name: "Sedução de Membros" },
     ],
     disciplineOptions: ["Feitiçaria de Sangue", "Dominação"],
+    meritsAndFlaws: [
+      { nome: "Status ou Vício em Vitae", tipo: "Vantagem", pontos: 1 },
+      { nome: "Inimigo (Membros)", tipo: "Defeito", pontos: 1 },
+    ],
     description: "Você se alimenta exclusivamente do sangue de outros vampiros.",
   },
   Cleaver: {
@@ -226,6 +258,10 @@ export const V5_PREDATOR_TYPES: Record<string, V5PredatorTypeInfo> = {
       { skill: "subterfugio", skillLabel: "Subterfúgio", name: "Manter Aparências" },
     ],
     disciplineOptions: ["Dominação", "Animalismo"],
+    meritsAndFlaws: [
+      { nome: "Refúgio (Família Mortal)", tipo: "Antecedente", pontos: 1 },
+      { nome: "Segredo Sombrio (Cleaver)", tipo: "Defeito", pontos: 1 },
+    ],
     description: "Você se alimenta secretamente da sua própria família ou de uma família mortal que você mantém.",
   },
   Consensualist: {
@@ -236,6 +272,10 @@ export const V5_PREDATOR_TYPES: Record<string, V5PredatorTypeInfo> = {
       { skill: "persuasao", skillLabel: "Persuasão", name: "Obtenção de Consentimento" },
     ],
     disciplineOptions: ["Auspícios", "Fortitude"],
+    meritsAndFlaws: [
+      { nome: "Aliados (Consentimento)", tipo: "Antecedente", pontos: 1 },
+      { nome: "Segredo Sombrio (Violador)", tipo: "Defeito", pontos: 1 },
+    ],
     description: "Você se alimenta apenas com o consentimento explícito dos mortais.",
   },
   Farmer: {
@@ -246,6 +286,10 @@ export const V5_PREDATOR_TYPES: Record<string, V5PredatorTypeInfo> = {
       { skill: "sobrevivencia", skillLabel: "Sobrevivência", name: "Rastreamento de Animais" },
     ],
     disciplineOptions: ["Animalismo", "Metamorfose"],
+    meritsAndFlaws: [
+      { nome: "Refúgio / Animal de Estimação", tipo: "Antecedente", pontos: 1 },
+      { nome: "Alimentação Restrita (Animais)", tipo: "Defeito", pontos: 1 },
+    ],
     description: "Você recusa se alimentar de humanos e bebe apenas sangue de animais.",
   },
   Osiris: {
@@ -256,6 +300,10 @@ export const V5_PREDATOR_TYPES: Record<string, V5PredatorTypeInfo> = {
       { skill: "subterfugio", skillLabel: "Subterfúgio", name: "Doutrinação de Culto" },
     ],
     disciplineOptions: ["Presença", "Feitiçaria de Sangue"],
+    meritsAndFlaws: [
+      { nome: "Rebanho (Culto)", tipo: "Antecedente", pontos: 2 },
+      { nome: "Inimigo (Hater/Investigador)", tipo: "Defeito", pontos: 1 },
+    ],
     description: "Você é um ídolo, guru ou artista cujos devotos doam sangue voluntariamente.",
   },
   Sandman: {
@@ -266,6 +314,10 @@ export const V5_PREDATOR_TYPES: Record<string, V5PredatorTypeInfo> = {
       { skill: "ladroagem", skillLabel: "Ladroagem", name: "Arrombamento de Fechaduras" },
     ],
     disciplineOptions: ["Auspícios", "Ofuscação"],
+    meritsAndFlaws: [
+      { nome: "Recursos / Refúgio", tipo: "Antecedente", pontos: 1 },
+      { nome: "Estigma Noturno", tipo: "Defeito", pontos: 1 },
+    ],
     description: "Você se esgueira em residências e se alimenta de mortais enquanto eles dormem.",
   },
   SceneQueen: {
@@ -276,6 +328,10 @@ export const V5_PREDATOR_TYPES: Record<string, V5PredatorTypeInfo> = {
       { skill: "etiqueta", skillLabel: "Etiqueta", name: "Camarotes / Áreas VIP" },
     ],
     disciplineOptions: ["Presença", "Dominação"],
+    meritsAndFlaws: [
+      { nome: "Fama / Contatos (Subcultura)", tipo: "Antecedente", pontos: 2 },
+      { nome: "Inimigo (Rival da Cena)", tipo: "Defeito", pontos: 1 },
+    ],
     description: "Você domina uma subcultura específica (gótica, rave, alta sociedade) e caça no seu círculo social.",
   },
   Siren: {
@@ -286,6 +342,10 @@ export const V5_PREDATOR_TYPES: Record<string, V5PredatorTypeInfo> = {
       { skill: "subterfugio", skillLabel: "Subterfúgio", name: "Encontros de Uma Noite" },
     ],
     disciplineOptions: ["Fortitude", "Presença"],
+    meritsAndFlaws: [
+      { nome: "Aparência Deslumbrante", tipo: "Vantagem", pontos: 2 },
+      { nome: "Inimigo (Ex-Parceiro Vingativo)", tipo: "Defeito", pontos: 1 },
+    ],
     description: "Você usa atratividade e sedução para alimentar-se de parceiros casuais.",
   },
 };
@@ -708,7 +768,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
     }
   };
 
-  // Handler de Tipo de Predador (Predator Type V5)
+  // Handler de Tipo de Predador com Automação de Vantagens/Defeitos Gratuitos V5
   const handlePredatorTypeChange = (pKey: string) => {
     const pInfo = V5_PREDATOR_TYPES[pKey];
     setForm((prev) => ({
@@ -716,8 +776,24 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       predator_type: pKey,
       predator_specialty: "",
     }));
+
     if (pInfo) {
-      toast.info(`Tipo de Predador alterado para ${pInfo.label}. Escolha a especialização abaixo.`);
+      // Remove vantagens anteriores de predador e injeta as novas do estilo de caça
+      setAdvantages((prev) => {
+        const nonPredatorAdvantages = prev.filter((a) => !a.isPredatorBonus);
+        const predatorBonusItems: PlayerAdvantage[] = (pInfo.meritsAndFlaws || []).map((mf) => ({
+          id: crypto.randomUUID(),
+          nome: mf.nome,
+          tipo: mf.tipo,
+          pontos: mf.pontos,
+          isPredatorBonus: true,
+        }));
+        return [...nonPredatorAdvantages, ...predatorBonusItems];
+      });
+
+      toast.info(
+        `Tipo de Predador alterado para ${pInfo.label}. Vantagens/Defeitos gratuitos aplicados!`
+      );
     }
   };
 
@@ -1041,25 +1117,61 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
     setDisciplines((prev) => prev.filter((d) => d.id !== id));
   };
 
-  // Handlers Vantagens/Defeitos/Antecedentes com Gasto Direto de XP (3 XP por ponto)
-  const handleAddAdvantage = () => {
-    const costDelta = 1 * 3;
-    setAdvantages((prev) => [
-      ...prev,
-      { id: crypto.randomUUID(), nome: "", tipo: "Vantagem", pontos: 1 },
-    ]);
+  // Helper de Cálculo de Orçamento de Vantagens e Defeitos (V5: 7 Vantagens + 2 Defeitos)
+  const getAdvantagesBudgetSummary = () => {
+    let freeMeritPointsSpent = 0;
+    let flawPointsChosen = 0;
 
-    setForm((prev) => ({
-      ...prev,
-      xp_total: Math.max(0, (prev.xp_total || 0) - costDelta),
-      xp_spent: Math.max(0, (prev.xp_spent || 0) + costDelta),
-    }));
+    advantages.forEach((adv) => {
+      if (adv.isPredatorBonus) return;
+      const pts = adv.pontos || 1;
+      if (adv.tipo === "Defeito") {
+        flawPointsChosen += pts;
+      } else {
+        freeMeritPointsSpent += pts;
+      }
+    });
+
+    const flawBonusAllowed = Math.min(2, flawPointsChosen);
+    const totalMeritBudget = 7 + flawBonusAllowed;
+    const remainingMeritBudget = totalMeritBudget - freeMeritPointsSpent;
+
+    return {
+      baseBudget: 7,
+      flawPointsChosen,
+      flawBonusAllowed,
+      totalMeritBudget,
+      freeMeritPointsSpent,
+      remainingMeritBudget,
+    };
+  };
+
+  const advBudget = getAdvantagesBudgetSummary();
+
+  const handleAddAdvantageFromCatalog = (catalogItemName: string) => {
+    if (catalogItemName === "custom") {
+      setAdvantages((prev) => [
+        ...prev,
+        { id: crypto.randomUUID(), nome: "Vantagem Personalizada (Homebrew)", tipo: "Vantagem", pontos: 1, isHomebrew: true },
+      ]);
+      toast.info("Vantagem Homebrew adicionada. Ajuste o nome e os pontos.");
+      return;
+    }
+
+    const item = V5_MERITS_CATALOG.find((m) => m.nome === catalogItemName);
+    if (item) {
+      setAdvantages((prev) => [
+        ...prev,
+        { id: crypto.randomUUID(), nome: item.nome, tipo: item.tipo, pontos: item.pontosDefault },
+      ]);
+      toast.success(`${item.tipo} "${item.nome}" adicionada do catálogo V5.`);
+    }
   };
 
   const handleUpdateAdvantage = (id: string, field: keyof PlayerAdvantage, value: any) => {
     if (field === "pontos") {
       const target = advantages.find((a) => a.id === id);
-      if (target && typeof value === "number") {
+      if (target && !target.isPredatorBonus && typeof value === "number") {
         const oldPts = target.pontos || 1;
         const costDelta = (value - oldPts) * 3;
         setForm((prev) => ({
@@ -1076,7 +1188,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
 
   const handleRemoveAdvantage = (id: string) => {
     const target = advantages.find((a) => a.id === id);
-    if (target) {
+    if (target && !target.isPredatorBonus) {
       const refund = (target.pontos || 1) * 3;
       setForm((prev) => ({
         ...prev,
@@ -1961,21 +2073,62 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
               </Accordion>
             </div>
 
-            {/* Seção 3: Vantagens, Defeitos e Antecedentes */}
+            {/* Seção 3: Vantagens, Defeitos e Antecedentes (Orçamento Oficial V5: 7 Vantagens + 2 Defeitos) */}
             <div className="border-t border-border/60 pt-4 space-y-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <Label className="text-sm font-semibold flex items-center gap-1.5 font-serif text-primary">
-                  <Award className="w-4 h-4" /> Vantagens, Defeitos e Antecedentes (Backgrounds)
+                  <Award className="w-4 h-4" /> Vantagens, Defeitos e Antecedentes (Orçamento V5)
                 </Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleAddAdvantage}
-                  className="h-8 text-xs gap-1"
-                >
-                  <Plus className="w-3.5 h-3.5" /> Adicionar Item
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Select
+                    onValueChange={(val) => {
+                      if (val) handleAddAdvantageFromCatalog(val);
+                    }}
+                  >
+                    <SelectTrigger className="h-7 text-xs bg-background font-semibold w-56">
+                      <SelectValue placeholder="Catálogo Oficial V5..." />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-56">
+                      <SelectItem value="custom" className="text-xs italic text-amber-400 font-bold">
+                        -- Digitação Livre (Homebrew) --
+                      </SelectItem>
+                      {V5_MERITS_CATALOG.map((item) => (
+                        <SelectItem key={item.nome} value={item.nome} className="text-xs">
+                          [{item.tipo}] {item.nome} ({item.pontosDefault} pt)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Resumo Dinâmico do Orçamento V5 */}
+              <div className="p-2.5 bg-background/60 border border-border/40 rounded-lg flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div className="flex items-center gap-3">
+                  <span className="text-[11px] text-muted-foreground">
+                    Orçamento Base: <span className="font-bold text-foreground">7 Pts</span>
+                  </span>
+                  <span className="text-[11px] text-rose-400">
+                    Defeitos Escolhidos: <span className="font-bold">{advBudget.flawPointsChosen} Pts</span> (+{advBudget.flawBonusAllowed} bônus)
+                  </span>
+                  <span className="text-[11px] text-emerald-400">
+                    Vantagens Gastas: <span className="font-bold">{advBudget.freeMeritPointsSpent} / {advBudget.totalMeritBudget} Pts</span>
+                  </span>
+                </div>
+                <div className="text-[11px] font-bold font-mono px-2 py-0.5 rounded bg-muted/40 border border-border/40">
+                  Saldo Livre:{" "}
+                  <span
+                    className={
+                      advBudget.remainingMeritBudget < 0
+                        ? "text-rose-400"
+                        : advBudget.remainingMeritBudget === 0
+                        ? "text-emerald-400"
+                        : "text-amber-400"
+                    }
+                  >
+                    {advBudget.remainingMeritBudget} Pts
+                  </span>
+                </div>
               </div>
 
               {advantages.length === 0 ? (
@@ -1985,47 +2138,74 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
               ) : (
                 <div className="space-y-2">
                   {advantages.map((adv) => (
-                    <div key={adv.id} className="flex items-center gap-2 p-2 bg-surface-container-low border border-border/40 rounded-md">
-                      <Select
-                        value={adv.tipo}
-                        onValueChange={(val) => handleUpdateAdvantage(adv.id, "tipo", val)}
-                      >
-                        <SelectTrigger className="h-8 text-xs bg-background w-32 font-semibold">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Vantagem" className="text-xs text-emerald-400 font-bold">Vantagem</SelectItem>
-                          <SelectItem value="Defeito" className="text-xs text-rose-400 font-bold">Defeito</SelectItem>
-                          <SelectItem value="Antecedente" className="text-xs text-blue-400 font-bold">Antecedente</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    <div
+                      key={adv.id}
+                      className={`flex flex-col sm:flex-row items-start sm:items-center gap-2 p-2 rounded-md border transition-colors ${
+                        adv.isPredatorBonus
+                          ? "bg-amber-950/20 border-amber-500/40"
+                          : adv.isHomebrew
+                          ? "bg-purple-950/20 border-purple-500/40"
+                          : "bg-surface-container-low border-border/40"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 flex-1 w-full">
+                        <Select
+                          value={adv.tipo}
+                          onValueChange={(val) => handleUpdateAdvantage(adv.id, "tipo", val)}
+                          disabled={adv.isPredatorBonus}
+                        >
+                          <SelectTrigger className="h-8 text-xs bg-background w-32 font-semibold">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Vantagem" className="text-xs text-emerald-400 font-bold">Vantagem</SelectItem>
+                            <SelectItem value="Defeito" className="text-xs text-rose-400 font-bold">Defeito</SelectItem>
+                            <SelectItem value="Antecedente" className="text-xs text-blue-400 font-bold">Antecedente</SelectItem>
+                          </SelectContent>
+                        </Select>
 
-                      <Input
-                        placeholder="Nome (ex: Recursos, Cobrador de Dívidas)"
-                        value={adv.nome}
-                        onChange={(e) => handleUpdateAdvantage(adv.id, "nome", e.target.value)}
-                        className="h-8 text-xs bg-background flex-1"
-                      />
-
-                      <div className="px-2">
-                        <DotRating
-                          value={adv.pontos}
-                          min={1}
-                          max={5}
-                          size="sm"
-                          onChange={(v) => handleUpdateAdvantage(adv.id, "pontos", v)}
+                        <Input
+                          placeholder="Nome da Vantagem/Defeito..."
+                          value={adv.nome}
+                          onChange={(e) => handleUpdateAdvantage(adv.id, "nome", e.target.value)}
+                          className="h-8 text-xs bg-background flex-1"
+                          readOnly={adv.isPredatorBonus}
                         />
+
+                        {adv.isPredatorBonus && (
+                          <span className="text-[9px] font-bold text-amber-400 bg-amber-950/40 border border-amber-500/40 px-1.5 py-0.5 rounded whitespace-nowrap">
+                            Grátis (Predador)
+                          </span>
+                        )}
+
+                        {adv.isHomebrew && (
+                          <span className="text-[9px] font-bold text-purple-400 bg-purple-950/40 border border-purple-500/40 px-1.5 py-0.5 rounded whitespace-nowrap">
+                            Homebrew
+                          </span>
+                        )}
                       </div>
 
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleRemoveAdvantage(adv.id)}
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <div className="flex items-center gap-2 self-end sm:self-auto">
+                        <div className="px-2">
+                          <DotRating
+                            value={adv.pontos}
+                            min={1}
+                            max={5}
+                            size="sm"
+                            onChange={(v) => handleUpdateAdvantage(adv.id, "pontos", v)}
+                          />
+                        </div>
+
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveAdvantage(adv.id)}
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
