@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useCloudStorage } from "@/hooks/useCloudStorage";
 import { useDicePool } from "@/hooks/useDicePool";
+import { supabase } from "@/integrations/supabase/client";
 import { Sword, Trash2, Heart, Skull, ShieldBan, Crosshair, Zap, Dices, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -33,6 +34,7 @@ export default function CombatePage() {
   const [availableNpcs, setAvailableNpcs] = useState<any[]>([]);
   const [selectedEntity, setSelectedEntity] = useState<string>("");
   const [customName, setCustomName] = useState<string>("");
+  const [isEndingCombat, setIsEndingCombat] = useState<boolean>(false);
 
   // Estado para gerenciar Toggles Ativos por Combatente { combatantId: { conditionKey: boolean } }
   const [activeConditionsMap, setActiveConditionsMap] = useState<Record<string, Record<string, boolean>>>({});
@@ -63,7 +65,10 @@ export default function CombatePage() {
         mental_pool: entity.mental_pool || 3,
         max_hp: entity.health || 6,
         max_wp: 5,
-        sup_dmg: 0, agr_dmg: 0, fw_sup: 0, fw_agr: 0,
+        sup_dmg: entity.sup_dmg || 0,
+        agr_dmg: entity.agr_dmg || 0,
+        fw_sup: entity.fw_sup || 0,
+        fw_agr: entity.fw_agr || 0,
         npcRefId: entity.id
       });
       setSelectedEntity("");
@@ -94,9 +99,105 @@ export default function CombatePage() {
     setCombatants(prev => prev.filter(c => c.id !== id));
   };
 
-  const clearArena = () => {
-    setCombatants([]);
-    toast("A poeira baixou...", { description: "Arena de Sangue foi limpa." });
+  // Função para Encerrar Combate e Atualizar Supabase (Batch / Promise.all)
+  const handleEndCombat = async () => {
+    if (combatants.length === 0) {
+      toast("A arena já está vazia.");
+      return;
+    }
+
+    setIsEndingCombat(true);
+
+    try {
+      // 1. Filtrar apenas personagens oficiais (PLAYER e OFFICIAL_NPC / NPC)
+      // Ameaças abruptas (CUSTOM / type === 'custom') são ignoradas completamente
+      const officialCombatants = combatants.filter(
+        (c) => (c.type === "player" || c.type === "npc") && c.npcRefId
+      );
+
+      if (officialCombatants.length > 0) {
+        // 2. Promessas em paralelo para atualizar Supabase e LocalStorage
+        const updatePromises = officialCombatants.map(async (c) => {
+          const targetId = c.npcRefId!;
+
+          if (c.type === "player") {
+            // Atualiza no Supabase
+            const { error } = await supabase
+              .from("players")
+              .update({
+                sup_dmg: c.sup_dmg,
+                agr_dmg: c.agr_dmg,
+                fw_sup: c.fw_sup,
+                fw_agr: c.fw_agr,
+              })
+              .eq("id", targetId);
+
+            if (error) {
+              console.error(`Erro ao atualizar jogador no Supabase (${c.name}):`, error);
+            }
+
+            // Atualiza cache local de jogadores (coterie)
+            const coterieKey = getPrefixedKey("v5_coterie");
+            const rawPlayers = localStorage.getItem(coterieKey);
+            if (rawPlayers) {
+              const parsed = JSON.parse(rawPlayers);
+              const updated = parsed.map((p: any) =>
+                p.id === targetId
+                  ? { ...p, sup_dmg: c.sup_dmg, agr_dmg: c.agr_dmg, fw_sup: c.fw_sup, fw_agr: c.fw_agr }
+                  : p
+              );
+              localStorage.setItem(coterieKey, JSON.stringify(updated));
+            }
+          } else if (c.type === "npc") {
+            // Atualiza no Supabase
+            const { error } = await supabase
+              .from("npcs")
+              .update({
+                sup_dmg: c.sup_dmg,
+                agr_dmg: c.agr_dmg,
+                fw_sup: c.fw_sup,
+                fw_agr: c.fw_agr,
+                health: c.max_hp,
+              })
+              .eq("id", targetId);
+
+            if (error) {
+              console.error(`Erro ao atualizar NPC no Supabase (${c.name}):`, error);
+            }
+
+            // Atualiza cache local de NPCs
+            const npcsKey = getPrefixedKey("v5_npcs");
+            const rawNpcs = localStorage.getItem(npcsKey);
+            if (rawNpcs) {
+              const parsed = JSON.parse(rawNpcs);
+              const updated = parsed.map((n: any) =>
+                n.id === targetId
+                  ? { ...n, sup_dmg: c.sup_dmg, agr_dmg: c.agr_dmg, fw_sup: c.fw_sup, fw_agr: c.fw_agr, health: c.max_hp }
+                  : n
+              );
+              localStorage.setItem(npcsKey, JSON.stringify(updated));
+            }
+          }
+        });
+
+        // Executa todas as atualizações simultaneamente
+        await Promise.all(updatePromises);
+      }
+
+      // 3. Limpa o painel de combate e exibe toast de sucesso
+      setCombatants([]);
+      setActiveConditionsMap({});
+      toast.success("Combate encerrado e fichas atualizadas!", {
+        description: officialCombatants.length > 0
+          ? `${officialCombatants.length} fichas oficiais foram salvas.`
+          : "Nenhum personagem oficial precisou de alteração.",
+      });
+    } catch (err: any) {
+      console.error("Erro ao encerrar combate:", err);
+      toast.error("Erro ao sincronizar fichas com o Supabase.");
+    } finally {
+      setIsEndingCombat(false);
+    }
   };
 
   const addSuperficialDmg = (combatantId: string) => {
@@ -245,8 +346,13 @@ export default function CombatePage() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={clearArena} className="border-destructive text-destructive hover:bg-destructive hover:text-white h-9 text-xs">
-             Encerrar Combate
+          <Button
+            variant="outline"
+            onClick={handleEndCombat}
+            disabled={isEndingCombat}
+            className="border-destructive text-destructive hover:bg-destructive hover:text-white h-9 text-xs"
+          >
+            {isEndingCombat ? "Sincronizando..." : "Encerrar Combate"}
           </Button>
         </div>
       </div>
