@@ -2,10 +2,53 @@ import { useMemo } from "react";
 import { useCloudStorage } from "@/hooks/useCloudStorage";
 import { Node, Edge } from "@xyflow/react";
 
+// Constantes de Layout Orgânico
+const CENTER_X = 500;
+const CENTER_Y = 400;
+
+/** Distribui nós ao redor de um ponto central com jitter orgânico */
+function radialPosition(cx: number, cy: number, radius: number, index: number, total: number, jitter = 30): { x: number; y: number } {
+  const angle = (index / Math.max(1, total)) * 2 * Math.PI - Math.PI / 2;
+  const j = (Math.sin(index * 137.508) * jitter); // golden-angle jitter para aspecto orgânico
+  return {
+    x: Math.round(cx + Math.cos(angle) * (radius + j)),
+    y: Math.round(cy + Math.sin(angle) * (radius + j)),
+  };
+}
+
+/** Distribui touchstones ao redor do seu vampiro dono */
+function satellitePosition(parentX: number, parentY: number, index: number, total: number): { x: number; y: number } {
+  const radius = 170 + total * 10;
+  const spread = Math.min(Math.PI * 0.8, Math.PI / Math.max(1, total - 1));
+  const baseAngle = -Math.PI / 2; // começa por cima
+  const angle = total === 1 ? baseAngle : baseAngle - spread / 2 + (index / (total - 1)) * spread;
+  return {
+    x: Math.round(parentX + Math.cos(angle) * radius),
+    y: Math.round(parentY + Math.sin(angle) * radius),
+  };
+}
+
+/** Estiliza uma aresta conforme o tipo de vínculo V5 */
+function getEdgeStyle(relationType: string): { stroke: string; strokeDasharray?: string; animated: boolean; strokeWidth: number } {
+  switch (relationType) {
+    case "BloodBond":
+      return { stroke: "#ef4444", animated: true, strokeWidth: 3 };
+    case "Enemy":
+      return { stroke: "#f43f5e", animated: false, strokeWidth: 2 };
+    case "Boon":
+    case "Sire":
+      return { stroke: "#eab308", strokeDasharray: "4,4", animated: true, strokeWidth: 2 };
+    case "Touchstone":
+      return { stroke: "#3b82f6", strokeDasharray: "6,4", animated: false, strokeWidth: 2 };
+    default:
+      return { stroke: "#6b7280", animated: false, strokeWidth: 1.5 };
+  }
+}
+
 export function useRelationshipMap(mode: "coterie" | "global") {
   const [players] = useCloudStorage<any[]>("v5_coterie", []);
   const [npcs] = useCloudStorage<any[]>("v5_npcs", []);
-  const [relMap] = useCloudStorage<any[]>("v5_relationship_map", []);
+  const [relMap, setRelMap] = useCloudStorage<any[]>("v5_relationship_map", []);
   const [boons] = useCloudStorage<any[]>("v5_boons", []);
 
   const result = useMemo(() => {
@@ -17,68 +60,64 @@ export function useRelationshipMap(mode: "coterie" | "global") {
     const nodes: Node[] = [];
     const edges: Edge[] = [];
 
-    // Nó Central da Coterie (sempre presente)
+    // ── NÓ CENTRAL DA COTERIE ──
     nodes.push({
       id: "coterie_center",
-      position: { x: 400, y: 300 },
+      position: { x: CENTER_X, y: CENTER_Y },
       data: {
         label: "A COTERIE",
         type: "coterie",
         image: "https://images.unsplash.com/photo-1605806616949-1e87b487cb2a?q=80&w=400&auto=format&fit=crop",
+        memberCount: safePlayers.length,
       },
-      type: "character",
+      type: "coterieNode",
     });
 
-    // Mapeamento Radial de Personagens dos Jogadores (Coterie)
-    const totalPlayers = safePlayers.length;
-    const playerRadius = 260;
+    // ── JOGADORES (VAMPIROS) ──
+    const playerPositions: Record<string, { x: number; y: number }> = {};
+    const playerRadius = 280 + safePlayers.length * 20;
 
     safePlayers.forEach((p, idx) => {
       const playerId = p.id || `player_${idx}`;
-      const angle = (idx / Math.max(1, totalPlayers)) * 2 * Math.PI - Math.PI / 2;
-      const px = Math.round(400 + Math.cos(angle) * playerRadius);
-      const py = Math.round(300 + Math.sin(angle) * playerRadius);
+      const pos = radialPosition(CENTER_X, CENTER_Y, playerRadius, idx, safePlayers.length);
+      playerPositions[playerId] = pos;
 
       nodes.push({
         id: playerId,
-        position: { x: px, y: py },
+        position: pos,
         data: {
           label: p.character_name || p.name || "Vampiro",
           image: p.avatar_url || p.image_url,
           clan: p.clan,
-          humanity: p.humanity,
+          humanity: p.humanity ?? 7,
           type: "vampire",
           faction: p.clan,
           status: p.status,
         },
-        type: "character",
+        type: "vampireNode",
       });
 
-      // Aresta de Pertencimento à Coterie
+      // Aresta: Membro da Coterie
       edges.push({
         id: `edge_coterie_${playerId}`,
         source: "coterie_center",
         target: playerId,
-        label: "Membro da Coterie",
-        style: { stroke: "#b91c1c", strokeWidth: 2.5 },
+        label: p.clan || "Membro",
+        style: { stroke: "#b91c1c", strokeWidth: 2 },
+        type: "smoothstep",
       });
 
-      // Mapeamento dos Pilares (Touchstones) da Ficha do Jogador
-      const playerConvictions = Array.isArray(p.convictions) ? p.convictions : [];
+      // ── TOUCHSTONES / PILARES DO JOGADOR ──
+      const playerConvictions = Array.isArray(p.convictions) ? p.convictions.filter(Boolean) : [];
       playerConvictions.forEach((c: any, cIdx: number) => {
-        if (!c) return;
         const touchstoneId = c.npc_id || `touchstone_${playerId}_${c.id || cIdx}`;
         const touchstoneName = c.touchstone_name || c.pilar_nome || "Pilar Mortal";
 
-        const alreadyInNodes = nodes.some((n) => n.id === touchstoneId);
-        if (!alreadyInNodes) {
-          const touchstoneAngle = angle + (cIdx - (playerConvictions.length - 1) / 2) * 0.5;
-          const tx = Math.round(px + Math.cos(touchstoneAngle) * 180);
-          const ty = Math.round(py + Math.sin(touchstoneAngle) * 180);
-
+        if (!nodes.some((n) => n.id === touchstoneId)) {
+          const tPos = satellitePosition(pos.x, pos.y, cIdx, playerConvictions.length);
           nodes.push({
             id: touchstoneId,
-            position: { x: tx, y: ty },
+            position: tPos,
             data: {
               label: touchstoneName,
               role: c.touchstone_title || c.touchstone_relation || "Pilar de Humanidade",
@@ -86,112 +125,89 @@ export function useRelationshipMap(mode: "coterie" | "global") {
               type: "touchstone",
               faction: "Mortal",
             },
-            type: "character",
+            type: "touchstoneNode",
           });
         }
 
-        // Aresta Oficial V5: Aliado / Pilar (Linha Azul Tracejada)
         edges.push({
-          id: `edge_touchstone_${playerId}_${touchstoneId}`,
+          id: `edge_ts_${playerId}_${touchstoneId}`,
           source: playerId,
           target: touchstoneId,
-          label: `Pilar: ${c.conviction || "Humanidade"}`,
-          style: { stroke: "#3b82f6", strokeWidth: 2, strokeDasharray: "5,5" },
-          animated: true,
+          label: c.conviction ? `Pilar: ${c.conviction}` : "Pilar",
+          ...getEdgeStyle("Touchstone"),
+          style: { ...getEdgeStyle("Touchstone") },
+          type: "smoothstep",
         });
       });
     });
 
+    // ── MODO GLOBAL: NPCs + RELAÇÕES + BOONS ──
     if (mode === "global") {
-      // Adiciona todos os NPCs da Galeria (v5_npcs) que ainda não estão no grafo
-      const totalNpcs = safeNpcs.length;
-      const globalRadius = 520;
-
+      const globalRadius = 580 + safeNpcs.length * 8;
       safeNpcs.forEach((npc, idx) => {
         const npcId = npc.id || `npc_${idx}`;
-        const alreadyInNodes = nodes.some((n) => n.id === npcId);
-        if (!alreadyInNodes) {
-          const angle = (idx / Math.max(1, totalNpcs)) * 2 * Math.PI;
-          const nx = Math.round(400 + Math.cos(angle) * globalRadius);
-          const ny = Math.round(300 + Math.sin(angle) * globalRadius);
+        if (nodes.some((n) => n.id === npcId)) return;
 
-          nodes.push({
-            id: npcId,
-            position: { x: nx, y: ny },
-            data: {
-              label: npc.name || npc.nome || "NPC",
-              role: npc.role || npc.cargo || npc.title || "NPC",
-              sect: npc.category || npc.seita || "Mortal",
-              status: npc.status,
-              image: npc.image_url || npc.avatar_url,
-              is_touchstone: npc.is_touchstone,
-              type: npc.is_touchstone ? "touchstone" : "npc",
-              faction: npc.category || npc.seita || "Mortal",
-            },
-            type: "character",
-          });
-        }
+        const pos = radialPosition(CENTER_X, CENTER_Y, globalRadius, idx, safeNpcs.length, 50);
+        nodes.push({
+          id: npcId,
+          position: pos,
+          data: {
+            label: npc.name || npc.nome || "NPC",
+            role: npc.role || npc.cargo || npc.title,
+            sect: npc.category || npc.seita,
+            status: npc.status,
+            image: npc.image_url || npc.avatar_url,
+            type: npc.is_touchstone ? "touchstone" : "npc",
+            faction: npc.category || npc.seita || "Mortal",
+          },
+          type: npc.is_touchstone ? "touchstoneNode" : "npcNode",
+        });
       });
 
-      // Processa Relacionamentos da Tabela v5_relationship_map
+      // Relacionamentos persistidos
       safeRelMap.forEach((rel) => {
         if (!rel || !rel.source_id || !rel.target_id) return;
-
-        let strokeColor = "#3b82f6";
-        let dashArray: string | undefined = undefined;
-        let isAnimated = false;
-
-        if (rel.relation_type === "BloodBond" || rel.type === "bloodbond") {
-          strokeColor = "#ef4444";
-          isAnimated = true;
-        } else if (rel.relation_type === "Enemy" || rel.type === "rival") {
-          strokeColor = "#f43f5e";
-        } else if (rel.relation_type === "Boon" || rel.type === "boon") {
-          strokeColor = "#eab308";
-          dashArray = "3,3";
-          isAnimated = true;
-        } else if (rel.relation_type === "Touchstone") {
-          strokeColor = "#3b82f6";
-          dashArray = "5,5";
-        }
-
+        const relType = rel.relation_type || rel.type || "Touchstone";
+        const style = getEdgeStyle(relType);
         edges.push({
           id: `rel_${rel.id || rel.source_id + "_" + rel.target_id}`,
           source: rel.source_id,
           target: rel.target_id,
-          label: rel.label || rel.relation_type || "Vínculo",
-          animated: isAnimated,
-          style: { stroke: strokeColor, strokeWidth: 2, strokeDasharray: dashArray },
+          label: rel.label || relType,
+          animated: style.animated,
+          style: { stroke: style.stroke, strokeWidth: style.strokeWidth, strokeDasharray: style.strokeDasharray },
+          type: "smoothstep",
         });
       });
 
-      // Processa Favores e Dívidas de Sangue (v5_boons)
+      // Boons / Dívidas
       safeBoons.forEach((boon) => {
         if (!boon || boon.isResolved) return;
+        const fromNode = nodes.find((n) => (n.data.label as string).toLowerCase() === (boon.from || "").toLowerCase());
+        const toNode = nodes.find((n) => (n.data.label as string).toLowerCase() === (boon.to || "").toLowerCase());
+        if (!fromNode || !toNode) return;
 
-        const fromNode = nodes.find((n) => n.data.label.toLowerCase() === (boon.from || "").toLowerCase());
-        const toNode = nodes.find((n) => n.data.label.toLowerCase() === (boon.to || "").toLowerCase());
+        let strokeColor = "#eab308";
+        if (boon.type === "minor") strokeColor = "#3b82f6";
+        if (boon.type === "trivial") strokeColor = "#9ca3af";
+        if (boon.type === "life") strokeColor = "#991b1b";
 
-        if (fromNode && toNode) {
-          let strokeColor = "#eab308";
-          if (boon.type === "minor") strokeColor = "#3b82f6";
-          if (boon.type === "trivial") strokeColor = "#9ca3af";
-          if (boon.type === "life") strokeColor = "#991b1b";
-
-          edges.push({
-            id: `boon_${boon.id}`,
-            source: fromNode.id,
-            target: toNode.id,
-            label: `Dívida: ${boon.description || boon.type}`,
-            animated: true,
-            style: { stroke: strokeColor, strokeWidth: 2, strokeDasharray: "3,3" },
-          });
-        }
+        edges.push({
+          id: `boon_${boon.id}`,
+          source: fromNode.id,
+          target: toNode.id,
+          label: `Dívida: ${boon.description || boon.type}`,
+          animated: true,
+          style: { stroke: strokeColor, strokeWidth: 2, strokeDasharray: "4,4" },
+          type: "smoothstep",
+        });
       });
     }
 
     return { nodes, edges };
   }, [players, npcs, relMap, boons, mode]);
 
-  return result;
+  // Expor setRelMap para persistir novas conexões criadas pelo Narrador
+  return { ...result, setRelMap };
 }
