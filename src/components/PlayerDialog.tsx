@@ -712,8 +712,20 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
     setForm((prev) => ({ ...prev, generation: gen, blood_potency: clampedBp }));
   };
 
+  // Helper para Perícias + Especializações (Declarado como function para evitar Hoisting TDZ)
+  function getSkillData(key: string) {
+    const aliasKey = SKILL_KEY_ALIASES[key] || key;
+    const raw = form.skills?.[key] || form.skills?.[aliasKey];
+    if (typeof raw === "number") return { nivel: raw, especializacao: "" };
+    if (raw && typeof raw === "object") {
+      const spec = Array.isArray(raw.especializacao) ? raw.especializacao.join(", ") : raw.especializacao || "";
+      return { nivel: raw.nivel || 0, especializacao: spec };
+    }
+    return { nivel: 0, especializacao: "" };
+  }
+
   // Helper de Contagem Reativa de Distribuição de Perícias
-  const getSkillDistributionCounts = () => {
+  function getSkillDistributionCounts() {
     const counts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
     const allSkillKeys = Object.values(V5_SKILLS_LIST)
       .flat()
@@ -726,7 +738,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       }
     });
     return counts;
-  };
+  }
 
   const skillDistributionCounts = getSkillDistributionCounts();
 
@@ -769,18 +781,6 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
         xp_spent: Math.max(0, (prev.xp_spent || 0) + costDelta),
       }));
     }
-  };
-
-  // Helper para Perícias + Especializações com Validação de Perfis V5 e Gasto Direto de XP
-  const getSkillData = (key: string) => {
-    const aliasKey = SKILL_KEY_ALIASES[key] || key;
-    const raw = form.skills?.[key] || form.skills?.[aliasKey];
-    if (typeof raw === "number") return { nivel: raw, especializacao: "" };
-    if (raw && typeof raw === "object") {
-      const spec = Array.isArray(raw.especializacao) ? raw.especializacao.join(", ") : raw.especializacao || "";
-      return { nivel: raw.nivel || 0, especializacao: spec };
-    }
-    return { nivel: 0, especializacao: "" };
   };
 
   const setSkillNivel = (key: string, newLevel: number) => {
