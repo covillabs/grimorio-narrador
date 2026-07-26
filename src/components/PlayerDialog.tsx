@@ -9,7 +9,7 @@ import { HungerTracker } from "@/components/HungerTracker";
 import { HumanityTracker } from "@/components/HumanityTracker";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, Plus, Sparkles, Award, BookOpen, ShieldAlert, Heart, Zap, ShieldCheck, Flame, Layers } from "lucide-react";
+import { Trash2, Plus, Sparkles, Award, BookOpen, ShieldAlert, Heart, Zap, ShieldCheck, Flame, Layers, Skull } from "lucide-react";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -34,6 +34,91 @@ interface PlayerDialogProps {
   onDelete?: (id: string) => void;
   onSave: (player: any) => void;
 }
+
+export interface V5ClanInfo {
+  name: string;
+  disciplines: string[];
+  bane: string;
+}
+
+// Mapeamento Completo dos 15 Clãs Oficiais do V5 com Disciplinas e Banes (Fraquezas)
+export const V5_CLANS_DATA: Record<string, V5ClanInfo> = {
+  Brujah: {
+    name: "Brujah",
+    disciplines: ["Potência", "Rapidez", "Presença"],
+    bane: "Fúria Violenta: O Brujah sofre uma penalidade em rolagens para resistir ao Frenesi de Fúria.",
+  },
+  Gangrel: {
+    name: "Gangrel",
+    disciplines: ["Animalismo", "Fortitude", "Metamorfose"],
+    bane: "Estigma Bestial: Ao entrar em Frenesi, o Gangrel ganha características animais temporárias.",
+  },
+  Malkavian: {
+    name: "Malkavian",
+    disciplines: ["Auspícios", "Dominação", "Ofuscação"],
+    bane: "Mandarim da Loucura: O Malkavian carrega uma Perturbação incurável que se intensifica com a Fome.",
+  },
+  Nosferatu: {
+    name: "Nosferatu",
+    disciplines: ["Animalismo", "Ofuscação", "Potência"],
+    bane: "Deformidade Hedionda: A aparência monstruosa impede disfarces comuns e penaliza interações sociais humanas.",
+  },
+  Toreador: {
+    name: "Toreador",
+    disciplines: ["Auspícios", "Presença", "Rapidez"],
+    bane: "Fascínio Estético: O Toreador se torna paralisado de fascínio ao testemunhar beleza suprema.",
+  },
+  Tremere: {
+    name: "Tremere",
+    disciplines: ["Auspícios", "Dominação", "Feitiçaria de Sangue"],
+    bane: "Laço Destruído: O Sangue Tremere é incapaz de criar laços de sangue totais com outros vampiros.",
+  },
+  Ventrue: {
+    name: "Ventrue",
+    disciplines: ["Dominação", "Fortitude", "Presença"],
+    bane: "Paladar Refinado: O Ventrue só consegue se alimentar de um tipo específico e restrito de sangue mortal.",
+  },
+  "Banu Haqim": {
+    name: "Banu Haqim",
+    disciplines: ["Auspícios", "Feitiçaria de Sangue", "Rapidez"],
+    bane: "Vício em Vitae: O Banu Haqim sente uma sede incontrolável pelo sangue de outros vampiros.",
+  },
+  Lasombra: {
+    name: "Lasombra",
+    disciplines: ["Dominação", "Oblívio", "Potência"],
+    bane: "Distorção de Imagem: O Lasombra não produz reflexos claros em espelhos e distorce gravações de vídeo.",
+  },
+  Ministério: {
+    name: "Ministério",
+    disciplines: ["Metamorfose", "Ofuscação", "Presença"],
+    bane: "Aversão à Luz: O Ministério sofre dano e penalidades intensificadas quando exposto a luzes fortes.",
+  },
+  Hecata: {
+    name: "Hecata",
+    disciplines: ["Auspícios", "Fortitude", "Oblívio"],
+    bane: "Beijo Doloroso: O Beijo do Hecata causa uma dor agonizante indescritível à vítima.",
+  },
+  Ravnos: {
+    name: "Ravnos",
+    disciplines: ["Animalismo", "Ofuscação", "Presença"],
+    bane: "Espírito Nômade: O Ravnos sofre danos se dormir no mesmo local na mesma semana.",
+  },
+  Tzimisce: {
+    name: "Tzimisce",
+    disciplines: ["Animalismo", "Dominação", "Metamorfose"],
+    bane: "Propriedade Sagrada: O Tzimisce deve dormir cercado por terra de seu local de nascimento.",
+  },
+  "Sangue-Fraco": {
+    name: "Sangue-Fraco",
+    disciplines: ["Alquimia Sangue-Fraco"],
+    bane: "Sangue Diluído: Não possui disciplinas inerentes e sofre fraquezas fatais de mortais.",
+  },
+  Caitiff: {
+    name: "Caitiff",
+    disciplines: ["Auspícios", "Fortitude", "Potência"],
+    bane: "Sem Clã: O Caitiff sofre rejeição social generalizada entre os Membros da sociedade vampírica.",
+  },
+};
 
 // Lista Oficial das 12 Disciplinas do V5
 export const V5_OFFICIAL_DISCIPLINES = [
@@ -191,9 +276,9 @@ export function getV5BloodPotencyLimits(generation: number) {
 }
 
 const defaultPlayer = {
-  character_name: "", player_name: "", clan: "", sire: "", generation: 13,
+  character_name: "", player_name: "", clan: "Ventrue", sire: "", generation: 13,
   hunger: 0, humanity: 7, stains: 0, blood_potency: 1,
-  xp_total: 0, xp_spent: 0,
+  xp_total: 0, xp_spent: 0, clan_bane: "",
   forca: 1, destreza: 1, vigor: 1,
   carisma: 1, manipulacao: 1, compostura: 1,
   inteligencia: 1, raciocinio: 1, perseveranca: 1,
@@ -328,6 +413,8 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       setForm({
         ...defaultPlayer,
         ...player,
+        clan: player.clan || "Ventrue",
+        clan_bane: player.clan_bane || (V5_CLANS_DATA[player.clan]?.bane || ""),
         skills: player.skills && typeof player.skills === "object" ? player.skills : {},
       });
     } else {
@@ -336,6 +423,30 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       setAdvantages([]);
     }
   }, [player, open]);
+
+  // Handler de Seleção de Clã com Automação de Disciplinas e Bane
+  const handleClanChange = (newClan: string) => {
+    const clanInfo = V5_CLANS_DATA[newClan];
+    const baneText = clanInfo ? clanInfo.bane : "";
+
+    setForm((prev) => ({
+      ...prev,
+      clan: newClan,
+      clan_bane: baneText,
+    }));
+
+    // Se a lista de disciplinas estiver vazia, pré-carrega as 3 disciplinas inerentes do clã
+    if (clanInfo && clanInfo.disciplines.length > 0 && disciplines.length === 0) {
+      const autoDisciplines: PlayerDiscipline[] = clanInfo.disciplines.map((dName) => ({
+        id: crypto.randomUUID(),
+        nome: dName,
+        nivel: 1,
+        poderes: [""],
+      }));
+      setDisciplines(autoDisciplines);
+      toast.info(`Disciplinas do Clã ${newClan} pré-carregadas: ${clanInfo.disciplines.join(", ")}`);
+    }
+  };
 
   // Automações de Potência de Sangue e Status
   const bpLimits = getV5BloodPotencyLimits(form.generation || 13);
@@ -488,7 +599,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
         </DialogHeader>
         <ScrollArea className="max-h-[72vh] pr-4 pt-2">
           <form onSubmit={handleSubmit} className="space-y-6 pt-1 pb-4">
-            {/* Topo: Imagem + Nome + Jogador + Clã */}
+            {/* Topo: Imagem + Nome + Jogador + Clã Oficial V5 */}
             <div className="flex flex-col sm:flex-row gap-4 items-start bg-muted/10 p-3 rounded-lg border border-border/40">
               <ImageUpload
                 currentUrl={form.image_url || null}
@@ -519,17 +630,41 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                     />
                   </div>
                   <div>
-                    <Label className="text-xs">Clã</Label>
-                    <Input
-                      value={form.clan}
-                      onChange={(e) => set("clan", e.target.value)}
-                      placeholder="Ex: Ventrue"
-                      className="mt-1 bg-background"
-                    />
+                    <Label className="text-xs font-bold text-blood">Clã Oficial (V5) *</Label>
+                    <Select
+                      value={form.clan || "Ventrue"}
+                      onValueChange={handleClanChange}
+                    >
+                      <SelectTrigger className="mt-1 bg-background font-semibold text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-48">
+                        {Object.keys(V5_CLANS_DATA).map((clanKey) => (
+                          <SelectItem key={clanKey} value={clanKey} className="text-xs">
+                            {clanKey}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </div>
             </div>
+
+            {/* Bane / Fraqueza do Clã (Gerado Automaticamente) */}
+            {form.clan_bane && (
+              <div className="p-3 bg-rose-950/20 border border-rose-500/30 rounded-lg flex items-start gap-2">
+                <Skull className="w-4 h-4 text-rose-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <span className="text-xs font-bold text-rose-400 uppercase tracking-wider block">
+                    Bane (Fraqueza do Clã {form.clan}):
+                  </span>
+                  <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
+                    {form.clan_bane}
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Senhor, Geração e Potência de Sangue Reativa */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-muted/10 p-3 rounded-lg border border-border/40">
