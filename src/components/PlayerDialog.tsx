@@ -9,7 +9,7 @@ import { HungerTracker } from "@/components/HungerTracker";
 import { HumanityTracker } from "@/components/HumanityTracker";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, Plus, Sparkles, Award, BookOpen, ShieldAlert, Heart, Zap, ShieldCheck, Flame, Layers, Skull } from "lucide-react";
+import { Trash2, Plus, Sparkles, Award, BookOpen, ShieldAlert, Heart, Zap, ShieldCheck, Flame, Layers, Skull, Crosshair } from "lucide-react";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -39,6 +39,14 @@ export interface V5ClanInfo {
   name: string;
   disciplines: string[];
   bane: string;
+}
+
+export interface V5PredatorTypeInfo {
+  name: string;
+  label: string;
+  specialtyOptions: Array<{ skill: string; skillLabel: string; name: string }>;
+  disciplineOptions: string[];
+  description: string;
 }
 
 // Mapeamento Completo dos 15 Clãs Oficiais do V5 com Disciplinas e Banes (Fraquezas)
@@ -119,6 +127,149 @@ export const V5_CLANS_DATA: Record<string, V5ClanInfo> = {
     bane: "Sem Clã: O Caitiff sofre rejeição social generalizada entre os Membros da sociedade vampírica.",
   },
 };
+
+// Mapeamento Oficial de 10 Tipos de Predador (Predator Types V5)
+export const V5_PREDATOR_TYPES: Record<string, V5PredatorTypeInfo> = {
+  Alleycat: {
+    name: "Alleycat",
+    label: "Felino de Beco (Alleycat)",
+    specialtyOptions: [
+      { skill: "intimidacao", skillLabel: "Intimidação", name: "Assalto Violento" },
+      { skill: "briga", skillLabel: "Briga", name: "Imobilização / Grappling" },
+    ],
+    disciplineOptions: ["Potência", "Rapidez"],
+    description: "Você toma o sangue à força através de violência direta ou emboscadas em becos escuros.",
+  },
+  Bagger: {
+    name: "Bagger",
+    label: "Sacoleiro (Bagger)",
+    specialtyOptions: [
+      { skill: "ladroagem", skillLabel: "Ladroagem", name: "Infiltração em Hospitais" },
+      { skill: "manha", skillLabel: "Manha", name: "Mercado Negro de Sangue" },
+    ],
+    disciplineOptions: ["Feitiçaria de Sangue", "Ofuscação"],
+    description: "Você compra ou rouba bolsas de sangue preservadas de hospitais e bancos de sangue.",
+  },
+  BloodLeech: {
+    name: "BloodLeech",
+    label: "Sanguessuga (Blood Leech)",
+    specialtyOptions: [
+      { skill: "briga", skillLabel: "Briga", name: "Vampiros" },
+      { skill: "subterfugio", skillLabel: "Subterfúgio", name: "Sedução de Membros" },
+    ],
+    disciplineOptions: ["Feitiçaria de Sangue", "Dominação"],
+    description: "Você se alimenta exclusivamente do sangue de outros vampiros.",
+  },
+  Cleaver: {
+    name: "Cleaver",
+    label: "Cortador / Falsa Família (Cleaver)",
+    specialtyOptions: [
+      { skill: "persuasao", skillLabel: "Persuasão", name: "Gaslighting Familiar" },
+      { skill: "subterfugio", skillLabel: "Subterfúgio", name: "Manter Aparências" },
+    ],
+    disciplineOptions: ["Dominação", "Animalismo"],
+    description: "Você se alimenta secretamente da sua própria família ou de uma família mortal que você mantém.",
+  },
+  Consensualist: {
+    name: "Consensualist",
+    label: "Consensualista (Consensualist)",
+    specialtyOptions: [
+      { skill: "medicina", skillLabel: "Medicina", name: "Flebotomia / Coleta" },
+      { skill: "persuasao", skillLabel: "Persuasão", name: "Obtenção de Consentimento" },
+    ],
+    disciplineOptions: ["Auspícios", "Fortitude"],
+    description: "Você se alimenta apenas com o consentimento explícito dos mortais.",
+  },
+  Farmer: {
+    name: "Farmer",
+    label: "Fazendeiro (Farmer)",
+    specialtyOptions: [
+      { skill: "trato_animais", skillLabel: "Trato c/ Animais", name: "Caça Doméstica" },
+      { skill: "sobrevivencia", skillLabel: "Sobrevivência", name: "Rastreamento de Animais" },
+    ],
+    disciplineOptions: ["Animalismo", "Metamorfose"],
+    description: "Você recusa se alimentar de humanos e bebe apenas sangue de animais.",
+  },
+  Osiris: {
+    name: "Osiris",
+    label: "Osíris (Osiris)",
+    specialtyOptions: [
+      { skill: "performance", skillLabel: "Performance", name: "Atração de Fãs" },
+      { skill: "subterfugio", skillLabel: "Subterfúgio", name: "Doutrinação de Culto" },
+    ],
+    disciplineOptions: ["Presença", "Feitiçaria de Sangue"],
+    description: "Você é um ídolo, guru ou artista cujos devotos doam sangue voluntariamente.",
+  },
+  Sandman: {
+    name: "Sandman",
+    label: "João Pestana (Sandman)",
+    specialtyOptions: [
+      { skill: "furtividade", skillLabel: "Furtividade", name: "Invasão Noturna" },
+      { skill: "ladroagem", skillLabel: "Ladroagem", name: "Arrombamento de Fechaduras" },
+    ],
+    disciplineOptions: ["Auspícios", "Ofuscação"],
+    description: "Você se esgueira em residências e se alimenta de mortais enquanto eles dormem.",
+  },
+  SceneQueen: {
+    name: "SceneQueen",
+    label: "Rainha da Cena (Scene Queen)",
+    specialtyOptions: [
+      { skill: "manha", skillLabel: "Manha", name: "Subcultura Noturna" },
+      { skill: "etiqueta", skillLabel: "Etiqueta", name: "Camarotes / Áreas VIP" },
+    ],
+    disciplineOptions: ["Presença", "Dominação"],
+    description: "Você domina uma subcultura específica (gótica, rave, alta sociedade) e caça no seu círculo social.",
+  },
+  Siren: {
+    name: "Siren",
+    label: "Sereia (Siren)",
+    specialtyOptions: [
+      { skill: "persuasao", skillLabel: "Persuasão", name: "Sedução" },
+      { skill: "subterfugio", skillLabel: "Subterfúgio", name: "Encontros de Uma Noite" },
+    ],
+    disciplineOptions: ["Fortitude", "Presença"],
+    description: "Você usa atratividade e sedução para alimentar-se de parceiros casuais.",
+  },
+};
+
+// Sugestões de Especializações Oficiais V5 por Perícia
+export const V5_RECOMMENDED_SPECIALTIES: Record<string, string[]> = {
+  // Físicas
+  atletismo: ["Corrida", "Escalada", "Parkour", "Natação", "Arremesso"],
+  briga: ["Soco", "Chute", "Imobilização", "Mordida Vampírica", "Esquiva em Combate"],
+  conducao: ["Carros de Passeio", "Motocicletas", "Perseguição", "Fuga", "Caminhões"],
+  armas_fogo: ["Pistolas", "Fuzis de Assalto", "Snipers", "Espingardas", "Saque Rápido"],
+  furtividade: ["Mimetismo em Sombras", "Rastreamento Urbano", "Perseguição Silenciosa", "Invasão"],
+  armas_brancas: ["Espadas", "Facas", "Machados", "Bastões", "Parry / Bloqueio"],
+  oficios: ["Carpintaria", "Eletrônica", "Armaria", "Escultura", "Mecânica Automotiva"],
+  sobrevivencia: ["Florestas", "Deserto", "Rastreamento de Pistas", "Abrigo de Emergência"],
+  ladroagem: ["Arrombamento de Fechaduras", "Furtar Bolsos", "Bypass de Alarmes", "Infiltração"],
+
+  // Sociais
+  empatia: ["Detectar Mentiras", "Emoções Ocultas", "Traumas", "Intenções de Combate"],
+  etiqueta: ["Alta Sociedade / Élite", "Camarilla", "Submundo / Anarquistas", "Eventos VIP"],
+  intimidacao: ["Ameaças Físicas", "Coerção Psicológica", "Tortura", "Postura Predatória"],
+  lideranca: ["Comando Tático", "Motivação de Tropas", "Oratória", "Inspiração"],
+  manha: ["Mercado Negro", "Rumores da Cidade", "Rotas de Fuga", "Gangues Urbanas"],
+  performance: ["Canto", "Atuação", "Dança", "Oratória", "Instrumentos de Corda"],
+  persuasao: ["Negociação", "Sedução", "Barganha", "Debates Políticos"],
+  subterfugio: ["Lábia / Mentira", "Sedução Disfarçada", "Disfarce", "Imitação de Voz"],
+  trato_animais: ["Cães de Guarda", "Gatos", "Aves de Rapina", "Ratos", "Cavalos"],
+
+  // Mentais
+  erudicao: ["História da Camarilla", "Direito", "Literatura", "Pesquisa Arquivística", "Línguas Antigas"],
+  ciencias: ["Química", "Física", "Biologia Molecular", "Genética", "Geologia"],
+  financas: ["Mercado de Ações", "Lavagem de Dinheiro", "Imóveis", "Avaliação de Bens"],
+  investigacao: ["Cenas de Crime", "Análise de Evidências", "Interrogatório", "Pesquisa Digital"],
+  medicina: ["Cirurgia", "Primeiros Socorros", "Toxicologia", "Flebotomia", "Patologia"],
+  ocultismo: ["Rituais de Feitiçaria", "Gehenna", "Nodismo", "Alquimia", "Fantasmas"],
+  percepcao: ["Emboscadas", "Aura", "Disfarces de Ofuscação", "Audição Aguçada"],
+  politica: ["Polícia Local", "Tribunais da Camarilla", "Conselho Anarquista", "Burocracia Municipal"],
+  tecnologia: ["Hacking", "Segurança de Redes", "Criptografia", "Hardware / Servidores"],
+};
+
+// As 4 Perícias Inatas que exigem Especialização Obrigatória no V5
+export const INNATE_SPECIALTY_SKILLS = new Set(["erudicao", "oficios", "performance", "ciencias"]);
 
 // Lista Oficial das 12 Disciplinas do V5
 export const V5_OFFICIAL_DISCIPLINES = [
@@ -235,7 +386,7 @@ export const V5_SKILLS_LIST = {
     { key: "armas_brancas", label: "Armas Brancas" },
     { key: "oficios", label: "Ofícios" },
     { key: "sobrevivencia", label: "Sobrevivência" },
-    { key: "larcenia", label: "Larcênia" },
+    { key: "ladroagem", label: "Ladroagem" },
   ],
   sociais: [
     { key: "empatia", label: "Empatia" },
@@ -249,7 +400,7 @@ export const V5_SKILLS_LIST = {
     { key: "trato_animais", label: "Trato c/ Animais" },
   ],
   mentais: [
-    { key: "academismo", label: "Academismo" },
+    { key: "erudicao", label: "Erudição" },
     { key: "ciencias", label: "Ciências" },
     { key: "financas", label: "Finanças" },
     { key: "investigacao", label: "Investigação" },
@@ -262,10 +413,11 @@ export const V5_SKILLS_LIST = {
 };
 
 const SKILL_KEY_ALIASES: Record<string, string> = {
-  ladragem: "larcenia",
+  larcenia: "ladroagem",
+  ladragem: "ladroagem",
   expressao: "etiqueta",
   labia: "subterfugio",
-  erudicao: "academismo",
+  academismo: "erudicao",
 };
 
 // Limites Oficiais de Potência de Sangue por Geração (V5)
@@ -295,7 +447,7 @@ export function getV5DisciplineMultiplier(clanName: string, discName: string): n
 const defaultPlayer = {
   character_name: "", player_name: "", clan: "Ventrue", sire: "", generation: 13,
   hunger: 0, humanity: 7, stains: 0, blood_potency: 1,
-  xp_total: 0, xp_spent: 0, clan_bane: "",
+  xp_total: 0, xp_spent: 0, clan_bane: "", predator_type: "", predator_specialty: "",
   forca: 1, destreza: 1, vigor: 1,
   carisma: 1, manipulacao: 1, compostura: 1,
   inteligencia: 1, raciocinio: 1, perseveranca: 1,
@@ -478,6 +630,31 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       }));
       setDisciplines(autoDisciplines);
       toast.info(`Disciplinas atualizadas para o Clã ${newClan}: ${clanInfo.disciplines.join(", ")}`);
+    }
+  };
+
+  // Handler de Tipo de Predador (Predator Type V5)
+  const handlePredatorTypeChange = (pKey: string) => {
+    const pInfo = V5_PREDATOR_TYPES[pKey];
+    setForm((prev) => ({
+      ...prev,
+      predator_type: pKey,
+      predator_specialty: "",
+    }));
+    if (pInfo) {
+      toast.info(`Tipo de Predador alterado para ${pInfo.label}. Escolha a especialização abaixo.`);
+    }
+  };
+
+  const handleApplyPredatorSpecialty = (specVal: string) => {
+    const [skillKey, specName] = specVal.split(":");
+    if (skillKey && specName) {
+      setSkillSpec(skillKey, specName);
+      setForm((prev) => ({ ...prev, predator_specialty: specVal }));
+      const skillLabel = Object.values(V5_SKILLS_LIST)
+        .flat()
+        .find((s) => s.key === skillKey)?.label || skillKey;
+      toast.success(`Especialização do Predador aplicada: ${skillLabel} (${specName})`);
     }
   };
 
@@ -758,6 +935,87 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
 
   const set = (field: string, value: any) => setForm((prev) => ({ ...prev, [field]: value }));
 
+  // Helper de Renderização de Item de Perícia com Especialização Obrigatória e Sugestões V5
+  const renderSkillItem = (s: { key: string; label: string }) => {
+    const skillData = getSkillData(s.key);
+    const isInnate = INNATE_SPECIALTY_SKILLS.has(s.key);
+    const isMissingInnate = isInnate && skillData.nivel > 0 && !skillData.especializacao.trim();
+    const recSpecs = V5_RECOMMENDED_SPECIALTIES[s.key] || [];
+
+    return (
+      <div
+        key={s.key}
+        className={`space-y-1.5 p-2 rounded border transition-colors ${
+          isMissingInnate
+            ? "bg-rose-950/20 border-rose-500/50"
+            : "bg-background/50 border-border/30"
+        }`}
+      >
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-foreground font-medium flex items-center gap-1">
+            {s.label}
+            {isInnate && (
+              <span
+                className="text-[9px] text-amber-400 font-bold px-1 bg-amber-950/40 rounded border border-amber-500/30"
+                title="Exige especialização obrigatória no V5 ao colocar ponto"
+              >
+                Inata
+              </span>
+            )}
+          </span>
+          <DotRating
+            value={skillData.nivel}
+            min={0}
+            size="sm"
+            onChange={(v) => setSkillNivel(s.key, v)}
+          />
+        </div>
+
+        {skillData.nivel > 0 && (
+          <div className="space-y-1 pt-0.5">
+            <Select
+              value={recSpecs.includes(skillData.especializacao) ? skillData.especializacao : "custom"}
+              onValueChange={(val) => {
+                if (val !== "custom") {
+                  setSkillSpec(s.key, val);
+                }
+              }}
+            >
+              <SelectTrigger className="h-6 text-[10px] bg-background font-semibold w-full">
+                <SelectValue placeholder="Sugestões Oficiais V5..." />
+              </SelectTrigger>
+              <SelectContent className="max-h-40">
+                <SelectItem value="custom" className="text-[10px] italic text-muted-foreground">
+                  -- Digitação Livre --
+                </SelectItem>
+                {recSpecs.map((specName) => (
+                  <SelectItem key={specName} value={specName} className="text-[10px]">
+                    {specName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Input
+              placeholder={
+                isMissingInnate
+                  ? "* Especialização Obrigatória (V5)..."
+                  : "Especialização (ex: Fuzis, Cirurgia)..."
+              }
+              value={skillData.especializacao}
+              onChange={(e) => setSkillSpec(s.key, e.target.value)}
+              className={`h-6 text-[10px] bg-background ${
+                isMissingInnate
+                  ? "border-rose-500 text-rose-300 placeholder:text-rose-400/70 font-semibold"
+                  : ""
+              }`}
+            />
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh]">
@@ -870,6 +1128,72 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                   />
                 </div>
               </div>
+            </div>
+
+            {/* Tipo de Predador (Predator Type V5) */}
+            <div className="bg-muted/10 p-3 rounded-lg border border-border/40 space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-bold text-blood flex items-center gap-1.5 font-serif">
+                  <Crosshair className="w-4 h-4 text-blood" /> Tipo de Predador (Predator Type V5)
+                </Label>
+                <span className="text-[10px] text-muted-foreground italic">Estilo de Caça Noturna</span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs">Selecione o Tipo de Predador</Label>
+                  <Select
+                    value={form.predator_type || ""}
+                    onValueChange={handlePredatorTypeChange}
+                  >
+                    <SelectTrigger className="mt-1 bg-background font-semibold text-xs h-8">
+                      <SelectValue placeholder="Escolha o estilo de caça..." />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-48">
+                      {Object.entries(V5_PREDATOR_TYPES).map(([pKey, pInfo]) => (
+                        <SelectItem key={pKey} value={pKey} className="text-xs">
+                          {pInfo.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {form.predator_type && V5_PREDATOR_TYPES[form.predator_type] && (
+                  <div>
+                    <Label className="text-xs text-emerald-400 font-semibold">Especialização Recomendada do Predador</Label>
+                    <Select
+                      value={form.predator_specialty || ""}
+                      onValueChange={handleApplyPredatorSpecialty}
+                    >
+                      <SelectTrigger className="mt-1 bg-background font-semibold text-xs h-8 border-emerald-500/40">
+                        <SelectValue placeholder="Aplicar especialização do predador..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {V5_PREDATOR_TYPES[form.predator_type].specialtyOptions.map((opt, idx) => (
+                          <SelectItem key={idx} value={`${opt.skill}:${opt.name}`} className="text-xs">
+                            {opt.skillLabel}: {opt.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+
+              {form.predator_type && V5_PREDATOR_TYPES[form.predator_type] && (
+                <div className="p-2.5 bg-background/60 border border-border/40 rounded text-xs space-y-1">
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    {V5_PREDATOR_TYPES[form.predator_type].description}
+                  </p>
+                  <div className="flex items-center gap-2 pt-1">
+                    <span className="text-[10px] font-bold uppercase text-primary">Disciplinas Recomendadas:</span>
+                    <span className="text-[10px] text-emerald-400 font-mono">
+                      {V5_PREDATOR_TYPES[form.predator_type].disciplineOptions.join(" ou ")}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Fome, Humanidade, Manchas (Stains) e XP Reativo */}
@@ -1235,30 +1559,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                         <span className="text-xs font-bold text-blood uppercase tracking-wider block border-b border-blood/20 pb-1">
                           Perícias Físicas (9)
                         </span>
-                        {V5_SKILLS_LIST.fisicas.map((s) => {
-                          const skillData = getSkillData(s.key);
-                          return (
-                            <div key={s.key} className="space-y-1 bg-background/50 p-1.5 rounded border border-border/30">
-                              <div className="flex items-center justify-between text-xs">
-                                <span className="text-foreground font-medium">{s.label}</span>
-                                <DotRating
-                                  value={skillData.nivel}
-                                  min={0}
-                                  size="sm"
-                                  onChange={(v) => setSkillNivel(s.key, v)}
-                                />
-                              </div>
-                              {skillData.nivel > 0 && (
-                                <Input
-                                  placeholder="Especialização (ex: Fuzis)"
-                                  value={skillData.especializacao}
-                                  onChange={(e) => setSkillSpec(s.key, e.target.value)}
-                                  className="h-6 text-[10px] bg-background"
-                                />
-                              )}
-                            </div>
-                          );
-                        })}
+                        {V5_SKILLS_LIST.fisicas.map((s) => renderSkillItem(s))}
                       </div>
 
                       {/* Sociais */}
@@ -1266,30 +1567,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                         <span className="text-xs font-bold text-amber-400 uppercase tracking-wider block border-b border-amber-400/20 pb-1">
                           Perícias Sociais (9)
                         </span>
-                        {V5_SKILLS_LIST.sociais.map((s) => {
-                          const skillData = getSkillData(s.key);
-                          return (
-                            <div key={s.key} className="space-y-1 bg-background/50 p-1.5 rounded border border-border/30">
-                              <div className="flex items-center justify-between text-xs">
-                                <span className="text-foreground font-medium">{s.label}</span>
-                                <DotRating
-                                  value={skillData.nivel}
-                                  min={0}
-                                  size="sm"
-                                  onChange={(v) => setSkillNivel(s.key, v)}
-                                />
-                              </div>
-                              {skillData.nivel > 0 && (
-                                <Input
-                                  placeholder="Especialização (ex: Intimidação Física)"
-                                  value={skillData.especializacao}
-                                  onChange={(e) => setSkillSpec(s.key, e.target.value)}
-                                  className="h-6 text-[10px] bg-background"
-                                />
-                              )}
-                            </div>
-                          );
-                        })}
+                        {V5_SKILLS_LIST.sociais.map((s) => renderSkillItem(s))}
                       </div>
 
                       {/* Mentais */}
@@ -1297,30 +1575,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                         <span className="text-xs font-bold text-blue-400 uppercase tracking-wider block border-b border-blue-400/20 pb-1">
                           Perícias Mentais (9)
                         </span>
-                        {V5_SKILLS_LIST.mentais.map((s) => {
-                          const skillData = getSkillData(s.key);
-                          return (
-                            <div key={s.key} className="space-y-1 bg-background/50 p-1.5 rounded border border-border/30">
-                              <div className="flex items-center justify-between text-xs">
-                                <span className="text-foreground font-medium">{s.label}</span>
-                                <DotRating
-                                  value={skillData.nivel}
-                                  min={0}
-                                  size="sm"
-                                  onChange={(v) => setSkillNivel(s.key, v)}
-                                />
-                              </div>
-                              {skillData.nivel > 0 && (
-                                <Input
-                                  placeholder="Especialização (ex: Criptografia)"
-                                  value={skillData.especializacao}
-                                  onChange={(e) => setSkillSpec(s.key, e.target.value)}
-                                  className="h-6 text-[10px] bg-background"
-                                />
-                              )}
-                            </div>
-                          );
-                        })}
+                        {V5_SKILLS_LIST.mentais.map((s) => renderSkillItem(s))}
                       </div>
                     </div>
                   </AccordionContent>
