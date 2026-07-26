@@ -178,19 +178,58 @@ export default function NpcsPage() {
                           </div>
                         )}
 
-                        {npc.disciplines && (
+                        {/* Disciplinas */}
+                        {Array.isArray(npc.disciplines) && npc.disciplines.length > 0 ? (
+                          <div className="pt-2 border-t border-border/30">
+                            <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground block mb-2">Disciplinas & Trunfos</span>
+                            <div className="space-y-2">
+                              {npc.disciplines.map((disc: any, idx: number) => (
+                                <div key={disc.id || idx} className="bg-background/60 p-2.5 rounded border border-border/40 text-xs space-y-1">
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-bold text-foreground text-xs flex items-center gap-1.5">
+                                      <Sparkles className="w-3.5 h-3.5 text-primary" /> {disc.name || "Disciplina"}
+                                    </span>
+                                    {disc.level !== undefined && disc.level !== null && (
+                                      <Badge variant="default" className="text-[9px] bg-primary/20 text-primary border-none py-0">
+                                        Nível {disc.level}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  {disc.powers && (
+                                    <p className="text-[11px] text-muted-foreground whitespace-pre-line leading-relaxed pl-1 border-l-2 border-primary/30 mt-1">
+                                      {disc.powers}
+                                    </p>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ) : typeof npc.disciplines === "string" && npc.disciplines ? (
                           <div className="pt-2">
                             <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground block mb-1">Disciplinas</span>
                             <p className="text-sm font-medium">{npc.disciplines}</p>
                           </div>
-                        )}
+                        ) : null}
 
-                        {npc.specialties && (
+                        {/* Especialidades */}
+                        {Array.isArray(npc.specialties) && npc.specialties.length > 0 ? (
+                          <div className="pt-2 border-t border-border/30 mt-2">
+                            <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground block mb-2">Especialidades</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {npc.specialties.map((spec: any, idx: number) => (
+                                <Badge key={spec.id || idx} variant="outline" className="text-[11px] bg-background/50 border-border/60 py-0.5 px-2 font-medium">
+                                  <span className="text-primary font-semibold">{spec.pericia}</span>
+                                  {spec.foco && <span className="text-muted-foreground ml-1">({spec.foco})</span>}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        ) : typeof npc.specialties === "string" && npc.specialties ? (
                           <div className="pt-2 border-t border-border/30 mt-2">
                             <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground block mb-1">Especialidades</span>
                             <p className="text-sm">{npc.specialties}</p>
                           </div>
-                        )}
+                        ) : null}
 
                         {npc.master_secrets && (
                           <div className="pt-4">
