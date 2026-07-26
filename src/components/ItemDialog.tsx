@@ -13,11 +13,20 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 const CATEGORIES = ["Arma", "Ferramenta de Investigação", "Artefato Místico", "Documento"];
 const RULE_TYPES = ["PASSIVO", "REATIVO", "GATILHO", "AÇÃO", "BÔNUS"] as const;
 
+export interface ItemModifier {
+  id: string;
+  target: string;
+  value: number;
+  isConditional: boolean;
+  conditionKey?: string;
+}
+
 export interface ItemRule {
   id: string;
   type: typeof RULE_TYPES[number];
   title: string;
   description: string;
+  modifiers?: ItemModifier[];
 }
 
 interface ItemDialogProps {
@@ -75,6 +84,7 @@ export function ItemDialog({ open, onOpenChange, item, onDelete, players, npcs, 
         type: "PASSIVO",
         title: "",
         description: "",
+        modifiers: [],
       },
     ]);
   };
@@ -87,6 +97,60 @@ export function ItemDialog({ open, onOpenChange, item, onDelete, players, npcs, 
 
   const handleRemoveRule = (id: string) => {
     setRules((prev) => prev.filter((r) => r.id !== id));
+  };
+
+  const handleAddModifier = (ruleId: string) => {
+    setRules((prev) =>
+      prev.map((r) => {
+        if (r.id !== ruleId) return r;
+        const currentMods = r.modifiers || [];
+        return {
+          ...r,
+          modifiers: [
+            ...currentMods,
+            {
+              id: crypto.randomUUID(),
+              target: "Combate",
+              value: 1,
+              isConditional: false,
+              conditionKey: "",
+            },
+          ],
+        };
+      })
+    );
+  };
+
+  const handleUpdateModifier = (
+    ruleId: string,
+    modId: string,
+    field: keyof ItemModifier,
+    value: any
+  ) => {
+    setRules((prev) =>
+      prev.map((r) => {
+        if (r.id !== ruleId) return r;
+        const currentMods = r.modifiers || [];
+        return {
+          ...r,
+          modifiers: currentMods.map((m) =>
+            m.id === modId ? { ...m, [field]: value } : m
+          ),
+        };
+      })
+    );
+  };
+
+  const handleRemoveModifier = (ruleId: string, modId: string) => {
+    setRules((prev) =>
+      prev.map((r) => {
+        if (r.id !== ruleId) return r;
+        return {
+          ...r,
+          modifiers: (r.modifiers || []).filter((m) => m.id !== modId),
+        };
+      })
+    );
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -232,6 +296,84 @@ export function ItemDialog({ open, onOpenChange, item, onDelete, players, npcs, 
                           rows={2}
                           className="text-xs bg-background min-h-[60px]"
                         />
+                      </div>
+
+                      {/* Subformulário: Modificadores Mecânicos (Dice Pool) */}
+                      <div className="pt-2 border-t border-border/40 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                            <Plus className="w-3 h-3 text-primary" /> Modificadores de Dados (+/-)
+                          </span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleAddModifier(rule.id)}
+                            className="h-6 text-[10px] text-primary hover:text-primary gap-1 px-2"
+                          >
+                            + Modificador
+                          </Button>
+                        </div>
+
+                        {rule.modifiers && rule.modifiers.length > 0 && (
+                          <div className="space-y-2 bg-background/50 p-2 rounded border border-border/40">
+                            {rule.modifiers.map((mod) => (
+                              <div key={mod.id} className="space-y-2 p-2 bg-muted/20 rounded border border-border/30">
+                                <div className="grid grid-cols-3 gap-2 items-center">
+                                  <div>
+                                    <Label className="text-[10px]">Alvo (Ex: Combate)</Label>
+                                    <Input
+                                      value={mod.target}
+                                      onChange={(e) => handleUpdateModifier(rule.id, mod.id, "target", e.target.value)}
+                                      placeholder="Ex: Combate, Físico"
+                                      className="h-7 text-xs bg-background"
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label className="text-[10px]">Valor (+/-)</Label>
+                                    <Input
+                                      type="number"
+                                      value={mod.value}
+                                      onChange={(e) => handleUpdateModifier(rule.id, mod.id, "value", parseInt(e.target.value) || 0)}
+                                      className="h-7 text-xs bg-background"
+                                    />
+                                  </div>
+                                  <div className="flex items-center justify-between pt-3">
+                                    <label className="flex items-center gap-1 text-[10px] cursor-pointer">
+                                      <input
+                                        type="checkbox"
+                                        checked={mod.isConditional}
+                                        onChange={(e) => handleUpdateModifier(rule.id, mod.id, "isConditional", e.target.checked)}
+                                        className="rounded text-primary focus:ring-0"
+                                      />
+                                      Condicional
+                                    </label>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => handleRemoveModifier(rule.id, mod.id)}
+                                      className="h-5 w-5 text-muted-foreground hover:text-destructive"
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                                {mod.isConditional && (
+                                  <div>
+                                    <Label className="text-[10px]">Gatilho / Nome da Condição</Label>
+                                    <Input
+                                      value={mod.conditionKey || ""}
+                                      onChange={(e) => handleUpdateModifier(rule.id, mod.id, "conditionKey", e.target.value)}
+                                      placeholder="Ex: furia_fria_ativa ou Lua Cheia"
+                                      className="h-7 text-xs bg-background"
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
