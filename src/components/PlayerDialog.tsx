@@ -1149,38 +1149,75 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
   const advBudget = getAdvantagesBudgetSummary();
 
   const handleAddAdvantageFromCatalog = (catalogItemName: string) => {
+    let newItem: PlayerAdvantage;
     if (catalogItemName === "custom") {
-      setAdvantages((prev) => [
-        ...prev,
-        { id: crypto.randomUUID(), nome: "Vantagem Personalizada (Homebrew)", tipo: "Vantagem", pontos: 1, isHomebrew: true },
-      ]);
-      toast.info("Vantagem Homebrew adicionada. Ajuste o nome e os pontos.");
-      return;
+      newItem = {
+        id: crypto.randomUUID(),
+        nome: "Vantagem Personalizada (Homebrew)",
+        tipo: "Vantagem",
+        pontos: 1,
+        isHomebrew: true,
+      };
+    } else {
+      const item = V5_MERITS_CATALOG.find((m) => m.nome === catalogItemName);
+      if (!item) return;
+      newItem = {
+        id: crypto.randomUUID(),
+        nome: item.nome,
+        tipo: item.tipo,
+        pontos: item.pontosDefault,
+      };
     }
 
-    const item = V5_MERITS_CATALOG.find((m) => m.nome === catalogItemName);
-    if (item) {
-      setAdvantages((prev) => [
-        ...prev,
-        { id: crypto.randomUUID(), nome: item.nome, tipo: item.tipo, pontos: item.pontosDefault },
-      ]);
-      toast.success(`${item.tipo} "${item.nome}" adicionada do catálogo V5.`);
+    // Trava de Orçamento Rígida V5 na Criação
+    if (form.enforce_attr_limits !== false) {
+      if (newItem.tipo !== "Defeito") {
+        if (advBudget.remainingMeritBudget - newItem.pontos < 0) {
+          toast.error(
+            `Saldo de Vantagens V5 insuficiente! Você só possui ${advBudget.remainingMeritBudget} ponto(s) livre(s). Adicione Defeitos (máx 2 pts bônus) ou reduza outras Vantagens.`
+          );
+          return;
+        }
+      } else {
+        if (advBudget.flawPointsChosen + newItem.pontos > 2) {
+          toast.warning(
+            `Na criação oficial do V5, defeitos além de 2 pontos não adicionam mais pontos ao orçamento livre de Vantagens.`
+          );
+        }
+      }
     }
+
+    setAdvantages((prev) => [...prev, newItem]);
+    toast.success(`${newItem.tipo} "${newItem.nome}" adicionada.`);
   };
 
   const handleUpdateAdvantage = (id: string, field: keyof PlayerAdvantage, value: any) => {
-    if (field === "pontos") {
-      const target = advantages.find((a) => a.id === id);
-      if (target && !target.isPredatorBonus && typeof value === "number") {
-        const oldPts = target.pontos || 1;
-        const costDelta = (value - oldPts) * 3;
-        setForm((prev) => ({
-          ...prev,
-          xp_total: Math.max(0, (prev.xp_total || 0) - costDelta),
-          xp_spent: Math.max(0, (prev.xp_spent || 0) + costDelta),
-        }));
+    const target = advantages.find((a) => a.id === id);
+    if (!target) return;
+
+    if (field === "pontos" && !target.isPredatorBonus && typeof value === "number") {
+      const oldPts = target.pontos || 1;
+      const deltaPts = value - oldPts;
+
+      if (form.enforce_attr_limits !== false && deltaPts > 0) {
+        if (target.tipo !== "Defeito") {
+          if (advBudget.remainingMeritBudget - deltaPts < 0) {
+            toast.error(
+              `Saldo de Vantagens V5 insuficiente! Você tem apenas ${advBudget.remainingMeritBudget} ponto(s) disponível(is).`
+            );
+            return;
+          }
+        }
       }
+
+      const costDelta = deltaPts * 3;
+      setForm((prev) => ({
+        ...prev,
+        xp_total: Math.max(0, (prev.xp_total || 0) - costDelta),
+        xp_spent: Math.max(0, (prev.xp_spent || 0) + costDelta),
+      }));
     }
+
     setAdvantages((prev) =>
       prev.map((a) => (a.id === id ? { ...a, [field]: value } : a))
     );
