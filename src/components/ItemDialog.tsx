@@ -13,6 +13,64 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 const CATEGORIES = ["Arma", "Ferramenta de Investigação", "Artefato Místico", "Documento"];
 const RULE_TYPES = ["PASSIVO", "REATIVO", "GATILHO", "AÇÃO", "BÔNUS"] as const;
 
+export const TARGET_OPTIONS = [
+  {
+    group: "Paradas Principais",
+    options: [
+      { label: "Combate (Geral)", value: "combate" },
+      { label: "Parada Física", value: "fisico" },
+      { label: "Parada Social", value: "social" },
+      { label: "Parada Mental", value: "mental" },
+    ],
+  },
+  {
+    group: "Atributos Físicos",
+    options: [
+      { label: "Força", value: "forca" },
+      { label: "Destreza", value: "destreza" },
+      { label: "Vigor", value: "vigor" },
+    ],
+  },
+  {
+    group: "Atributos Sociais",
+    options: [
+      { label: "Carisma", value: "carisma" },
+      { label: "Manipulação", value: "manipulacao" },
+      { label: "Compostura", value: "compostura" },
+    ],
+  },
+  {
+    group: "Atributos Mentais",
+    options: [
+      { label: "Inteligência", value: "inteligencia" },
+      { label: "Raciocínio", value: "raciocinio" },
+      { label: "Perseverança", value: "perseveranca" },
+    ],
+  },
+  {
+    group: "Perícias",
+    options: [
+      { label: "Briga", value: "briga" },
+      { label: "Armas de Fogo", value: "armas_de_fogo" },
+      { label: "Armas Brancas", value: "armas_brancas" },
+      { label: "Furtividade", value: "furtividade" },
+      { label: "Percepção", value: "percepcao" },
+      { label: "Investigação", value: "investigacao" },
+      { label: "Atletismo", value: "atletismo" },
+    ],
+  },
+  {
+    group: "Combate & Status",
+    options: [
+      { label: "Dano Físico (+Bônus)", value: "dano_fisico" },
+      { label: "Dano Agravado", value: "dano_agravado" },
+      { label: "Defesa (Esquiva)", value: "defesa" },
+      { label: "Vitalidade Máxima", value: "vitalidade" },
+      { label: "Força de Vontade Máxima", value: "vontade" },
+    ],
+  },
+];
+
 export interface ItemModifier {
   id: string;
   target: string;
@@ -298,11 +356,11 @@ export function ItemDialog({ open, onOpenChange, item, onDelete, players, npcs, 
                         />
                       </div>
 
-                      {/* Subformulário: Modificadores Mecânicos (Dice Pool) */}
+                      {/* Subformulário: Modificadores Mecânicos (Dice Pool & Atributos) */}
                       <div className="pt-2 border-t border-border/40 space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                            <Plus className="w-3 h-3 text-primary" /> Modificadores de Dados (+/-)
+                            <Plus className="w-3 h-3 text-primary" /> Modificadores Mecânicos (+/-)
                           </span>
                           <Button
                             type="button"
@@ -319,26 +377,51 @@ export function ItemDialog({ open, onOpenChange, item, onDelete, players, npcs, 
                           <div className="space-y-2 bg-background/50 p-2 rounded border border-border/40">
                             {rule.modifiers.map((mod) => (
                               <div key={mod.id} className="space-y-2 p-2 bg-muted/20 rounded border border-border/30">
-                                <div className="grid grid-cols-3 gap-2 items-center">
-                                  <div>
-                                    <Label className="text-[10px]">Alvo (Ex: Combate)</Label>
-                                    <Input
-                                      value={mod.target}
-                                      onChange={(e) => handleUpdateModifier(rule.id, mod.id, "target", e.target.value)}
-                                      placeholder="Ex: Combate, Físico"
-                                      className="h-7 text-xs bg-background"
-                                    />
+                                <div className="grid grid-cols-5 gap-2 items-center">
+                                  <div className="col-span-2">
+                                    <Label className="text-[10px]">Alvo</Label>
+                                    <Select
+                                      value={mod.target || (mod as any).alvo || "combate"}
+                                      onValueChange={(v) => {
+                                        handleUpdateModifier(rule.id, mod.id, "target", v);
+                                        handleUpdateModifier(rule.id, mod.id, "alvo" as any, v);
+                                      }}
+                                    >
+                                      <SelectTrigger className="h-7 text-[11px] bg-background">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent className="max-h-48">
+                                        {TARGET_OPTIONS.map((grp) => (
+                                          <div key={grp.group}>
+                                            <div className="text-[10px] font-bold text-muted-foreground uppercase px-2 py-1 bg-muted/30">
+                                              {grp.group}
+                                            </div>
+                                            {grp.options.map((opt) => (
+                                              <SelectItem key={opt.value} value={opt.value} className="text-xs pl-4">
+                                                {opt.label}
+                                              </SelectItem>
+                                            ))}
+                                          </div>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
                                   </div>
+
                                   <div>
                                     <Label className="text-[10px]">Valor (+/-)</Label>
                                     <Input
                                       type="number"
-                                      value={mod.value}
-                                      onChange={(e) => handleUpdateModifier(rule.id, mod.id, "value", parseInt(e.target.value) || 0)}
-                                      className="h-7 text-xs bg-background"
+                                      value={mod.value !== undefined ? mod.value : (mod as any).valor || 0}
+                                      onChange={(e) => {
+                                        const val = parseInt(e.target.value) || 0;
+                                        handleUpdateModifier(rule.id, mod.id, "value", val);
+                                        handleUpdateModifier(rule.id, mod.id, "valor" as any, val);
+                                      }}
+                                      className="h-7 text-xs bg-background text-center font-mono"
                                     />
                                   </div>
-                                  <div className="flex items-center justify-between pt-3">
+
+                                  <div className="col-span-2 flex items-center justify-between pt-3 pl-1">
                                     <label className="flex items-center gap-1 text-[10px] cursor-pointer">
                                       <input
                                         type="checkbox"
@@ -353,12 +436,14 @@ export function ItemDialog({ open, onOpenChange, item, onDelete, players, npcs, 
                                       variant="ghost"
                                       size="icon"
                                       onClick={() => handleRemoveModifier(rule.id, mod.id)}
-                                      className="h-5 w-5 text-muted-foreground hover:text-destructive"
+                                      className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                                      title="Excluir modificador"
                                     >
-                                      <Trash2 className="w-3 h-3" />
+                                      <Trash2 className="w-3.5 h-3.5" />
                                     </Button>
                                   </div>
                                 </div>
+
                                 {mod.isConditional && (
                                   <div>
                                     <Label className="text-[10px]">Gatilho / Nome da Condição</Label>
