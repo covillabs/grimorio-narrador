@@ -49,6 +49,41 @@ export interface V5PredatorTypeInfo {
   description: string;
 }
 
+export interface V5SkillProfileInfo {
+  name: string;
+  label: string;
+  limits: Record<number, number>;
+  description: string;
+}
+
+// Perfis Oficiais de Distribuição de Perícias V5 na Criação
+export const V5_SKILL_PROFILES: Record<string, V5SkillProfileInfo> = {
+  JackOfAllTrades: {
+    name: "JackOfAllTrades",
+    label: "Pau para Toda Obra (Jack-of-all-trades)",
+    limits: { 4: 0, 3: 1, 2: 8, 1: 10 },
+    description: "1 Habilidade no nível 3, 8 Habilidades no nível 2 e 10 Habilidades no nível 1.",
+  },
+  Balanced: {
+    name: "Balanced",
+    label: "Balanceado (Balanced)",
+    limits: { 4: 0, 3: 3, 2: 5, 1: 7 },
+    description: "3 Habilidades no nível 3, 5 Habilidades no nível 2 e 7 Habilidades no nível 1.",
+  },
+  Specialist: {
+    name: "Specialist",
+    label: "Especialista (Specialist)",
+    limits: { 4: 1, 3: 3, 2: 3, 1: 3 },
+    description: "1 Habilidade no nível 4, 3 Habilidades no nível 3, 3 no nível 2 e 3 no nível 1.",
+  },
+  Custom: {
+    name: "Custom",
+    label: "Livre / Narrador (Custom)",
+    limits: { 5: 5, 4: 5, 3: 27, 2: 27, 1: 27 },
+    description: "Distribuição livre de pontos sem travas automáticas de perfil.",
+  },
+};
+
 // Mapeamento Completo dos 15 Clãs Oficiais do V5 com Disciplinas e Banes (Fraquezas)
 export const V5_CLANS_DATA: Record<string, V5ClanInfo> = {
   Brujah: {
@@ -253,7 +288,7 @@ export const V5_RECOMMENDED_SPECIALTIES: Record<string, string[]> = {
   manha: ["Mercado Negro", "Rumores da Cidade", "Rotas de Fuga", "Gangues Urbanas"],
   performance: ["Canto", "Atuação", "Dança", "Oratória", "Instrumentos de Corda"],
   persuasao: ["Negociação", "Sedução", "Barganha", "Debates Políticos"],
-  subterfugio: ["Lábia / Mentira", "Sedução Disfarçada", "Disfarce", "Imitação de Voz"],
+  subterfugio: ["Lábia / Mentira", "Sedução Disfarçada", "Disfarce", "Imitation de Voz"],
   trato_animais: ["Cães de Guarda", "Gatos", "Aves de Rapina", "Ratos", "Cavalos"],
 
   // Mentais
@@ -448,6 +483,7 @@ const defaultPlayer = {
   character_name: "", player_name: "", clan: "Ventrue", sire: "", generation: 13,
   hunger: 0, humanity: 7, stains: 0, blood_potency: 1,
   xp_total: 0, xp_spent: 0, clan_bane: "", predator_type: "", predator_specialty: "",
+  skill_distribution_profile: "Balanced",
   forca: 1, destreza: 1, vigor: 1,
   carisma: 1, manipulacao: 1, compostura: 1,
   inteligencia: 1, raciocinio: 1, perseveranca: 1,
@@ -676,6 +712,24 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
     setForm((prev) => ({ ...prev, generation: gen, blood_potency: clampedBp }));
   };
 
+  // Helper de Contagem Reativa de Distribuição de Perícias
+  const getSkillDistributionCounts = () => {
+    const counts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    const allSkillKeys = Object.values(V5_SKILLS_LIST)
+      .flat()
+      .map((s) => s.key);
+
+    allSkillKeys.forEach((key) => {
+      const data = getSkillData(key);
+      if (data.nivel > 0 && data.nivel <= 5) {
+        counts[data.nivel] = (counts[data.nivel] || 0) + 1;
+      }
+    });
+    return counts;
+  };
+
+  const skillDistributionCounts = getSkillDistributionCounts();
+
   // Handler de Potência de Sangue com Gasto Direto de XP (Novo Nível x 10 XP)
   const handleBloodPotencyChange = (newBP: number) => {
     const oldBP = form.blood_potency || bpLimits.min;
@@ -717,7 +771,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
     }
   };
 
-  // Helper para Perícias + Especializações com Compatibilidade Retroativa e Gasto Direto de XP
+  // Helper para Perícias + Especializações com Validação de Perfis V5 e Gasto Direto de XP
   const getSkillData = (key: string) => {
     const aliasKey = SKILL_KEY_ALIASES[key] || key;
     const raw = form.skills?.[key] || form.skills?.[aliasKey];
@@ -732,7 +786,26 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
   const setSkillNivel = (key: string, newLevel: number) => {
     const current = getSkillData(key);
     const oldLevel = current.nivel;
+
     if (newLevel !== oldLevel) {
+      const profileKey = form.skill_distribution_profile || "Balanced";
+      const profile = V5_SKILL_PROFILES[profileKey];
+
+      // Validação de Limites por Perfil de Criação V5
+      if (profile && profileKey !== "Custom" && newLevel > oldLevel && newLevel > 0) {
+        const projectedCounts = { ...skillDistributionCounts };
+        if (oldLevel > 0) projectedCounts[oldLevel] = Math.max(0, (projectedCounts[oldLevel] || 0) - 1);
+        projectedCounts[newLevel] = (projectedCounts[newLevel] || 0) + 1;
+
+        const maxAllowed = profile.limits[newLevel] ?? 0;
+        if (projectedCounts[newLevel] > maxAllowed) {
+          toast.error(
+            `Limite do perfil "${profile.label}" atingido! Máximo de ${maxAllowed} perícia(s) no Nível ${newLevel}.`
+          );
+          return;
+        }
+      }
+
       let costDelta = 0;
       if (newLevel > oldLevel) {
         for (let lvl = oldLevel + 1; lvl <= newLevel; lvl++) costDelta += lvl * 3;
@@ -1543,16 +1616,76 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
               )}
             </div>
 
-            {/* Seção 2: Perícias V5 + Especializações (27 Perícias Oficiais em 3 Blocos de 9) */}
+            {/* Seção 2: Perícias V5 + Distribuição de Perfil V5 */}
             <div className="border-t border-border/60 pt-4">
               <Accordion type="single" collapsible className="border border-border/50 rounded-lg px-3 bg-muted/10">
                 <AccordionItem value="skills" className="border-none">
                   <AccordionTrigger className="text-sm font-semibold hover:no-underline py-3">
                     <span className="flex items-center gap-2 font-serif text-primary">
-                      <Award className="w-4 h-4" /> Perícias Oficiais V5 & Especializações (27 Perícias: 9 Físicas, 9 Sociais, 9 Mentais)
+                      <Award className="w-4 h-4" /> Perícias Oficiais V5 (27 Perícias) & Distribuição de Criação
                     </span>
                   </AccordionTrigger>
-                  <AccordionContent className="pt-2">
+                  <AccordionContent className="pt-2 space-y-4">
+                    {/* Seletor de Perfil de Distribuição V5 */}
+                    <div className="p-3 bg-background/60 border border-border/40 rounded-lg space-y-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                          <Label className="text-xs font-bold text-primary flex items-center gap-1.5">
+                            <Layers className="w-3.5 h-3.5" /> Perfil de Distribuição de Criação (V5)
+                          </Label>
+                          <p className="text-[11px] text-muted-foreground">
+                            {V5_SKILL_PROFILES[form.skill_distribution_profile || "Balanced"]?.description}
+                          </p>
+                        </div>
+                        <Select
+                          value={form.skill_distribution_profile || "Balanced"}
+                          onValueChange={(val) => set("skill_distribution_profile", val)}
+                        >
+                          <SelectTrigger className="h-8 text-xs bg-background font-semibold w-full sm:w-64">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.entries(V5_SKILL_PROFILES).map(([pKey, pInfo]) => (
+                              <SelectItem key={pKey} value={pKey} className="text-xs">
+                                {pInfo.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Resumo Dinâmico dos Limites por Nível */}
+                      {form.skill_distribution_profile !== "Custom" && (
+                        <div className="pt-2 border-t border-border/30 grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          {[4, 3, 2, 1].map((lvl) => {
+                            const profile = V5_SKILL_PROFILES[form.skill_distribution_profile || "Balanced"];
+                            const maxAllowed = profile?.limits[lvl] ?? 0;
+                            const currentCount = skillDistributionCounts[lvl] || 0;
+                            const isFull = currentCount === maxAllowed && maxAllowed > 0;
+                            const isOver = currentCount > maxAllowed;
+
+                            return (
+                              <div
+                                key={lvl}
+                                className={`p-1.5 rounded text-center border text-xs ${
+                                  isOver
+                                    ? "bg-rose-950/30 border-rose-500/50 text-rose-400 font-bold"
+                                    : isFull
+                                    ? "bg-emerald-950/20 border-emerald-500/40 text-emerald-400 font-semibold"
+                                    : "bg-muted/30 border-border/30 text-muted-foreground"
+                                }`}
+                              >
+                                <span className="text-[10px] block uppercase tracking-wider font-mono">Nível {lvl}</span>
+                                <span className="text-xs font-bold font-mono">
+                                  {currentCount} / {maxAllowed}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       {/* Físicas */}
                       <div className="space-y-3">
