@@ -27,6 +27,14 @@ export interface PlayerAdvantage {
   pontos: number;
 }
 
+export interface PlayerConviction {
+  id: string;
+  conviction: string;
+  touchstone_name: string;
+  touchstone_relation: string;
+  status: "active" | "damaged" | "destroyed";
+}
+
 interface PlayerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -594,6 +602,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
   const [form, setForm] = useState(defaultPlayer);
   const [disciplines, setDisciplines] = useState<PlayerDiscipline[]>([]);
   const [advantages, setAdvantages] = useState<PlayerAdvantage[]>([]);
+  const [convictions, setConvictions] = useState<PlayerConviction[]>([]);
 
   const isEditing = !!player;
 
@@ -631,6 +640,19 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       }
       setAdvantages(parsedAdvantages);
 
+      // 3. Parsing de Convicções e Pilares (V5)
+      let parsedConvictions: PlayerConviction[] = [];
+      if (Array.isArray(player.convictions)) {
+        parsedConvictions = player.convictions.map((c: any) => ({
+          id: c.id || crypto.randomUUID(),
+          conviction: c.conviction || c.conviccao || "",
+          touchstone_name: c.touchstone_name || c.pilar_nome || "",
+          touchstone_relation: c.touchstone_relation || c.pilar_relacao || "",
+          status: c.status || "active",
+        }));
+      }
+      setConvictions(parsedConvictions);
+
       setForm({
         ...defaultPlayer,
         ...player,
@@ -659,6 +681,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
         setDisciplines([]);
       }
       setAdvantages([]);
+      setConvictions([]);
     }
   }, [player, open]);
 
@@ -1064,6 +1087,77 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
     setAdvantages((prev) => prev.filter((a) => a.id !== id));
   };
 
+  // Handlers de Convicções e Pilares (V5)
+  const handleAddConviction = () => {
+    setConvictions((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        conviction: "",
+        touchstone_name: "",
+        touchstone_relation: "",
+        status: "active",
+      },
+    ]);
+  };
+
+  const handleUpdateConviction = (id: string, field: keyof PlayerConviction, value: any) => {
+    if (field === "status") {
+      if (value === "damaged") {
+        setForm((prev) => ({ ...prev, stains: Math.min(10, (prev.stains || 0) + 1) }));
+        toast.warning("Pilar ferido! +1 Mancha adicionada à trilha de Humanidade.");
+      } else if (value === "destroyed") {
+        setForm((prev) => ({ ...prev, stains: Math.min(10, (prev.stains || 0) + 2) }));
+        toast.error("Pilar destruído! +2 Manchas adicionadas à trilha de Humanidade.");
+      }
+    }
+    setConvictions((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, [field]: value } : c))
+    );
+  };
+
+  const handleRemoveConviction = (id: string) => {
+    setConvictions((prev) => prev.filter((c) => c.id !== id));
+  };
+
+  // Automação do Teste de Remorso Oficial V5 (Reserva = max(1, 10 - Humanidade - Manchas))
+  const handleRollRemorse = () => {
+    const hum = form.humanity || 7;
+    const st = form.stains || 0;
+
+    if (st <= 0) {
+      toast.info("O personagem não possui Manchas acumuladas nesta sessão. Não há necessidade de Teste de Remorso.");
+      return;
+    }
+
+    const remorsePool = Math.max(1, 10 - hum - st);
+    const rolls: number[] = [];
+    let successes = 0;
+
+    for (let i = 0; i < remorsePool; i++) {
+      const r = Math.floor(Math.random() * 10) + 1;
+      rolls.push(r);
+      if (r >= 6) successes++;
+    }
+
+    const rollListStr = rolls.join(", ");
+
+    if (successes >= 1) {
+      setForm((prev) => ({ ...prev, stains: 0 }));
+      toast.success(
+        `🎲 Teste de Remorso (Reserva ${remorsePool}d10: [${rollListStr}]) -> ÊXITO! (${successes} sucesso(s)). Manchas limpas! Humanidade (${hum}) mantida.`,
+        { duration: 6000 }
+      );
+    } else {
+      const newHum = Math.max(0, hum - 1);
+      setForm((prev) => ({ ...prev, humanity: newHum, stains: 0 }));
+      toast.error(
+        `🎲 Teste de Remorso (Reserva ${remorsePool}d10: [${rollListStr}]) -> FALHA! (0 sucessos). Sofreu Degeneração Moral. Humanidade caiu de ${hum} para ${newHum}. Manchas limpas!`,
+        { duration: 7000 }
+      );
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.character_name || !form.character_name.trim()) {
@@ -1081,6 +1175,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       willpower_current: Math.max(0, calculatedWillpowerMax - (form.fw_sup || 0) - (form.fw_agr || 0)),
       disciplines,
       advantages,
+      convictions,
     };
 
     onSave(playerData);
@@ -1383,6 +1478,23 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                     size="sm"
                     onChange={(v) => set("stains", v)}
                   />
+                </div>
+
+                {/* Botão & Reserva do Teste de Remorso V5 */}
+                <div className="pt-2 border-t border-border/30 flex items-center justify-between gap-2">
+                  <div className="text-[10px] text-muted-foreground font-mono">
+                    Remorso: <span className="font-bold text-amber-400">{Math.max(1, 10 - (form.humanity || 7) - (form.stains || 0))}d10</span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRollRemorse}
+                    className="h-6 text-[10px] font-semibold border-amber-500/40 text-amber-300 hover:bg-amber-950/30 gap-1 px-2"
+                    title="Rolar Teste de Remorso ao fim da sessão (10 - Humanidade - Manchas)"
+                  >
+                    <Sparkles className="w-3 h-3 text-amber-400" /> Rolar Remorso
+                  </Button>
                 </div>
               </div>
 
@@ -1918,6 +2030,120 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                   ))}
                 </div>
               )}
+            </div>
+
+            {/* Seção 4: Convicções & Pilares (Convictions & Touchstones V5) */}
+            <div className="border-t border-border/60 pt-4">
+              <Accordion type="single" collapsible className="border border-border/50 rounded-lg px-3 bg-muted/10">
+                <AccordionItem value="convictions" className="border-none">
+                  <AccordionTrigger className="text-sm font-semibold hover:no-underline py-3">
+                    <span className="flex items-center gap-2 font-serif text-primary">
+                      <ShieldCheck className="w-4 h-4 text-emerald-400" /> Convicções & Pilares (Convictions & Touchstones V5)
+                    </span>
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-2 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[11px] text-muted-foreground leading-relaxed">
+                        Convicções protegem a Humanidade contra Manchas. Cada Convicção deve estar ancorada em um Pilar mortal.
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleAddConviction}
+                        className="h-7 text-xs gap-1"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> Adicionar Pilar
+                      </Button>
+                    </div>
+
+                    {convictions.length === 0 ? (
+                      <div className="p-3 border border-dashed border-border rounded-lg text-center bg-muted/10">
+                        <p className="text-xs text-muted-foreground">Nenhuma convicção ou pilar cadastrado.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {convictions.map((c) => (
+                          <div
+                            key={c.id}
+                            className={`p-3 rounded-md border space-y-2.5 transition-colors ${
+                              c.status === "destroyed"
+                                ? "bg-rose-950/20 border-rose-500/50"
+                                : c.status === "damaged"
+                                ? "bg-amber-950/20 border-amber-500/40"
+                                : "bg-surface-container-low border-border/50"
+                            }`}
+                          >
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <div>
+                                <Label className="text-[10px] text-muted-foreground font-semibold">Convicção (Moral)</Label>
+                                <Input
+                                  placeholder="Ex: Nunca ferir um inocente..."
+                                  value={c.conviction}
+                                  onChange={(e) => handleUpdateConviction(c.id, "conviction", e.target.value)}
+                                  className="h-7 text-xs bg-background"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-[10px] text-muted-foreground font-semibold">Pilar (Mortal Âncora)</Label>
+                                <Input
+                                  placeholder="Ex: Maria (Irmã) - Enfermeira..."
+                                  value={c.touchstone_name}
+                                  onChange={(e) => handleUpdateConviction(c.id, "touchstone_name", e.target.value)}
+                                  className="h-7 text-xs bg-background"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pt-1 border-t border-border/30">
+                              <div className="flex-1 w-full">
+                                <Input
+                                  placeholder="Relação / Notas do Pilar..."
+                                  value={c.touchstone_relation}
+                                  onChange={(e) => handleUpdateConviction(c.id, "touchstone_relation", e.target.value)}
+                                  className="h-6 text-[10px] bg-background"
+                                />
+                              </div>
+
+                              <div className="flex items-center gap-2 self-end sm:self-auto">
+                                <Select
+                                  value={c.status || "active"}
+                                  onValueChange={(val) => handleUpdateConviction(c.id, "status", val)}
+                                >
+                                  <SelectTrigger className="h-6 text-[10px] bg-background w-32 font-semibold">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="active" className="text-[10px] text-emerald-400 font-bold">
+                                      Ativo (Protegido)
+                                    </SelectItem>
+                                    <SelectItem value="damaged" className="text-[10px] text-amber-400 font-bold">
+                                      Ferido (+1 Mancha)
+                                    </SelectItem>
+                                    <SelectItem value="destroyed" className="text-[10px] text-rose-400 font-bold">
+                                      Destruído (+2 Manchas)
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleRemoveConviction(c.id)}
+                                  className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             </div>
 
             {/* Accordion de Lore: Background e História (Fechado por Padrão) */}
