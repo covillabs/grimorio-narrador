@@ -1174,15 +1174,16 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       if (newItem.tipo !== "Defeito") {
         if (advBudget.remainingMeritBudget - newItem.pontos < 0) {
           toast.error(
-            `Saldo de Vantagens V5 insuficiente! Você só possui ${advBudget.remainingMeritBudget} ponto(s) livre(s). Adicione Defeitos (máx 2 pts bônus) ou reduza outras Vantagens.`
+            `Estouro de Orçamento V5! Saldo livre disponível: ${advBudget.remainingMeritBudget} pt(s). Item custa ${newItem.pontos} pt(s).`
           );
           return;
         }
       } else {
         if (advBudget.flawPointsChosen + newItem.pontos > 2) {
-          toast.warning(
-            `Na criação oficial do V5, defeitos além de 2 pontos não adicionam mais pontos ao orçamento livre de Vantagens.`
+          toast.error(
+            `Trava V5: O limite de Defeitos de criação é de 2 pontos. Você já alocou ${advBudget.flawPointsChosen} pt(s).`
           );
+          return;
         }
       }
     }
@@ -1203,7 +1204,14 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
         if (target.tipo !== "Defeito") {
           if (advBudget.remainingMeritBudget - deltaPts < 0) {
             toast.error(
-              `Saldo de Vantagens V5 insuficiente! Você tem apenas ${advBudget.remainingMeritBudget} ponto(s) disponível(is).`
+              `Estouro de Orçamento V5! Saldo livre disponível: ${advBudget.remainingMeritBudget} pt(s).`
+            );
+            return;
+          }
+        } else {
+          if (advBudget.flawPointsChosen + deltaPts > 2) {
+            toast.error(
+              `Trava V5: O teto máximo de Defeitos na criação é de 2 pontos.`
             );
             return;
           }
@@ -2123,7 +2131,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                     }}
                   >
                     <SelectTrigger className="h-7 text-xs bg-background font-semibold w-56">
-                      <SelectValue placeholder="Catálogo Oficial V5..." />
+                      <SelectValue placeholder="Adicionar do Catálogo V5..." />
                     </SelectTrigger>
                     <SelectContent className="max-h-56">
                       <SelectItem value="custom" className="text-xs italic text-amber-400 font-bold">
@@ -2146,7 +2154,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                     Orçamento Base: <span className="font-bold text-foreground">7 Pts</span>
                   </span>
                   <span className="text-[11px] text-rose-400">
-                    Defeitos Escolhidos: <span className="font-bold">{advBudget.flawPointsChosen} Pts</span> (+{advBudget.flawBonusAllowed} bônus)
+                    Defeitos Escolhidos: <span className="font-bold">{advBudget.flawPointsChosen} / 2 Pts</span> (+{advBudget.flawBonusAllowed} bônus)
                   </span>
                   <span className="text-[11px] text-emerald-400">
                     Vantagens Gastas: <span className="font-bold">{advBudget.freeMeritPointsSpent} / {advBudget.totalMeritBudget} Pts</span>
@@ -2157,10 +2165,10 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                   <span
                     className={
                       advBudget.remainingMeritBudget < 0
-                        ? "text-rose-400"
+                        ? "text-rose-400 font-bold"
                         : advBudget.remainingMeritBudget === 0
-                        ? "text-emerald-400"
-                        : "text-amber-400"
+                        ? "text-emerald-400 font-bold"
+                        : "text-amber-400 font-bold"
                     }
                   >
                     {advBudget.remainingMeritBudget} Pts
@@ -2168,83 +2176,105 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                 </div>
               </div>
 
-              {advantages.length === 0 ? (
+              {/* Bloco 1: Vantagens Gratuitas de Predador (Totalmente Isoladas do Orçamento de 7 Pts) */}
+              {advantages.some((a) => a.isPredatorBonus) && (
+                <div className="p-3 bg-amber-950/20 border border-amber-500/40 rounded-lg space-y-2">
+                  <span className="text-xs font-bold text-amber-400 flex items-center gap-1.5 font-serif">
+                    <Crosshair className="w-3.5 h-3.5" /> Traços Gratuitos do Tipo de Predador (Isolados do Orçamento)
+                  </span>
+                  <div className="space-y-1.5">
+                    {advantages
+                      .filter((a) => a.isPredatorBonus)
+                      .map((adv) => (
+                        <div
+                          key={adv.id}
+                          className="flex items-center justify-between p-2 bg-background/60 border border-amber-500/30 rounded text-xs"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-amber-400">[{adv.tipo}]</span>
+                            <span className="text-foreground font-medium">{adv.nome}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold text-amber-300 bg-amber-950/60 border border-amber-500/40 px-2 py-0.5 rounded">
+                              {adv.pontos} Ponto(s) (Grátis)
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Bloco 2: Vantagens e Defeitos do Orçamento Livre de Criação */}
+              {advantages.filter((a) => !a.isPredatorBonus).length === 0 ? (
                 <div className="p-3 border border-dashed border-border rounded-lg text-center bg-muted/10">
-                  <p className="text-xs text-muted-foreground">Nenhuma vantagem, defeito ou antecedente registrado.</p>
+                  <p className="text-xs text-muted-foreground">Nenhuma vantagem, defeito ou antecedente do orçamento alocado.</p>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {advantages.map((adv) => (
-                    <div
-                      key={adv.id}
-                      className={`flex flex-col sm:flex-row items-start sm:items-center gap-2 p-2 rounded-md border transition-colors ${
-                        adv.isPredatorBonus
-                          ? "bg-amber-950/20 border-amber-500/40"
-                          : adv.isHomebrew
-                          ? "bg-purple-950/20 border-purple-500/40"
-                          : "bg-surface-container-low border-border/40"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 flex-1 w-full">
-                        <Select
-                          value={adv.tipo}
-                          onValueChange={(val) => handleUpdateAdvantage(adv.id, "tipo", val)}
-                          disabled={adv.isPredatorBonus}
-                        >
-                          <SelectTrigger className="h-8 text-xs bg-background w-32 font-semibold">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Vantagem" className="text-xs text-emerald-400 font-bold">Vantagem</SelectItem>
-                            <SelectItem value="Defeito" className="text-xs text-rose-400 font-bold">Defeito</SelectItem>
-                            <SelectItem value="Antecedente" className="text-xs text-blue-400 font-bold">Antecedente</SelectItem>
-                          </SelectContent>
-                        </Select>
+                  {advantages
+                    .filter((a) => !a.isPredatorBonus)
+                    .map((adv) => (
+                      <div
+                        key={adv.id}
+                        className={`flex flex-col sm:flex-row items-start sm:items-center gap-2 p-2 rounded-md border transition-colors ${
+                          adv.isHomebrew
+                            ? "bg-purple-950/20 border-purple-500/40"
+                            : "bg-surface-container-low border-border/40"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 flex-1 w-full">
+                          <Select
+                            value={adv.tipo}
+                            onValueChange={(val) => handleUpdateAdvantage(adv.id, "tipo", val)}
+                          >
+                            <SelectTrigger className="h-8 text-xs bg-background w-32 font-semibold">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Vantagem" className="text-xs text-emerald-400 font-bold">Vantagem</SelectItem>
+                              <SelectItem value="Defeito" className="text-xs text-rose-400 font-bold">Defeito</SelectItem>
+                              <SelectItem value="Antecedente" className="text-xs text-blue-400 font-bold">Antecedente</SelectItem>
+                            </SelectContent>
+                          </Select>
 
-                        <Input
-                          placeholder="Nome da Vantagem/Defeito..."
-                          value={adv.nome}
-                          onChange={(e) => handleUpdateAdvantage(adv.id, "nome", e.target.value)}
-                          className="h-8 text-xs bg-background flex-1"
-                          readOnly={adv.isPredatorBonus}
-                        />
-
-                        {adv.isPredatorBonus && (
-                          <span className="text-[9px] font-bold text-amber-400 bg-amber-950/40 border border-amber-500/40 px-1.5 py-0.5 rounded whitespace-nowrap">
-                            Grátis (Predador)
-                          </span>
-                        )}
-
-                        {adv.isHomebrew && (
-                          <span className="text-[9px] font-bold text-purple-400 bg-purple-950/40 border border-purple-500/40 px-1.5 py-0.5 rounded whitespace-nowrap">
-                            Homebrew
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-2 self-end sm:self-auto">
-                        <div className="px-2">
-                          <DotRating
-                            value={adv.pontos}
-                            min={1}
-                            max={5}
-                            size="sm"
-                            onChange={(v) => handleUpdateAdvantage(adv.id, "pontos", v)}
+                          <Input
+                            placeholder="Nome da Vantagem/Defeito..."
+                            value={adv.nome}
+                            onChange={(e) => handleUpdateAdvantage(adv.id, "nome", e.target.value)}
+                            className="h-8 text-xs bg-background flex-1"
                           />
+
+                          {adv.isHomebrew && (
+                            <span className="text-[9px] font-bold text-purple-400 bg-purple-950/40 border border-purple-500/40 px-1.5 py-0.5 rounded whitespace-nowrap">
+                              Homebrew
+                            </span>
+                          )}
                         </div>
 
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveAdvantage(adv.id)}
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        <div className="flex items-center gap-2 self-end sm:self-auto">
+                          <div className="px-2">
+                            <DotRating
+                              value={adv.pontos}
+                              min={1}
+                              max={5}
+                              size="sm"
+                              onChange={(v) => handleUpdateAdvantage(adv.id, "pontos", v)}
+                            />
+                          </div>
+
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemoveAdvantage(adv.id)}
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               )}
             </div>
