@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { Network, Users } from 'lucide-react';
-import { ReactFlow, Controls, Background, useNodesState, useEdgesState } from '@xyflow/react';
+import { ReactFlow, Controls, Background, applyNodeChanges, applyEdgeChanges, NodeChange, EdgeChange, Node, Edge } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { CharacterNode } from '@/components/Teia/CharacterNode';
 import { Button } from '@/components/ui/button';
@@ -12,16 +12,30 @@ const nodeTypes = {
 
 export default function TeiaPage() {
   const [mode, setMode] = useState<'coterie' | 'global'>('coterie');
-  const { nodes: computedNodes, edges: computedEdges } = useRelationshipMap(mode);
+  const { nodes, edges } = useRelationshipMap(mode);
 
-  const [nodes, setNodes, onNodesChange] = useNodesState(computedNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(computedEdges);
+  // Permitir que o usuário arraste os nós (aplicar mudanças de posição em cima dos nós computados)
+  const [nodePositionOverrides, setNodePositionOverrides] = useState<Record<string, { x: number; y: number }>>({});
 
-  // Reatividade em Tempo Real: Atualiza ReactFlow quando o estado das entidades mudar
-  useEffect(() => {
-    setNodes(computedNodes);
-    setEdges(computedEdges);
-  }, [computedNodes, computedEdges, setNodes, setEdges]);
+  const displayNodes = nodes.map((n) => {
+    const override = nodePositionOverrides[n.id];
+    return override ? { ...n, position: override } : n;
+  });
+
+  const onNodesChange = useCallback((changes: NodeChange[]) => {
+    changes.forEach((change) => {
+      if (change.type === 'position' && change.position && change.id) {
+        setNodePositionOverrides((prev) => ({
+          ...prev,
+          [change.id]: change.position!,
+        }));
+      }
+    });
+  }, []);
+
+  const onEdgesChange = useCallback((_changes: EdgeChange[]) => {
+    // Noop: arestas são derivadas dos dados
+  }, []);
 
   return (
     <div className="flex flex-col h-[calc(100vh-6rem)]">
@@ -41,7 +55,7 @@ export default function TeiaPage() {
             <Button 
               variant={mode === 'coterie' ? 'default' : 'ghost'} 
               size="sm" 
-              onClick={() => setMode('coterie')}
+              onClick={() => { setMode('coterie'); setNodePositionOverrides({}); }}
               className={`gap-2 ${mode === 'coterie' ? 'bg-primary text-white' : 'text-muted-foreground'}`}
             >
               <Users className="w-4 h-4" />
@@ -50,7 +64,7 @@ export default function TeiaPage() {
             <Button 
               variant={mode === 'global' ? 'default' : 'ghost'} 
               size="sm" 
-              onClick={() => setMode('global')}
+              onClick={() => { setMode('global'); setNodePositionOverrides({}); }}
               className={`gap-2 ${mode === 'global' ? 'bg-primary text-white' : 'text-muted-foreground'}`}
             >
               <Network className="w-4 h-4" />
@@ -63,7 +77,7 @@ export default function TeiaPage() {
       <div className="flex-1 w-full border border-border rounded-lg overflow-hidden relative bg-black/40">
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20 pointer-events-none z-0"></div>
         <ReactFlow
-          nodes={nodes}
+          nodes={displayNodes}
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
