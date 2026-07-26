@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useCloudStorage } from "@/hooks/useCloudStorage";
 import { supabase } from "@/integrations/supabase/client";
+import { calculateCharacterStats } from "@/utils/calculateCharacterStats";
 import { Plus, Crosshair, Sparkles, Zap, Users, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HungerTracker } from "@/components/HungerTracker";
@@ -9,6 +10,68 @@ import { PlayerDialog } from "@/components/PlayerDialog";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { getPrefixedKey } from "@/components/ChronicleSwitcher";
+
+// Componente para exibir valores com modificadores visuais no formato +X (verde) / -X (vermelho)
+export function ModifiedValue({
+  baseValue,
+  modValue = 0,
+  className = "",
+}: {
+  baseValue: number;
+  modValue?: number;
+  className?: string;
+}) {
+  return (
+    <span className={`inline-flex items-center font-mono ${className}`}>
+      <span>{baseValue}</span>
+      {modValue > 0 && (
+        <span className="text-emerald-400 text-xs font-bold ml-1">
+          +{modValue}
+        </span>
+      )}
+      {modValue < 0 && (
+        <span className="text-rose-400 text-xs font-bold ml-1">
+          {modValue}
+        </span>
+      )}
+    </span>
+  );
+}
+
+// Extrai um resumo rápido das regras e modificadores de um item
+function getItemSummary(item: any): string[] {
+  const summaries: string[] = [];
+
+  let rules: any[] = [];
+  const rawRules = item.rules_bonus || item.regras_bonus;
+  if (Array.isArray(rawRules)) {
+    rules = rawRules;
+  } else if (typeof rawRules === "string" && rawRules.startsWith("[")) {
+    try {
+      rules = JSON.parse(rawRules);
+    } catch {}
+  }
+
+  if (rules.length > 0) {
+    rules.forEach((r) => {
+      const mods = r.modificadores || r.modifiers || [];
+      if (mods.length > 0) {
+        mods.forEach((m: any) => {
+          const val = m.valor !== undefined ? m.valor : m.value;
+          const target = m.alvo || m.target || "Combate";
+          const sign = val > 0 ? `+${val}` : `${val}`;
+          summaries.push(`${sign} ${target}`);
+        });
+      } else if (r.title || r.nome) {
+        summaries.push(r.title || r.nome);
+      }
+    });
+  } else if (item.modifier) {
+    summaries.push(item.modifier);
+  }
+
+  return summaries;
+}
 
 const CLAN_DISCIPLINES: Record<string, {name: string, desc: string}[]> = {
   "Brujah": [
@@ -70,12 +133,10 @@ export default function CoteriePage() {
 
   // Função para Atualização Rápida de Fome no Supabase (Quick Update)
   const handleQuickHungerUpdate = async (playerId: string, newHunger: number) => {
-    // 1. Atualiza estado local instantaneamente
     setPlayers((prev) =>
       prev.map((p) => (p.id === playerId ? { ...p, hunger: newHunger } : p))
     );
 
-    // 2. Dispara UPDATE assíncrono para o Supabase
     try {
       const { error } = await supabase
         .from("players")
@@ -149,138 +210,183 @@ export default function CoteriePage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {players.map((player) => (
-            <div
-              key={player.id}
-              className="bg-card border border-border rounded-lg hover:border-primary/40 transition-colors cursor-pointer group/card relative"
-              onClick={() => { setEditingPlayer(player); setDialogOpen(true); }}
-            >
-              <div className="aspect-[4/3] bg-muted overflow-hidden rounded-t-lg">
-                {player.image_url ? (
-                  <img src={player.image_url} alt={player.character_name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                    <span className="font-serif text-4xl opacity-30">
-                      {player.character_name.charAt(0)}
-                    </span>
-                  </div>
-                )}
-              </div>
-              <div className="p-4 space-y-3">
-                <div>
-                  <h3 className="font-serif font-semibold text-lg">{player.character_name}</h3>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    {[player.clan, player.player_name && `(${player.player_name})`].filter(Boolean).join(" ")}
-                  </p>
-                </div>
+          {players.map((player) => {
+            const playerItems = arsenal.filter(
+              (item) => item.owner === player.character_name || item.owner === player.character_name.split(' ')[0]
+            );
+            const stats = calculateCharacterStats(player, playerItems);
 
-                {/* Trackers de Fome e Humanidade com Quick Update */}
-                <div className="flex items-center justify-between" onClick={(e) => e.stopPropagation()}>
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs text-primary font-medium tracking-wider uppercase">Fome</span>
-                      <Button size="icon" variant="outline" className="h-4 w-4 bg-transparent border-blood/50 text-blood hover:bg-blood hover:text-white rounded-full flex items-center justify-center p-0" title="Rouse Check (Despertar)" onClick={(e) => { e.stopPropagation(); rollRouse(player.id, player.hunger); }}>
-                         <Zap className="w-2 h-2" />
-                      </Button>
+            return (
+              <div
+                key={player.id}
+                className="bg-card border border-border rounded-lg hover:border-primary/40 transition-colors cursor-pointer group/card relative"
+                onClick={() => { setEditingPlayer(player); setDialogOpen(true); }}
+              >
+                <div className="aspect-[4/3] bg-muted overflow-hidden rounded-t-lg">
+                  {player.image_url ? (
+                    <img src={player.image_url} alt={player.character_name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                      <span className="font-serif text-4xl opacity-30">
+                        {player.character_name.charAt(0)}
+                      </span>
                     </div>
-                    <HungerTracker
-                      value={player.hunger}
-                      size="sm"
-                      onChange={(v) => handleQuickHungerUpdate(player.id, v)}
-                    />
-                  </div>
+                  )}
+                </div>
+                <div className="p-4 space-y-3">
                   <div>
-                    <span className="text-xs text-gold font-medium tracking-wider uppercase block mb-1">Humanidade</span>
-                    <HumanityTracker
-                      value={player.humanity}
-                      size="sm"
-                      onChange={(v) => updateTracker.mutate({ id: player.id, field: "humanity", value: v })}
-                    />
+                    <h3 className="font-serif font-semibold text-lg">{player.character_name}</h3>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      {[player.clan, player.player_name && `(${player.player_name})`].filter(Boolean).join(" ")}
+                    </p>
                   </div>
-                </div>
 
-                {/* Métricas Vitais Discretas: Vitalidade e Vontade */}
-                <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-2 border-t border-border/30">
-                  <div className="flex items-center gap-1 font-mono">
-                    <Heart className="w-3 h-3 text-blood/80" />
-                    <span>Vitalidade:</span>
-                    <span className="font-bold text-foreground">
-                      {player.health_current ?? 7}/{player.health_max ?? 7}
-                    </span>
+                  {/* Trackers de Fome e Humanidade com Quick Update */}
+                  <div className="flex items-center justify-between" onClick={(e) => e.stopPropagation()}>
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs text-primary font-medium tracking-wider uppercase">Fome</span>
+                        <Button size="icon" variant="outline" className="h-4 w-4 bg-transparent border-blood/50 text-blood hover:bg-blood hover:text-white rounded-full flex items-center justify-center p-0" title="Rouse Check (Despertar)" onClick={(e) => { e.stopPropagation(); rollRouse(player.id, player.hunger); }}>
+                           <Zap className="w-2 h-2" />
+                        </Button>
+                      </div>
+                      <HungerTracker
+                        value={player.hunger}
+                        size="sm"
+                        onChange={(v) => handleQuickHungerUpdate(player.id, v)}
+                      />
+                    </div>
+                    <div>
+                      <span className="text-xs text-gold font-medium tracking-wider uppercase block mb-1">Humanidade</span>
+                      <HumanityTracker
+                        value={player.humanity}
+                        size="sm"
+                        onChange={(v) => updateTracker.mutate({ id: player.id, field: "humanity", value: v })}
+                      />
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1 font-mono">
-                    <Brain className="w-3 h-3 text-blue-400/80" />
-                    <span>Vontade:</span>
-                    <span className="font-bold text-foreground">
-                      {player.willpower_current ?? 5}/{player.willpower_max ?? 5}
-                    </span>
-                  </div>
-                </div>
 
-                {/* Seção de Disciplinas (Tags JSONB com Nome e Nível) */}
-                <div className="pt-2 border-t border-border/40 space-y-1.5">
-                  <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground block flex items-center gap-1">
-                    <Zap className="w-3 h-3 text-primary" /> Disciplinas
-                  </span>
-                  <div className="flex flex-wrap gap-1">
-                    {Array.isArray(player.disciplines) && player.disciplines.length > 0 ? (
-                      player.disciplines.map((disc: any, idx: number) => (
-                        <Badge
-                          key={disc.id || idx}
-                          variant="outline"
-                          className="text-[10px] bg-background/60 border-blood/40 text-blood font-semibold py-0.5 px-2"
-                        >
-                          {disc.nome || disc.name} {disc.nivel !== undefined ? disc.nivel : ""}
-                        </Badge>
-                      ))
-                    ) : CLAN_DISCIPLINES[player.clan]?.length ? (
-                      CLAN_DISCIPLINES[player.clan].map((disc, idx) => (
-                        <Badge
-                          key={idx}
-                          variant="outline"
-                          className="text-[10px] bg-background/60 border-border/60 text-muted-foreground py-0.5 px-2"
-                        >
-                          {disc.name}
-                        </Badge>
-                      ))
-                    ) : typeof player.disciplines === "string" && player.disciplines ? (
-                      <Badge
-                        variant="outline"
-                        className="text-[10px] bg-background/60 border-blood/40 text-blood py-0.5 px-2"
-                      >
-                        {player.disciplines}
-                      </Badge>
-                    ) : (
-                      <span className="text-[10px] text-muted-foreground italic">Nenhuma disciplina cadastrada.</span>
+                  {/* Métricas Vitais Discretas com Formato +X (Verde) / -X (Vermelho) */}
+                  <div className="pt-2 border-t border-border/30 space-y-1">
+                    <div className="flex items-center justify-between text-[10px] text-muted-foreground font-mono">
+                      <div className="flex items-center gap-1">
+                        <Heart className="w-3 h-3 text-blood/80" />
+                        <span>Vitalidade:</span>
+                        <span className="font-bold text-foreground">
+                          {player.health_current ?? 7} /{" "}
+                          <ModifiedValue
+                            baseValue={player.health_max ?? player.health ?? 7}
+                            modValue={stats.bonusByTarget["vitalidade"] || 0}
+                          />
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Brain className="w-3 h-3 text-blue-400/80" />
+                        <span>Vontade:</span>
+                        <span className="font-bold text-foreground">
+                          {player.willpower_current ?? 5} /{" "}
+                          <ModifiedValue
+                            baseValue={player.willpower_max ?? 5}
+                            modValue={stats.bonusByTarget["vontade"] || 0}
+                          />
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Modificadores Ativos dos Itens no Personagem */}
+                    {Object.keys(stats.bonusByTarget).length > 0 && (
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        {Object.entries(stats.bonusByTarget).map(([target, val]) => (
+                          <span
+                            key={target}
+                            className={`text-[9px] px-1.5 py-0.5 rounded font-mono font-bold border ${
+                              val > 0
+                                ? "bg-emerald-950/40 border-emerald-500/40 text-emerald-400"
+                                : "bg-rose-950/40 border-rose-500/40 text-rose-400"
+                            }`}
+                          >
+                            {target.toUpperCase()}: {val > 0 ? `+${val}` : val}
+                          </span>
+                        ))}
+                      </div>
                     )}
                   </div>
-                </div>
 
-                {/* Inventário do Jogador puxado do Arsenal */}
-                <div className="pt-2 border-t border-border/40 mt-3">
-                  <h4 className="text-[10px] uppercase font-bold text-muted-foreground mb-2 flex items-center gap-1">
-                    <Sparkles className="w-3 h-3" /> Inventário Físico
-                  </h4>
-                  <div className="flex flex-col gap-1.5">
-                    {arsenal.filter(item => item.owner === player.character_name || item.owner === player.character_name.split(' ')[0]).length > 0 ? (
-                      arsenal.filter(item => item.owner === player.character_name || item.owner === player.character_name.split(' ')[0])
-                        .map(item => (
-                          <div key={item.id} className="flex flex-col bg-surface-container-low p-2 rounded border border-border/50 group-hover:border-primary/20 transition-colors">
-                            <span className="text-xs font-semibold text-foreground flex items-center gap-1">
-                              <Crosshair className="w-3 h-3 text-blood opacity-80" /> {item.name}
-                            </span>
-                            <span className="text-[10px] text-muted-foreground pl-4 leading-tight mt-0.5">{item.modifier}</span>
-                          </div>
-                      ))
-                    ) : (
-                      <span className="text-xs text-muted-foreground italic">Nenhum artefato equipado.</span>
-                    )}
+                  {/* Seção de Disciplinas (Tags JSONB com Nome e Nível) */}
+                  <div className="pt-2 border-t border-border/40 space-y-1.5">
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground block flex items-center gap-1">
+                      <Zap className="w-3 h-3 text-primary" /> Disciplinas
+                    </span>
+                    <div className="flex flex-wrap gap-1">
+                      {Array.isArray(player.disciplines) && player.disciplines.length > 0 ? (
+                        player.disciplines.map((disc: any, idx: number) => (
+                          <Badge
+                            key={disc.id || idx}
+                            variant="outline"
+                            className="text-[10px] bg-background/60 border-blood/40 text-blood font-semibold py-0.5 px-2"
+                          >
+                            {disc.nome || disc.name} {disc.nivel !== undefined ? disc.nivel : ""}
+                          </Badge>
+                        ))
+                      ) : CLAN_DISCIPLINES[player.clan]?.length ? (
+                        CLAN_DISCIPLINES[player.clan].map((disc, idx) => (
+                          <Badge
+                            key={idx}
+                            variant="outline"
+                            className="text-[10px] bg-background/60 border-border/60 text-muted-foreground py-0.5 px-2"
+                          >
+                            {disc.name}
+                          </Badge>
+                        ))
+                      ) : typeof player.disciplines === "string" && player.disciplines ? (
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] bg-background/60 border-blood/40 text-blood py-0.5 px-2"
+                        >
+                          {player.disciplines}
+                        </Badge>
+                      ) : (
+                        <span className="text-[10px] text-muted-foreground italic">Nenhuma disciplina cadastrada.</span>
+                      )}
+                    </div>
                   </div>
-                </div>
 
+                  {/* Inventário do Jogador com Detalhamento Rápido das Regras */}
+                  <div className="pt-2 border-t border-border/40 mt-3">
+                    <h4 className="text-[10px] uppercase font-bold text-muted-foreground mb-2 flex items-center gap-1">
+                      <Sparkles className="w-3 h-3" /> Inventário Físico
+                    </h4>
+                    <div className="flex flex-col gap-1.5">
+                      {playerItems.length > 0 ? (
+                        playerItems.map((item) => {
+                          const summaries = getItemSummary(item);
+                          return (
+                            <div key={item.id} className="flex flex-col bg-surface-container-low p-2 rounded border border-border/50 transition-colors">
+                              <span className="text-xs font-semibold text-foreground flex items-center gap-1">
+                                <Crosshair className="w-3 h-3 text-blood opacity-80" /> {item.name}
+                              </span>
+                              {summaries.length > 0 && (
+                                <div className="flex flex-wrap gap-1 pl-4 mt-1">
+                                  {summaries.map((sum, i) => (
+                                    <span key={i} className="text-[10px] text-muted-foreground bg-muted/40 px-1.5 py-0.5 rounded border border-border/30 font-mono">
+                                      {sum}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <span className="text-xs text-muted-foreground italic">Nenhum artefato equipado.</span>
+                      )}
+                    </div>
+                  </div>
+
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
