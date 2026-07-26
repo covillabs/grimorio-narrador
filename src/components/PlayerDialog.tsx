@@ -9,7 +9,7 @@ import { HungerTracker } from "@/components/HungerTracker";
 import { HumanityTracker } from "@/components/HumanityTracker";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, Plus, Sparkles, Award, BookOpen, ShieldAlert, Heart, Zap, ShieldCheck } from "lucide-react";
+import { Trash2, Plus, Sparkles, Award, BookOpen, ShieldAlert, Heart, Zap, ShieldCheck, Flame, Layers } from "lucide-react";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -20,9 +20,10 @@ export interface PlayerDiscipline {
   poderes: string[];
 }
 
-export interface PlayerMeritFlaw {
+export interface PlayerAdvantage {
   id: string;
   nome: string;
+  tipo: "Vantagem" | "Defeito" | "Antecedente";
   pontos: number;
 }
 
@@ -95,7 +96,7 @@ export const V5_DISCIPLINE_POWERS: Record<string, Record<number, string[]>> = {
     5: ["Encantamento em Massa", "Convocação Primordial"],
   },
   Metamorfose: {
-    1: ["Olhos do Predador", "Forma Bestial (Garras)"],
+    1: ["Olhos do Predador", "Forma Bestial (Gavras)"],
     2: ["Fusão com a Terra"],
     3: ["Metamorfose Selvagem (Lobo/Morcego)"],
     4: ["Forma de Névoa"],
@@ -175,14 +176,29 @@ export const V5_SKILLS_LIST = {
   ],
 };
 
+// Limites Oficiais de Potência de Sangue por Geração (V5)
+export function getV5BloodPotencyLimits(generation: number) {
+  const gen = Number(generation) || 13;
+  if (gen >= 14) return { min: 0, max: 0 };
+  if (gen >= 12) return { min: 1, max: 3 };
+  if (gen >= 10) return { min: 1, max: 4 };
+  if (gen === 9 || gen === 8) return { min: 2, max: 5 };
+  if (gen === 7) return { min: 3, max: 6 };
+  if (gen === 6) return { min: 4, max: 7 };
+  if (gen === 5) return { min: 5, max: 8 };
+  if (gen <= 4) return { min: 6, max: 9 };
+  return { min: 0, max: 10 };
+}
+
 const defaultPlayer = {
   character_name: "", player_name: "", clan: "", sire: "", generation: 13,
-  hunger: 0, humanity: 7,
+  hunger: 0, humanity: 7, stains: 0, blood_potency: 1,
+  xp_total: 0, xp_spent: 0,
   forca: 1, destreza: 1, vigor: 1,
   carisma: 1, manipulacao: 1, compostura: 1,
   inteligencia: 1, raciocinio: 1, perseveranca: 1,
   sup_dmg: 0, agr_dmg: 0, fw_sup: 0, fw_agr: 0,
-  skills: {} as Record<string, number>,
+  skills: {} as Record<string, { nivel: number; especializacao: string[] }>,
   human_history: "", embrace_story: "", image_url: "",
 };
 
@@ -201,7 +217,6 @@ export function calculateV5PassiveEffects(
     const normName = (d.nome || "").trim();
     const powers = d.poderes || [];
 
-    // 1. Fortitude (Resiliência) -> +Nível de Fortitude em Vitalidade Máxima
     if (normName.toLowerCase() === "fortitude") {
       const hasResilience = powers.some(
         (p) =>
@@ -272,8 +287,7 @@ function DotRating({
 export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: PlayerDialogProps) {
   const [form, setForm] = useState(defaultPlayer);
   const [disciplines, setDisciplines] = useState<PlayerDiscipline[]>([]);
-  const [merits, setMerits] = useState<PlayerMeritFlaw[]>([]);
-  const [flaws, setFlaws] = useState<PlayerMeritFlaw[]>([]);
+  const [advantages, setAdvantages] = useState<PlayerAdvantage[]>([]);
 
   const isEditing = !!player;
 
@@ -290,65 +304,26 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
             ? d.poderes
             : Array.from({ length: d.nivel || 1 }, () => ""),
         }));
-      } else if (typeof player.disciplines === "string" && player.disciplines.trim()) {
-        try {
-          const json = JSON.parse(player.disciplines);
-          if (Array.isArray(json)) {
-            parsedDisciplines = json.map((d: any) => ({
-              id: d.id || crypto.randomUUID(),
-              nome: d.nome || d.name || "Fortitude",
-              nivel: d.nivel || d.level || 1,
-              poderes: Array.isArray(d.poderes) ? d.poderes : Array.from({ length: d.nivel || 1 }, () => ""),
-            }));
-          } else throw new Error();
-        } catch {
-          parsedDisciplines = player.disciplines.split(",").map((s: string) => ({
-            id: crypto.randomUUID(),
-            nome: "Fortitude",
-            nivel: 1,
-            poderes: [""],
-          }));
-        }
       }
       setDisciplines(parsedDisciplines);
 
-      // 2. Parsing de Vantagens (Merits)
-      let parsedMerits: PlayerMeritFlaw[] = [];
-      if (Array.isArray(player.merits)) {
-        parsedMerits = player.merits;
-      } else if (typeof player.merits === "string" && player.merits.trim()) {
-        try {
-          const json = JSON.parse(player.merits);
-          if (Array.isArray(json)) parsedMerits = json;
-          else throw new Error();
-        } catch {
-          parsedMerits = player.merits.split(",").map((s: string) => ({
-            id: crypto.randomUUID(),
-            nome: s.trim(),
-            pontos: 1,
-          }));
+      // 2. Parsing Unificado de Vantagens, Defeitos e Antecedentes
+      let parsedAdvantages: PlayerAdvantage[] = [];
+      if (Array.isArray(player.advantages)) {
+        parsedAdvantages = player.advantages;
+      } else {
+        if (Array.isArray(player.merits)) {
+          player.merits.forEach((m: any) => {
+            parsedAdvantages.push({ id: m.id || crypto.randomUUID(), nome: m.nome, tipo: "Vantagem", pontos: m.pontos || 1 });
+          });
+        }
+        if (Array.isArray(player.flaws)) {
+          player.flaws.forEach((f: any) => {
+            parsedAdvantages.push({ id: f.id || crypto.randomUUID(), nome: f.nome, tipo: "Defeito", pontos: f.pontos || 1 });
+          });
         }
       }
-      setMerits(parsedMerits);
-
-      // 3. Parsing de Defeitos (Flaws)
-      let parsedFlaws: PlayerMeritFlaw[] = [];
-      if (Array.isArray(player.flaws)) {
-        parsedFlaws = player.flaws;
-      } else if (typeof player.flaws === "string" && player.flaws.trim()) {
-        try {
-          const json = JSON.parse(player.flaws);
-          if (Array.isArray(json)) parsedFlaws = json;
-          else throw new Error();
-        } catch {
-          parsedFlaws = player.flaws.split(",").map((s: string) => ({
-            id: crypto.randomUUID(),
-            nome: s.trim(),
-            pontos: 1,
-          }));
-        }
-      }
-      setFlaws(parsedFlaws);
+      setAdvantages(parsedAdvantages);
 
       setForm({
         ...defaultPlayer,
@@ -358,12 +333,12 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
     } else {
       setForm(defaultPlayer);
       setDisciplines([]);
-      setMerits([]);
-      setFlaws([]);
+      setAdvantages([]);
     }
   }, [player, open]);
 
-  // Automação Reativa de Efeitos Passivos V5
+  // Automações de Potência de Sangue e Status
+  const bpLimits = getV5BloodPotencyLimits(form.generation || 13);
   const passiveEffects = calculateV5PassiveEffects(
     disciplines,
     form.vigor || 1,
@@ -373,6 +348,45 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
 
   const calculatedHealthMax = passiveEffects.health_max;
   const calculatedWillpowerMax = passiveEffects.willpower_max;
+
+  const handleGenerationChange = (gen: number) => {
+    const lim = getV5BloodPotencyLimits(gen);
+    const clampedBp = Math.max(lim.min, Math.min(lim.max, form.blood_potency || lim.min));
+    setForm((prev) => ({ ...prev, generation: gen, blood_potency: clampedBp }));
+  };
+
+  // Helper para Perícias + Especializações
+  const getSkillData = (key: string) => {
+    const raw = form.skills?.[key];
+    if (typeof raw === "number") return { nivel: raw, especializacao: "" };
+    if (raw && typeof raw === "object") {
+      const spec = Array.isArray(raw.especializacao) ? raw.especializacao.join(", ") : raw.especializacao || "";
+      return { nivel: raw.nivel || 0, especializacao: spec };
+    }
+    return { nivel: 0, especializacao: "" };
+  };
+
+  const setSkillNivel = (key: string, nivel: number) => {
+    const current = getSkillData(key);
+    setForm((prev) => ({
+      ...prev,
+      skills: {
+        ...(prev.skills || {}),
+        [key]: { nivel, especializacao: current.especializacao },
+      },
+    }));
+  };
+
+  const setSkillSpec = (key: string, especializacao: string) => {
+    const current = getSkillData(key);
+    setForm((prev) => ({
+      ...prev,
+      skills: {
+        ...(prev.skills || {}),
+        [key]: { nivel: current.nivel, especializacao },
+      },
+    }));
+  };
 
   // Handlers de Disciplinas
   const handleAddDiscipline = () => {
@@ -386,7 +400,6 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
     setDisciplines((prev) =>
       prev.map((d) => {
         if (d.id !== id) return d;
-        // Reseta poderes ao mudar o nome da disciplina para os poderes compatíveis
         const newPoderes = Array.from({ length: d.nivel }, () => "");
         return { ...d, nome: newNome, poderes: newPoderes };
       })
@@ -420,34 +433,22 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
     setDisciplines((prev) => prev.filter((d) => d.id !== id));
   };
 
-  // Handlers Vantagens
-  const handleAddMerit = () => {
-    setMerits((prev) => [...prev, { id: crypto.randomUUID(), nome: "", pontos: 1 }]);
+  // Handlers Vantagens/Defeitos/Antecedentes
+  const handleAddAdvantage = () => {
+    setAdvantages((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), nome: "", tipo: "Vantagem", pontos: 1 },
+    ]);
   };
 
-  const handleUpdateMerit = (id: string, field: keyof PlayerMeritFlaw, value: any) => {
-    setMerits((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, [field]: value } : m))
+  const handleUpdateAdvantage = (id: string, field: keyof PlayerAdvantage, value: any) => {
+    setAdvantages((prev) =>
+      prev.map((a) => (a.id === id ? { ...a, [field]: value } : a))
     );
   };
 
-  const handleRemoveMerit = (id: string) => {
-    setMerits((prev) => prev.filter((m) => m.id !== id));
-  };
-
-  // Handlers Defeitos
-  const handleAddFlaw = () => {
-    setFlaws((prev) => [...prev, { id: crypto.randomUUID(), nome: "", pontos: 1 }]);
-  };
-
-  const handleUpdateFlaw = (id: string, field: keyof PlayerMeritFlaw, value: any) => {
-    setFlaws((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, [field]: value } : f))
-    );
-  };
-
-  const handleRemoveFlaw = (id: string) => {
-    setFlaws((prev) => prev.filter((f) => f.id !== id));
+  const handleRemoveAdvantage = (id: string) => {
+    setAdvantages((prev) => prev.filter((a) => a.id !== id));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -466,8 +467,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       health_current: Math.max(0, calculatedHealthMax - (form.sup_dmg || 0) - (form.agr_dmg || 0)),
       willpower_current: Math.max(0, calculatedWillpowerMax - (form.fw_sup || 0) - (form.fw_agr || 0)),
       disciplines,
-      merits,
-      flaws,
+      advantages,
     };
 
     onSave(playerData);
@@ -475,15 +475,8 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
   };
 
   const set = (field: string, value: any) => setForm((prev) => ({ ...prev, [field]: value }));
-  const setSkill = (skillKey: string, value: number) => {
-    setForm((prev) => ({
-      ...prev,
-      skills: {
-        ...(prev.skills || {}),
-        [skillKey]: value,
-      },
-    }));
-  };
+
+  const xpAvailable = Math.max(0, (form.xp_total || 0) - (form.xp_spent || 0));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -495,7 +488,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
         </DialogHeader>
         <ScrollArea className="max-h-[72vh] pr-4 pt-2">
           <form onSubmit={handleSubmit} className="space-y-6 pt-1 pb-4">
-            {/* Bloco do Topo sem clipping: Imagem + Nome + Jogador + Clã */}
+            {/* Topo: Imagem + Nome + Jogador + Clã */}
             <div className="flex flex-col sm:flex-row gap-4 items-start bg-muted/10 p-3 rounded-lg border border-border/40">
               <ImageUpload
                 currentUrl={form.image_url || null}
@@ -538,25 +531,106 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            {/* Senhor, Geração e Potência de Sangue Reativa */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-muted/10 p-3 rounded-lg border border-border/40">
               <div>
                 <Label className="text-xs">Senhor (Sire)</Label>
-                <Input value={form.sire || ""} onChange={(e) => set("sire", e.target.value)} className="h-8 text-xs" />
+                <Input value={form.sire || ""} onChange={(e) => set("sire", e.target.value)} className="h-8 text-xs bg-background mt-1" />
               </div>
               <div>
-                <Label className="text-xs">Geração</Label>
-                <Input type="number" value={form.generation || 13} onChange={(e) => set("generation", parseInt(e.target.value) || 13)} className="h-8 text-xs" />
+                <Label className="text-xs">Geração ({form.generation || 13}ª)</Label>
+                <Input
+                  type="number"
+                  min={4}
+                  max={16}
+                  value={form.generation || 13}
+                  onChange={(e) => handleGenerationChange(parseInt(e.target.value) || 13)}
+                  className="h-8 text-xs bg-background mt-1"
+                />
+              </div>
+              <div>
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-semibold text-blood flex items-center gap-1">
+                    <Flame className="w-3.5 h-3.5" /> Potência de Sangue
+                  </Label>
+                  <span className="text-[10px] text-muted-foreground font-mono">
+                    (Min: {bpLimits.min}, Máx: {bpLimits.max})
+                  </span>
+                </div>
+                <div className="mt-2">
+                  <DotRating
+                    value={form.blood_potency || bpLimits.min}
+                    min={bpLimits.min}
+                    max={10}
+                    onChange={(v) => {
+                      const clamped = Math.max(bpLimits.min, Math.min(bpLimits.max, v));
+                      set("blood_potency", clamped);
+                    }}
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-6 bg-muted/10 p-3 rounded-lg border border-border/40">
-              <div>
-                <Label className="text-xs font-semibold text-primary">Fome ({form.hunger}/5)</Label>
-                <HungerTracker value={form.hunger} onChange={(v) => set("hunger", v)} />
+            {/* Fome, Humanidade, Manchas (Stains) e XP */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/10 p-3 rounded-lg border border-border/40">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-xs font-semibold text-primary">Fome ({form.hunger}/5)</Label>
+                    <HungerTracker value={form.hunger} onChange={(v) => set("hunger", v)} />
+                  </div>
+                  <div>
+                    <Label className="text-xs font-semibold text-amber-400">Humanidade ({form.humanity}/10)</Label>
+                    <HumanityTracker value={form.humanity} onChange={(v) => set("humanity", v)} />
+                  </div>
+                </div>
+
+                {/* Trilha de Manchas (Stains V5) */}
+                <div className="pt-2 border-t border-border/30 flex items-center justify-between">
+                  <Label className="text-xs font-semibold text-rose-400 flex items-center gap-1">
+                    <ShieldAlert className="w-3.5 h-3.5" /> Manchas / Stains ({form.stains || 0}/10)
+                  </Label>
+                  <DotRating
+                    value={form.stains || 0}
+                    min={0}
+                    max={10}
+                    size="sm"
+                    onChange={(v) => set("stains", v)}
+                  />
+                </div>
               </div>
-              <div>
-                <Label className="text-xs font-semibold text-amber-400">Humanidade ({form.humanity}/10)</Label>
-                <HumanityTracker value={form.humanity} onChange={(v) => set("humanity", v)} />
+
+              {/* Experiência (XP Total, Gasto e Disponível) */}
+              <div className="space-y-2 border-l border-border/40 pl-4">
+                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                  <Layers className="w-3.5 h-3.5 text-primary" /> Experiência (XP)
+                </span>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <Label className="text-[10px]">XP Total</Label>
+                    <Input
+                      type="number"
+                      value={form.xp_total || 0}
+                      onChange={(e) => set("xp_total", parseInt(e.target.value) || 0)}
+                      className="h-7 text-xs bg-background"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-[10px]">XP Gasto</Label>
+                    <Input
+                      type="number"
+                      value={form.xp_spent || 0}
+                      onChange={(e) => set("xp_spent", parseInt(e.target.value) || 0)}
+                      className="h-7 text-xs bg-background"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-[10px]">Disponível</Label>
+                    <div className="h-7 text-xs bg-background border border-border rounded flex items-center justify-center font-bold font-mono text-emerald-400">
+                      {xpAvailable}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -635,9 +709,9 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
               </div>
             </div>
 
-            {/* Automação de Status V5 (Exceção Fortitude + Resiliência) */}
+            {/* Automação de Status V5 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-border/60 pt-4">
-              {/* Vitalidade (Vigor + 3 + Bônus Fortitude) */}
+              {/* Vitalidade */}
               <div className="bg-muted/10 p-3 rounded-lg border border-border/40 space-y-2">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-bold text-blood flex items-center gap-1">
@@ -682,7 +756,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                 </div>
               </div>
 
-              {/* Força de Vontade (Compostura + Perseverança) */}
+              {/* Força de Vontade */}
               <div className="bg-muted/10 p-3 rounded-lg border border-border/40 space-y-2">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-bold text-blue-400 flex items-center gap-1">
@@ -719,7 +793,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
               </div>
             </div>
 
-            {/* Field Array: Disciplinas Oficiais V5 (Select de Disciplinas + Selects em Cascata de Poderes) */}
+            {/* Field Array: Disciplinas Oficiais V5 */}
             <div className="border-t border-border/60 pt-4 space-y-3">
               <div className="flex items-center justify-between">
                 <Label className="text-sm font-semibold flex items-center gap-1.5 font-serif text-primary">
@@ -752,7 +826,6 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                     return (
                       <div key={disc.id} className="p-3 bg-surface-container-low border border-border/50 rounded-md space-y-3">
                         <div className="flex items-center gap-3">
-                          {/* Select da Disciplina Oficial */}
                           <div className="flex-1">
                             <Label className="text-[10px] text-muted-foreground">Disciplina Oficial V5</Label>
                             <Select
@@ -772,7 +845,6 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                             </Select>
                           </div>
 
-                          {/* Seletor de Nível em Bolinhas (DotRating 1 a 5) */}
                           <div>
                             <Label className="text-[10px] text-muted-foreground block mb-1">Nível ({disc.nivel})</Label>
                             <DotRating
@@ -795,7 +867,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                           </Button>
                         </div>
 
-                        {/* Selects em Cascata de Poderes Específicos por Nível */}
+                        {/* Selects em Cascata de Poderes */}
                         <div className="pl-3 border-l-2 border-primary/30 space-y-2 pt-1">
                           <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block">
                             Poderes Selecionados ({disc.nivel} Níveis)
@@ -842,69 +914,108 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
               )}
             </div>
 
-            {/* Seção 2: Perícias V5 (Accordion com 27 Perícias Oficiais) */}
+            {/* Seção 2: Perícias V5 + Especializações */}
             <div className="border-t border-border/60 pt-4">
               <Accordion type="single" collapsible className="border border-border/50 rounded-lg px-3 bg-muted/10">
                 <AccordionItem value="skills" className="border-none">
                   <AccordionTrigger className="text-sm font-semibold hover:no-underline py-3">
                     <span className="flex items-center gap-2 font-serif text-primary">
-                      <Award className="w-4 h-4" /> Perícias Oficiais V5 (27 Perícias)
+                      <Award className="w-4 h-4" /> Perícias Oficiais V5 & Especializações (27 Perícias)
                     </span>
                   </AccordionTrigger>
                   <AccordionContent className="pt-2">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       {/* Físicas */}
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         <span className="text-xs font-bold text-blood uppercase tracking-wider block border-b border-blood/20 pb-1">
-                          Físicas
+                          Perícias Físicas
                         </span>
-                        {V5_SKILLS_LIST.fisicas.map((s) => (
-                          <div key={s.key} className="flex items-center justify-between text-xs">
-                            <span className="text-muted-foreground">{s.label}</span>
-                            <DotRating
-                              value={(form.skills && form.skills[s.key]) || 0}
-                              min={0}
-                              size="sm"
-                              onChange={(v) => setSkill(s.key, v)}
-                            />
-                          </div>
-                        ))}
+                        {V5_SKILLS_LIST.fisicas.map((s) => {
+                          const skillData = getSkillData(s.key);
+                          return (
+                            <div key={s.key} className="space-y-1 bg-background/50 p-1.5 rounded border border-border/30">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="text-foreground font-medium">{s.label}</span>
+                                <DotRating
+                                  value={skillData.nivel}
+                                  min={0}
+                                  size="sm"
+                                  onChange={(v) => setSkillNivel(s.key, v)}
+                                />
+                              </div>
+                              {skillData.nivel > 0 && (
+                                <Input
+                                  placeholder="Especialização (ex: Fuzis)"
+                                  value={skillData.especializacao}
+                                  onChange={(e) => setSkillSpec(s.key, e.target.value)}
+                                  className="h-6 text-[10px] bg-background"
+                                />
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
 
                       {/* Sociais */}
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         <span className="text-xs font-bold text-amber-400 uppercase tracking-wider block border-b border-amber-400/20 pb-1">
-                          Sociais
+                          Perícias Sociais
                         </span>
-                        {V5_SKILLS_LIST.sociais.map((s) => (
-                          <div key={s.key} className="flex items-center justify-between text-xs">
-                            <span className="text-muted-foreground">{s.label}</span>
-                            <DotRating
-                              value={(form.skills && form.skills[s.key]) || 0}
-                              min={0}
-                              size="sm"
-                              onChange={(v) => setSkill(s.key, v)}
-                            />
-                          </div>
-                        ))}
+                        {V5_SKILLS_LIST.sociais.map((s) => {
+                          const skillData = getSkillData(s.key);
+                          return (
+                            <div key={s.key} className="space-y-1 bg-background/50 p-1.5 rounded border border-border/30">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="text-foreground font-medium">{s.label}</span>
+                                <DotRating
+                                  value={skillData.nivel}
+                                  min={0}
+                                  size="sm"
+                                  onChange={(v) => setSkillNivel(s.key, v)}
+                                />
+                              </div>
+                              {skillData.nivel > 0 && (
+                                <Input
+                                  placeholder="Especialização (ex: Intimidação Física)"
+                                  value={skillData.especializacao}
+                                  onChange={(e) => setSkillSpec(s.key, e.target.value)}
+                                  className="h-6 text-[10px] bg-background"
+                                />
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
 
                       {/* Mentais */}
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         <span className="text-xs font-bold text-blue-400 uppercase tracking-wider block border-b border-blue-400/20 pb-1">
-                          Mentais
+                          Perícias Mentais
                         </span>
-                        {V5_SKILLS_LIST.mentais.map((s) => (
-                          <div key={s.key} className="flex items-center justify-between text-xs">
-                            <span className="text-muted-foreground">{s.label}</span>
-                            <DotRating
-                              value={(form.skills && form.skills[s.key]) || 0}
-                              min={0}
-                              size="sm"
-                              onChange={(v) => setSkill(s.key, v)}
-                            />
-                          </div>
-                        ))}
+                        {V5_SKILLS_LIST.mentais.map((s) => {
+                          const skillData = getSkillData(s.key);
+                          return (
+                            <div key={s.key} className="space-y-1 bg-background/50 p-1.5 rounded border border-border/30">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="text-foreground font-medium">{s.label}</span>
+                                <DotRating
+                                  value={skillData.nivel}
+                                  min={0}
+                                  size="sm"
+                                  onChange={(v) => setSkillNivel(s.key, v)}
+                                />
+                              </div>
+                              {skillData.nivel > 0 && (
+                                <Input
+                                  placeholder="Especialização (ex: Criptografia)"
+                                  value={skillData.especializacao}
+                                  onChange={(e) => setSkillSpec(s.key, e.target.value)}
+                                  className="h-6 text-[10px] bg-background"
+                                />
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   </AccordionContent>
@@ -912,111 +1023,75 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
               </Accordion>
             </div>
 
-            {/* Field Array: Vantagens e Defeitos (Side-by-Side) */}
-            <div className="border-t border-border/60 pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Vantagens */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs font-semibold flex items-center gap-1 text-emerald-400">
-                    <Award className="w-3.5 h-3.5" /> Vantagens (Merits)
-                  </Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleAddMerit}
-                    className="h-7 text-[11px] px-2 gap-1"
-                  >
-                    <Plus className="w-3 h-3" /> Vantagem
-                  </Button>
-                </div>
-
-                {merits.length === 0 ? (
-                  <p className="text-[11px] text-muted-foreground italic">Nenhuma vantagem registrada.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {merits.map((m) => (
-                      <div key={m.id} className="flex items-center gap-2 p-1.5 bg-surface-container-low border border-border/40 rounded">
-                        <Input
-                          placeholder="Nome da Vantagem"
-                          value={m.nome}
-                          onChange={(e) => handleUpdateMerit(m.id, "nome", e.target.value)}
-                          className="h-7 text-xs bg-background flex-1"
-                        />
-                        <Input
-                          type="number"
-                          min={1}
-                          max={5}
-                          value={m.pontos}
-                          onChange={(e) => handleUpdateMerit(m.id, "pontos", parseInt(e.target.value) || 1)}
-                          className="h-7 text-xs bg-background w-14 text-center"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveMerit(m.id)}
-                          className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+            {/* Seção 3: Vantagens, Defeitos e Antecedentes */}
+            <div className="border-t border-border/60 pt-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-semibold flex items-center gap-1.5 font-serif text-primary">
+                  <Award className="w-4 h-4" /> Vantagens, Defeitos e Antecedentes (Backgrounds)
+                </Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAddAdvantage}
+                  className="h-8 text-xs gap-1"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Adicionar Item
+                </Button>
               </div>
 
-              {/* Defeitos */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs font-semibold flex items-center gap-1 text-rose-400">
-                    <ShieldAlert className="w-3.5 h-3.5" /> Defeitos (Flaws)
-                  </Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleAddFlaw}
-                    className="h-7 text-[11px] px-2 gap-1"
-                  >
-                    <Plus className="w-3 h-3" /> Defeito
-                  </Button>
+              {advantages.length === 0 ? (
+                <div className="p-3 border border-dashed border-border rounded-lg text-center bg-muted/10">
+                  <p className="text-xs text-muted-foreground">Nenhuma vantagem, defeito ou antecedente registrado.</p>
                 </div>
+              ) : (
+                <div className="space-y-2">
+                  {advantages.map((adv) => (
+                    <div key={adv.id} className="flex items-center gap-2 p-2 bg-surface-container-low border border-border/40 rounded-md">
+                      <Select
+                        value={adv.tipo}
+                        onValueChange={(val) => handleUpdateAdvantage(adv.id, "tipo", val)}
+                      >
+                        <SelectTrigger className="h-8 text-xs bg-background w-32 font-semibold">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Vantagem" className="text-xs text-emerald-400 font-bold">Vantagem</SelectItem>
+                          <SelectItem value="Defeito" className="text-xs text-rose-400 font-bold">Defeito</SelectItem>
+                          <SelectItem value="Antecedente" className="text-xs text-blue-400 font-bold">Antecedente</SelectItem>
+                        </SelectContent>
+                      </Select>
 
-                {flaws.length === 0 ? (
-                  <p className="text-[11px] text-muted-foreground italic">Nenhum defeito registrado.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {flaws.map((f) => (
-                      <div key={f.id} className="flex items-center gap-2 p-1.5 bg-surface-container-low border border-border/40 rounded">
-                        <Input
-                          placeholder="Nome do Defeito"
-                          value={f.nome}
-                          onChange={(e) => handleUpdateFlaw(f.id, "nome", e.target.value)}
-                          className="h-7 text-xs bg-background flex-1"
-                        />
-                        <Input
-                          type="number"
+                      <Input
+                        placeholder="Nome (ex: Recursos, Cobrador de Dívidas)"
+                        value={adv.nome}
+                        onChange={(e) => handleUpdateAdvantage(adv.id, "nome", e.target.value)}
+                        className="h-8 text-xs bg-background flex-1"
+                      />
+
+                      <div className="px-2">
+                        <DotRating
+                          value={adv.pontos}
                           min={1}
                           max={5}
-                          value={f.pontos}
-                          onChange={(e) => handleUpdateFlaw(f.id, "pontos", parseInt(e.target.value) || 1)}
-                          className="h-7 text-xs bg-background w-14 text-center"
+                          size="sm"
+                          onChange={(v) => handleUpdateAdvantage(adv.id, "pontos", v)}
                         />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveFlaw(f.id)}
-                          className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleRemoveAdvantage(adv.id)}
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Accordion de Lore: Background e História (Fechado por Padrão) */}
