@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Network, Users } from 'lucide-react';
-import { ReactFlow, Controls, Background, useNodesState, useEdgesState, Edge, Node } from '@xyflow/react';
+import { ReactFlow, Controls, Background, useNodesState, useEdgesState } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { CharacterNode } from '@/components/Teia/CharacterNode';
-import { coterieNodes, coterieEdges, globalNodes, globalEdges } from '@/components/Teia/mockData';
 import { Button } from '@/components/ui/button';
-import { getPrefixedKey } from "@/components/ChronicleSwitcher";
+import { useRelationshipMap } from '@/hooks/useRelationshipMap';
 
 const nodeTypes = {
   character: CharacterNode,
@@ -13,72 +12,16 @@ const nodeTypes = {
 
 export default function TeiaPage() {
   const [mode, setMode] = useState<'coterie' | 'global'>('coterie');
-  
-  const [nodes, setNodes, onNodesChange] = useNodesState(coterieNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(coterieEdges);
+  const { nodes: computedNodes, edges: computedEdges } = useRelationshipMap(mode);
 
-  const handleModeSwitch = (newMode: 'coterie' | 'global') => {
-    setMode(newMode);
-    if (newMode === 'coterie') {
-      setNodes(coterieNodes);
-      setEdges(coterieEdges);
-    } else {
-      // Injetando Boons Dinâmicos no Modo Global
-      let dynamicEdges = [...globalEdges];
-      let dynamicNodes = [...globalNodes];
-      
-      try {
-        const savedBoons = localStorage.getItem(getPrefixedKey("v5_boons"));
-        if (savedBoons) {
-          const boonsList = JSON.parse(savedBoons);
-          
-          boonsList.forEach((boon: any) => {
-            if (boon.isResolved) return; // Só favores ativos
-            
-            let fromNode = dynamicNodes.find(n => n.data.label.toLowerCase() === boon.from.toLowerCase());
-            let toNode = dynamicNodes.find(n => n.data.label.toLowerCase() === boon.to.toLowerCase());
-            
-            // Cria nós fantasmas se a pessoa ainda não estiver na teia oficial
-            if (!fromNode) {
-              const newId = 'dyn_' + Date.now() + Math.random();
-              fromNode = { id: newId, position: { x: Math.random() * 800, y: Math.random() * 400 }, data: { label: boon.from, type: 'npc' }, type: 'character' };
-              dynamicNodes.push(fromNode);
-            }
-            if (!toNode) {
-              const newId = 'dyn_' + Date.now() + Math.random();
-              toNode = { id: newId, position: { x: Math.random() * 800, y: Math.random() * 400 }, data: { label: boon.to, type: 'npc' }, type: 'character' };
-              dynamicNodes.push(toNode);
-            }
-            
-            // Cor baseada no tipo
-            let strokeColor = '#f59e0b'; // yellow-500
-            if (boon.type === 'minor') strokeColor = '#3b82f6';
-            if (boon.type === 'trivial') strokeColor = '#9ca3af';
-            if (boon.type === 'life') strokeColor = '#991b1b';
+  const [nodes, setNodes, onNodesChange] = useNodesState(computedNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(computedEdges);
 
-            dynamicEdges.push({
-              id: `boon_${boon.id}`,
-              source: fromNode.id,
-              target: toNode.id,
-              label: `Dívida: ${boon.description}`,
-              animated: true,
-              style: { stroke: strokeColor, strokeWidth: 2, strokeDasharray: '4,4' }
-            });
-          });
-        }
-      } catch (e) {
-        console.error("Erro ao ler Livro de Dívidas na Teia", e);
-      }
-      
-      setNodes(dynamicNodes);
-      setEdges(dynamicEdges);
-    }
-  };
-
+  // Reatividade em Tempo Real: Atualiza ReactFlow quando o estado das entidades mudar
   useEffect(() => {
-    // Carrega o modo inicial com os Boons se necessário
-    if (mode === 'global') handleModeSwitch('global');
-  }, []);
+    setNodes(computedNodes);
+    setEdges(computedEdges);
+  }, [computedNodes, computedEdges, setNodes, setEdges]);
 
   return (
     <div className="flex flex-col h-[calc(100vh-6rem)]">
@@ -89,29 +32,31 @@ export default function TeiaPage() {
           </div>
           <div>
             <h1 className="text-3xl font-serif font-bold text-foreground">Teia de Intrigas</h1>
-            <p className="text-muted-foreground mt-1 text-sm">O emaranhado político e social do Domínio</p>
+            <p className="text-muted-foreground mt-1 text-sm">O emaranhado político e social do Domínio (Grafo V5 Vivo)</p>
           </div>
         </div>
         
-        <div className="flex bg-surface-container-high rounded-md p-1 border border-border">
-          <Button 
-            variant={mode === 'coterie' ? 'default' : 'ghost'} 
-            size="sm" 
-            onClick={() => handleModeSwitch('coterie')}
-            className={`gap-2 ${mode === 'coterie' ? 'bg-primary text-white' : 'text-muted-foreground'}`}
-          >
-            <Users className="w-4 h-4" />
-            Modo Coterie
-          </Button>
-          <Button 
-            variant={mode === 'global' ? 'default' : 'ghost'} 
-            size="sm" 
-            onClick={() => handleModeSwitch('global')}
-            className={`gap-2 ${mode === 'global' ? 'bg-primary text-white' : 'text-muted-foreground'}`}
-          >
-            <Network className="w-4 h-4" />
-            Modo Global
-          </Button>
+        <div className="flex items-center gap-3">
+          <div className="flex bg-surface-container-high rounded-md p-1 border border-border">
+            <Button 
+              variant={mode === 'coterie' ? 'default' : 'ghost'} 
+              size="sm" 
+              onClick={() => setMode('coterie')}
+              className={`gap-2 ${mode === 'coterie' ? 'bg-primary text-white' : 'text-muted-foreground'}`}
+            >
+              <Users className="w-4 h-4" />
+              Modo Coterie
+            </Button>
+            <Button 
+              variant={mode === 'global' ? 'default' : 'ghost'} 
+              size="sm" 
+              onClick={() => setMode('global')}
+              className={`gap-2 ${mode === 'global' ? 'bg-primary text-white' : 'text-muted-foreground'}`}
+            >
+              <Network className="w-4 h-4" />
+              Modo Global
+            </Button>
+          </div>
         </div>
       </div>
       
@@ -131,23 +76,23 @@ export default function TeiaPage() {
         </ReactFlow>
 
         <div className="absolute bottom-4 left-4 z-20 bg-background/80 backdrop-blur-md p-4 border-l-2 border-primary rounded-r shadow-xl pointer-events-none">
-          <h3 className="font-serif font-bold text-sm mb-3">Legenda do Vinculum</h3>
+          <h3 className="font-serif font-bold text-sm mb-3">Legenda do Vinculum V5</h3>
           <div className="space-y-2 text-xs uppercase tracking-widest text-muted-foreground">
             <div className="flex items-center gap-2">
               <div className="w-6 h-1 bg-blood shadow-[0_0_5px_rgba(255,0,0,0.8)]"></div>
               <span>Laço de Sangue</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-6 h-0.5 bg-[#ffb4ab]"></div>
+              <div className="w-6 h-0.5 bg-rose-500"></div>
               <span>Rivalidade / Inimigo</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-6 border-b-2 border-dashed border-[#bcc3ff]"></div>
-              <span>Aliado / Pilar</span>
+              <div className="w-6 border-b-2 border-dashed border-blue-500"></div>
+              <span>Aliado / Pilar (Touchstone)</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-6 border-b-2 border-dotted border-gold"></div>
-              <span>Dívida (Boon) / Sire</span>
+              <div className="w-6 border-b-2 border-dotted border-amber-400"></div>
+              <span>Dívida (Boon) / Criador (Sire)</span>
             </div>
           </div>
         </div>
