@@ -2,46 +2,65 @@ import { useMemo } from "react";
 import { useCloudStorage } from "@/hooks/useCloudStorage";
 import { Node, Edge } from "@xyflow/react";
 
-// Constantes de Layout Orgânico
-const CENTER_X = 500;
-const CENTER_Y = 400;
+// ═══════════════════════════════════════════════════════════
+// ZONAS GEOPOLÍTICAS DO DOMÍNIO V5
+// Cada zona é um centro gravitacional para seus nós
+// ═══════════════════════════════════════════════════════════
 
-/** Distribui nós ao redor de um ponto central com jitter orgânico */
-function radialPosition(cx: number, cy: number, radius: number, index: number, total: number, jitter = 30): { x: number; y: number } {
-  const angle = (index / Math.max(1, total)) * 2 * Math.PI - Math.PI / 2;
-  const j = (Math.sin(index * 137.508) * jitter); // golden-angle jitter para aspecto orgânico
+const ZONES = {
+  coterie:   { cx: 600, cy: 450, label: "A Coterie" },
+  camarilla: { cx: 100, cy: 100, label: "Camarilla" },
+  anarch:    { cx: 1100, cy: 100, label: "Movimento Anarch" },
+  sabbat:    { cx: 1100, cy: 750, label: "Sabá" },
+  mortal:    { cx: 100, cy: 750, label: "Mortais & Pilares" },
+  independente: { cx: 600, cy: 900, label: "Independentes & Autárquicos" },
+};
+
+type ZoneKey = keyof typeof ZONES;
+
+/** Detecta a zona de um NPC com base na sua facção/categoria */
+function detectZone(faction: string): ZoneKey {
+  const f = (faction || "").toLowerCase();
+  if (f.includes("camarilla")) return "camarilla";
+  if (f.includes("anarch")) return "anarch";
+  if (f.includes("sabbat") || f.includes("sabá")) return "sabbat";
+  if (f.includes("mortal") || f.includes("humano") || f.includes("ghoul")) return "mortal";
+  if (f.includes("independ") || f.includes("autárquico") || f.includes("autarquico")) return "independente";
+  return "independente";
+}
+
+/** Distribui nós ao redor de um ponto central em cluster orgânico */
+function clusterPosition(cx: number, cy: number, index: number, total: number, radius = 160, jitter = 25): { x: number; y: number } {
+  if (total <= 1) return { x: cx, y: cy };
+  const angle = (index / total) * 2 * Math.PI - Math.PI / 2;
+  const j = Math.sin(index * 137.508) * jitter;
   return {
     x: Math.round(cx + Math.cos(angle) * (radius + j)),
     y: Math.round(cy + Math.sin(angle) * (radius + j)),
   };
 }
 
-/** Distribui touchstones ao redor do seu vampiro dono */
-function satellitePosition(parentX: number, parentY: number, index: number, total: number): { x: number; y: number } {
-  const radius = 170 + total * 10;
+/** Distribui touchstones em satélite ao redor do seu vampiro */
+function satellitePosition(px: number, py: number, index: number, total: number): { x: number; y: number } {
+  const radius = 150;
   const spread = Math.min(Math.PI * 0.8, Math.PI / Math.max(1, total - 1));
-  const baseAngle = -Math.PI / 2; // começa por cima
-  const angle = total === 1 ? baseAngle : baseAngle - spread / 2 + (index / (total - 1)) * spread;
+  const base = -Math.PI / 2;
+  const angle = total === 1 ? base : base - spread / 2 + (index / (total - 1)) * spread;
   return {
-    x: Math.round(parentX + Math.cos(angle) * radius),
-    y: Math.round(parentY + Math.sin(angle) * radius),
+    x: Math.round(px + Math.cos(angle) * radius),
+    y: Math.round(py + Math.sin(angle) * radius),
   };
 }
 
-/** Estiliza uma aresta conforme o tipo de vínculo V5 */
-function getEdgeStyle(relationType: string): { stroke: string; strokeDasharray?: string; animated: boolean; strokeWidth: number } {
-  switch (relationType) {
-    case "BloodBond":
-      return { stroke: "#ef4444", animated: true, strokeWidth: 3 };
-    case "Enemy":
-      return { stroke: "#f43f5e", animated: false, strokeWidth: 2 };
+/** Estiliza aresta conforme tipo de vínculo V5 */
+function getEdgeStyle(type: string) {
+  switch (type) {
+    case "BloodBond": return { stroke: "#ef4444", animated: true, strokeWidth: 3, strokeDasharray: undefined };
+    case "Enemy":     return { stroke: "#f43f5e", animated: false, strokeWidth: 2, strokeDasharray: undefined };
     case "Boon":
-    case "Sire":
-      return { stroke: "#eab308", strokeDasharray: "4,4", animated: true, strokeWidth: 2 };
-    case "Touchstone":
-      return { stroke: "#3b82f6", strokeDasharray: "6,4", animated: false, strokeWidth: 2 };
-    default:
-      return { stroke: "#6b7280", animated: false, strokeWidth: 1.5 };
+    case "Sire":      return { stroke: "#eab308", animated: true, strokeWidth: 2, strokeDasharray: "4,4" };
+    case "Touchstone": return { stroke: "#3b82f6", animated: false, strokeWidth: 2, strokeDasharray: "6,4" };
+    default:          return { stroke: "#6b7280", animated: false, strokeWidth: 1.5, strokeDasharray: undefined };
   }
 }
 
@@ -60,27 +79,21 @@ export function useRelationshipMap(mode: "coterie" | "global") {
     const nodes: Node[] = [];
     const edges: Edge[] = [];
 
+    const { cx, cy } = ZONES.coterie;
+
     // ── NÓ CENTRAL DA COTERIE ──
     nodes.push({
       id: "coterie_center",
-      position: { x: CENTER_X, y: CENTER_Y },
-      data: {
-        label: "A COTERIE",
-        type: "coterie",
-        image: "https://images.unsplash.com/photo-1605806616949-1e87b487cb2a?q=80&w=400&auto=format&fit=crop",
-        memberCount: safePlayers.length,
-      },
+      position: { x: cx, y: cy },
+      data: { label: "A COTERIE", type: "coterie", memberCount: safePlayers.length, image: "https://images.unsplash.com/photo-1605806616949-1e87b487cb2a?q=80&w=400&auto=format&fit=crop", faction: "Coterie" },
       type: "coterieNode",
     });
 
-    // ── JOGADORES (VAMPIROS) ──
-    const playerPositions: Record<string, { x: number; y: number }> = {};
-    const playerRadius = 280 + safePlayers.length * 20;
-
+    // ── JOGADORES ──
+    const playerRadius = 220 + safePlayers.length * 15;
     safePlayers.forEach((p, idx) => {
       const playerId = p.id || `player_${idx}`;
-      const pos = radialPosition(CENTER_X, CENTER_Y, playerRadius, idx, safePlayers.length);
-      playerPositions[playerId] = pos;
+      const pos = clusterPosition(cx, cy, idx, safePlayers.length, playerRadius, 20);
 
       nodes.push({
         id: playerId,
@@ -91,13 +104,12 @@ export function useRelationshipMap(mode: "coterie" | "global") {
           clan: p.clan,
           humanity: p.humanity ?? 7,
           type: "vampire",
-          faction: p.clan,
+          faction: "Coterie",
           status: p.status,
         },
         type: "vampireNode",
       });
 
-      // Aresta: Membro da Coterie
       edges.push({
         id: `edge_coterie_${playerId}`,
         source: "coterie_center",
@@ -105,21 +117,22 @@ export function useRelationshipMap(mode: "coterie" | "global") {
         label: p.clan || "Membro",
         style: { stroke: "#b91c1c", strokeWidth: 2 },
         type: "smoothstep",
+        data: { relationType: "Coterie" },
       });
 
-      // ── TOUCHSTONES / PILARES DO JOGADOR ──
-      const playerConvictions = Array.isArray(p.convictions) ? p.convictions.filter(Boolean) : [];
-      playerConvictions.forEach((c: any, cIdx: number) => {
-        const touchstoneId = c.npc_id || `touchstone_${playerId}_${c.id || cIdx}`;
-        const touchstoneName = c.touchstone_name || c.pilar_nome || "Pilar Mortal";
+      // ── TOUCHSTONES ──
+      const convictions = Array.isArray(p.convictions) ? p.convictions.filter(Boolean) : [];
+      convictions.forEach((c: any, cIdx: number) => {
+        const tsId = c.npc_id || `ts_${playerId}_${c.id || cIdx}`;
+        const tsName = c.touchstone_name || c.pilar_nome || "Pilar Mortal";
 
-        if (!nodes.some((n) => n.id === touchstoneId)) {
-          const tPos = satellitePosition(pos.x, pos.y, cIdx, playerConvictions.length);
+        if (!nodes.some((n) => n.id === tsId)) {
+          const tPos = satellitePosition(pos.x, pos.y, cIdx, convictions.length);
           nodes.push({
-            id: touchstoneId,
+            id: tsId,
             position: tPos,
             data: {
-              label: touchstoneName,
+              label: tsName,
               role: c.touchstone_title || c.touchstone_relation || "Pilar de Humanidade",
               status: c.status || "active",
               type: "touchstone",
@@ -130,42 +143,71 @@ export function useRelationshipMap(mode: "coterie" | "global") {
         }
 
         edges.push({
-          id: `edge_ts_${playerId}_${touchstoneId}`,
+          id: `edge_ts_${playerId}_${tsId}`,
           source: playerId,
-          target: touchstoneId,
+          target: tsId,
           label: c.conviction ? `Pilar: ${c.conviction}` : "Pilar",
           ...getEdgeStyle("Touchstone"),
           style: { ...getEdgeStyle("Touchstone") },
           type: "smoothstep",
+          data: { relationType: "Touchstone" },
         });
       });
     });
 
-    // ── MODO GLOBAL: NPCs + RELAÇÕES + BOONS ──
+    // ── MODO GLOBAL: NPCs POR ZONA GEOPOLÍTICA ──
     if (mode === "global") {
-      const globalRadius = 580 + safeNpcs.length * 8;
-      safeNpcs.forEach((npc, idx) => {
-        const npcId = npc.id || `npc_${idx}`;
-        if (nodes.some((n) => n.id === npcId)) return;
+      // Agrupa NPCs por zona
+      const zoneGroups: Record<ZoneKey, any[]> = {
+        coterie: [], camarilla: [], anarch: [], sabbat: [], mortal: [], independente: [],
+      };
+      safeNpcs.forEach((npc) => {
+        if (nodes.some((n) => n.id === npc.id)) return; // já está como touchstone
+        const faction = npc.category || npc.seita || npc.species_faction || "Mortal";
+        const zone = detectZone(faction);
+        zoneGroups[zone].push(npc);
+      });
 
-        const pos = radialPosition(CENTER_X, CENTER_Y, globalRadius, idx, safeNpcs.length, 50);
+      // Renderiza nós de zona (rótulo visual)
+      (Object.keys(zoneGroups) as ZoneKey[]).forEach((zk) => {
+        if (zk === "coterie") return; // já temos o nó central
+        const group = zoneGroups[zk];
+        if (group.length === 0) return;
+
+        const zone = ZONES[zk];
+        // Nó invisível de rótulo de zona
         nodes.push({
-          id: npcId,
-          position: pos,
-          data: {
-            label: npc.name || npc.nome || "NPC",
-            role: npc.role || npc.cargo || npc.title,
-            sect: npc.category || npc.seita,
-            status: npc.status,
-            image: npc.image_url || npc.avatar_url,
-            type: npc.is_touchstone ? "touchstone" : "npc",
-            faction: npc.category || npc.seita || "Mortal",
-          },
-          type: npc.is_touchstone ? "touchstoneNode" : "npcNode",
+          id: `zone_label_${zk}`,
+          position: { x: zone.cx - 60, y: zone.cy - 60 },
+          data: { label: zone.label, type: "zone_label", faction: zk },
+          type: "npcNode",
+          selectable: false,
+          draggable: false,
+        });
+
+        group.forEach((npc: any, idx: number) => {
+          const npcId = npc.id || `npc_${zk}_${idx}`;
+          const pos = clusterPosition(zone.cx, zone.cy, idx, group.length, 120 + group.length * 8, 20);
+          const faction = npc.category || npc.seita || zk;
+
+          nodes.push({
+            id: npcId,
+            position: pos,
+            data: {
+              label: npc.name || npc.nome || "NPC",
+              role: npc.role || npc.cargo || npc.title,
+              sect: faction,
+              status: npc.status,
+              image: npc.image_url || npc.avatar_url,
+              type: npc.is_touchstone ? "touchstone" : "npc",
+              faction: faction,
+            },
+            type: npc.is_touchstone ? "touchstoneNode" : "npcNode",
+          });
         });
       });
 
-      // Relacionamentos persistidos
+      // ── RELAÇÕES PERSISTIDAS ──
       safeRelMap.forEach((rel) => {
         if (!rel || !rel.source_id || !rel.target_id) return;
         const relType = rel.relation_type || rel.type || "Touchstone";
@@ -178,10 +220,11 @@ export function useRelationshipMap(mode: "coterie" | "global") {
           animated: style.animated,
           style: { stroke: style.stroke, strokeWidth: style.strokeWidth, strokeDasharray: style.strokeDasharray },
           type: "smoothstep",
+          data: { relationType: relType },
         });
       });
 
-      // Boons / Dívidas
+      // ── BOONS / DÍVIDAS ──
       safeBoons.forEach((boon) => {
         if (!boon || boon.isResolved) return;
         const fromNode = nodes.find((n) => (n.data.label as string).toLowerCase() === (boon.from || "").toLowerCase());
@@ -201,6 +244,7 @@ export function useRelationshipMap(mode: "coterie" | "global") {
           animated: true,
           style: { stroke: strokeColor, strokeWidth: 2, strokeDasharray: "4,4" },
           type: "smoothstep",
+          data: { relationType: "Boon" },
         });
       });
     }
@@ -208,6 +252,5 @@ export function useRelationshipMap(mode: "coterie" | "global") {
     return { nodes, edges };
   }, [players, npcs, relMap, boons, mode]);
 
-  // Expor setRelMap para persistir novas conexões criadas pelo Narrador
   return { ...result, setRelMap };
 }
