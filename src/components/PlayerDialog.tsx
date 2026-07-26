@@ -162,13 +162,14 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.character_name) {
+    if (!form.character_name || !form.character_name.trim()) {
       toast.error("Nome do personagem é obrigatório.");
       return;
     }
 
     const playerData = {
       ...form,
+      character_name: form.character_name.trim(),
       id: isEditing ? player.id : crypto.randomUUID(),
       disciplines, // Enviado como JSONB array
       merits,      // Enviado como JSONB array
@@ -184,34 +185,51 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh]">
-        <DialogHeader>
-          <DialogTitle className="font-serif">
+        <DialogHeader className="pb-2 border-b border-border/40">
+          <DialogTitle className="font-serif text-xl">
             {isEditing ? "Editar Personagem" : "Novo Personagem"}
           </DialogTitle>
         </DialogHeader>
-        <ScrollArea className="max-h-[70vh] pr-4">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="flex gap-4">
+        <ScrollArea className="max-h-[72vh] pr-4 pt-2">
+          <form onSubmit={handleSubmit} className="space-y-6 pt-1 pb-4">
+            {/* Bloco do Topo: Imagem + Nome + Jogador + Clã */}
+            <div className="flex flex-col sm:flex-row gap-4 items-start bg-muted/10 p-3 rounded-lg border border-border/40">
               <ImageUpload
                 currentUrl={form.image_url || null}
                 folder="players"
                 onUpload={(url) => set("image_url", url)}
                 onRemove={() => set("image_url", "")}
-                className="w-32 h-32 flex-shrink-0"
+                className="w-32 h-32 flex-shrink-0 rounded-md overflow-hidden"
               />
-              <div className="flex-1 space-y-3">
+              <div className="flex-1 w-full space-y-3">
                 <div>
-                  <Label>Nome do Personagem *</Label>
-                  <Input value={form.character_name} onChange={(e) => set("character_name", e.target.value)} required />
+                  <Label className="text-xs font-bold text-foreground">Nome do Personagem *</Label>
+                  <Input
+                    value={form.character_name}
+                    onChange={(e) => set("character_name", e.target.value)}
+                    placeholder="Ex: Gabriel Vane"
+                    required
+                    className="mt-1 bg-background"
+                  />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <Label>Nome do Jogador</Label>
-                    <Input value={form.player_name} onChange={(e) => set("player_name", e.target.value)} />
+                    <Label className="text-xs">Nome do Jogador</Label>
+                    <Input
+                      value={form.player_name}
+                      onChange={(e) => set("player_name", e.target.value)}
+                      placeholder="Ex: Lucas"
+                      className="mt-1 bg-background"
+                    />
                   </div>
                   <div>
-                    <Label>Clã</Label>
-                    <Input value={form.clan} onChange={(e) => set("clan", e.target.value)} />
+                    <Label className="text-xs">Clã</Label>
+                    <Input
+                      value={form.clan}
+                      onChange={(e) => set("clan", e.target.value)}
+                      placeholder="Ex: Ventrue"
+                      className="mt-1 bg-background"
+                    />
                   </div>
                 </div>
               </div>
