@@ -701,7 +701,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
   const handleApplyPredatorSpecialty = (specVal: string) => {
     const [skillKey, specName] = specVal.split(":");
     if (skillKey && specName) {
-      setSkillSpec(skillKey, specName);
+      addSkillSpec(skillKey, specName);
       setForm((prev) => ({ ...prev, predator_specialty: specVal }));
       const skillLabel = Object.values(V5_SKILLS_LIST)
         .flat()
@@ -728,16 +728,25 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
     setForm((prev) => ({ ...prev, generation: gen, blood_potency: clampedBp }));
   };
 
-  // Helper para Perícias + Especializações (Declarado como function para evitar Hoisting TDZ)
-  function getSkillData(key: string) {
+  // Helper para Perícias + Especializações (Especializações como Array de Strings em JSONB)
+  function getSkillData(key: string): { nivel: number; especializacao: string[] } {
     const aliasKey = SKILL_KEY_ALIASES[key] || key;
     const raw = form.skills?.[key] || form.skills?.[aliasKey];
-    if (typeof raw === "number") return { nivel: raw, especializacao: "" };
+
+    if (typeof raw === "number") return { nivel: raw, especializacao: [] };
     if (raw && typeof raw === "object") {
-      const spec = Array.isArray(raw.especializacao) ? raw.especializacao.join(", ") : raw.especializacao || "";
-      return { nivel: raw.nivel || 0, especializacao: spec };
+      let specList: string[] = [];
+      if (Array.isArray(raw.especializacao)) {
+        specList = raw.especializacao.filter((s: any) => typeof s === "string" && s.trim().length > 0);
+      } else if (typeof raw.especializacao === "string" && raw.especializacao.trim()) {
+        specList = raw.especializacao
+          .split(",")
+          .map((s: string) => s.trim())
+          .filter(Boolean);
+      }
+      return { nivel: raw.nivel || 0, especializacao: specList };
     }
-    return { nivel: 0, especializacao: "" };
+    return { nivel: 0, especializacao: [] };
   }
 
   // Helper de Contagem Reativa de Distribuição de Atributos V5
@@ -875,28 +884,50 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
     }
   };
 
-  const setSkillSpec = (key: string, especializacao: string) => {
-    const current = getSkillData(key);
-    const oldHasSpec = !!current.especializacao.trim();
-    const newHasSpec = !!especializacao.trim();
+  // Handlers de Múltiplas Especializações por Perícia V5
+  const addSkillSpec = (key: string, specName: string) => {
+    const cleanSpec = specName.trim();
+    if (!cleanSpec) return;
 
-    let costDelta = 0;
-    if (!oldHasSpec && newHasSpec) costDelta = 3;
-    else if (oldHasSpec && !newHasSpec) costDelta = -3;
+    const current = getSkillData(key);
+    if (current.especializacao.includes(cleanSpec)) {
+      toast.info(`Especialização "${cleanSpec}" já adicionada.`);
+      return;
+    }
+
+    const updatedSpecs = [...current.especializacao, cleanSpec];
+    const costDelta = 3; // Custo oficial V5: 3 XP por nova especialização
 
     setForm((prev) => ({
       ...prev,
       skills: {
         ...(prev.skills || {}),
-        [key]: { nivel: current.nivel, especializacao },
+        [key]: { nivel: current.nivel, especializacao: updatedSpecs },
       },
-      ...(costDelta !== 0
-        ? {
-            xp_total: Math.max(0, (prev.xp_total || 0) - costDelta),
-            xp_spent: Math.max(0, (prev.xp_spent || 0) + costDelta),
-          }
-        : {}),
+      xp_total: Math.max(0, (prev.xp_total || 0) - costDelta),
+      xp_spent: Math.max(0, (prev.xp_spent || 0) + costDelta),
     }));
+    toast.success(`Especialização "${cleanSpec}" adicionada (+3 XP).`);
+  };
+
+  const removeSkillSpec = (key: string, specIdx: number) => {
+    const current = getSkillData(key);
+    const targetSpec = current.especializacao[specIdx];
+    const updatedSpecs = current.especializacao.filter((_, idx) => idx !== specIdx);
+    const refund = 3;
+
+    setForm((prev) => ({
+      ...prev,
+      skills: {
+        ...(prev.skills || {}),
+        [key]: { nivel: current.nivel, especializacao: updatedSpecs },
+      },
+      xp_total: (prev.xp_total || 0) + refund,
+      xp_spent: Math.max(0, (prev.xp_spent || 0) - refund),
+    }));
+    if (targetSpec) {
+      toast.info(`Especialização "${targetSpec}" removida (-3 XP reembolsados).`);
+    }
   };
 
   // Handlers de Disciplinas com Gasto Direto de XP (Clã = Nível x 5 / Caitiff ou Sangue-Fraco = Nível x 6 / Fora = Nível x 7)
@@ -1058,11 +1089,11 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
 
   const set = (field: string, value: any) => setForm((prev) => ({ ...prev, [field]: value }));
 
-  // Helper de Renderização de Item de Perícia com Especialização Obrigatória e Sugestões V5
+  // Helper de Renderização de Item de Perícia com Múltiplas Especializações V5
   const renderSkillItem = (s: { key: string; label: string }) => {
     const skillData = getSkillData(s.key);
     const isInnate = INNATE_SPECIALTY_SKILLS.has(s.key);
-    const isMissingInnate = isInnate && skillData.nivel > 0 && !skillData.especializacao.trim();
+    const isMissingInnate = isInnate && skillData.nivel > 0 && skillData.especializacao.length === 0;
     const recSpecs = V5_RECOMMENDED_SPECIALTIES[s.key] || [];
 
     return (
@@ -1095,22 +1126,39 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
         </div>
 
         {skillData.nivel > 0 && (
-          <div className="space-y-1 pt-0.5">
+          <div className="space-y-1.5 pt-0.5">
+            {/* Badges de Especializações Ativas */}
+            {skillData.especializacao.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {skillData.especializacao.map((spec, specIdx) => (
+                  <span
+                    key={specIdx}
+                    className="inline-flex items-center gap-1 text-[10px] bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 font-semibold px-1.5 py-0.5 rounded"
+                  >
+                    <span>{spec}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeSkillSpec(s.key, specIdx)}
+                      className="hover:text-rose-400 text-muted-foreground text-xs leading-none ml-0.5"
+                      title="Remover Especialização"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Selector de Sugestões V5 */}
             <Select
-              value={recSpecs.includes(skillData.especializacao) ? skillData.especializacao : "custom"}
               onValueChange={(val) => {
-                if (val !== "custom") {
-                  setSkillSpec(s.key, val);
-                }
+                if (val) addSkillSpec(s.key, val);
               }}
             >
               <SelectTrigger className="h-6 text-[10px] bg-background font-semibold w-full">
                 <SelectValue placeholder="Sugestões Oficiais V5..." />
               </SelectTrigger>
               <SelectContent className="max-h-40">
-                <SelectItem value="custom" className="text-[10px] italic text-muted-foreground">
-                  -- Digitação Livre --
-                </SelectItem>
                 {recSpecs.map((specName) => (
                   <SelectItem key={specName} value={specName} className="text-[10px]">
                     {specName}
@@ -1119,19 +1167,9 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
               </SelectContent>
             </Select>
 
-            <Input
-              placeholder={
-                isMissingInnate
-                  ? "* Especialização Obrigatória (V5)..."
-                  : "Especialização (ex: Fuzis, Cirurgia)..."
-              }
-              value={skillData.especializacao}
-              onChange={(e) => setSkillSpec(s.key, e.target.value)}
-              className={`h-6 text-[10px] bg-background ${
-                isMissingInnate
-                  ? "border-rose-500 text-rose-300 placeholder:text-rose-400/70 font-semibold"
-                  : ""
-              }`}
+            <SkillSpecCustomAdder
+              onAdd={(text) => addSkillSpec(s.key, text)}
+              isMissingInnate={isMissingInnate}
             />
           </div>
         )}
@@ -1932,5 +1970,58 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
         </ScrollArea>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function SkillSpecCustomAdder({
+  onAdd,
+  isMissingInnate,
+}: {
+  onAdd: (val: string) => void;
+  isMissingInnate: boolean;
+}) {
+  const [val, setVal] = useState("");
+
+  const handleAdd = () => {
+    if (val.trim()) {
+      onAdd(val.trim());
+      setVal("");
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-1">
+      <Input
+        placeholder={
+          isMissingInnate
+            ? "* Adicionar Especialização Obrigatória..."
+            : "Digitar nova especialização..."
+        }
+        value={val}
+        onChange={(e) => setVal(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            handleAdd();
+          }
+        }}
+        className={`h-6 text-[10px] bg-background flex-1 ${
+          isMissingInnate
+            ? "border-rose-500 text-rose-300 placeholder:text-rose-400/70 font-semibold"
+            : ""
+        }`}
+      />
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        onClick={handleAdd}
+        disabled={!val.trim()}
+        className="h-6 px-1.5 text-[10px] bg-background border-border"
+        title="Adicionar Especialização"
+      >
+        <Plus className="w-3 h-3" />
+      </Button>
+    </div>
   );
 }
