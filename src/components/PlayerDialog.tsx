@@ -8,6 +8,7 @@ import { ImageUpload } from "@/components/ImageUpload";
 import { HungerTracker } from "@/components/HungerTracker";
 import { HumanityTracker } from "@/components/HumanityTracker";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trash2, Plus, Sparkles, Award, BookOpen, ShieldAlert, Heart, Zap, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -33,8 +34,45 @@ interface PlayerDialogProps {
   onSave: (player: any) => void;
 }
 
-// Dicionário de Poderes Oficiais V5 por Nível de Disciplina
+// Lista Oficial das 12 Disciplinas do V5
+export const V5_OFFICIAL_DISCIPLINES = [
+  "Animalismo",
+  "Auspícios",
+  "Rapidez",
+  "Fortitude",
+  "Potência",
+  "Presença",
+  "Metamorfose",
+  "Ofuscação",
+  "Dominação",
+  "Feitiçaria de Sangue",
+  "Oblívio",
+  "Alquimia Sangue-Fraco",
+] as const;
+
+// Mapeamento Completo de Poderes Oficiais do V5 por Disciplina e Nível
 export const V5_DISCIPLINE_POWERS: Record<string, Record<number, string[]>> = {
+  Animalismo: {
+    1: ["Sussurros dos Animais", "Acalmar a Besta"],
+    2: ["Familiar Vampírico"],
+    3: ["Dominar a Besta", "Sucção Animal"],
+    4: ["Comandar Pragas", "Subjugar o Espírito"],
+    5: ["Expulsão do Sangue", "Comunhão Bestial"],
+  },
+  Auspícios: {
+    1: ["Sentidos Aguçados", "Premonição"],
+    2: ["Visão da Aura", "Revelação Mística"],
+    3: ["Toque Psíquico", "Sintonar a Mente"],
+    4: ["Telepatia", "Possuição Distante"],
+    5: ["Projeção Psíquica", "Onisciência"],
+  },
+  Rapidez: {
+    1: ["Reflexos de Gato", "Fração de Segundo"],
+    2: ["Movimento Rápido", "Esquiva Celerada"],
+    3: ["Passo de Ilusão", "Velocidade Relâmpago"],
+    4: ["Aceleração Temporal"],
+    5: ["Fantasmas de Sangue", "Ataque Múltiplo"],
+  },
   Fortitude: {
     1: ["Resistência Mística", "Mente Inviolável"],
     2: ["Resiliência", "Endurecimento"],
@@ -44,66 +82,59 @@ export const V5_DISCIPLINE_POWERS: Record<string, Record<number, string[]>> = {
   },
   Potência: {
     1: ["Corpo Letal", "Salto Prodigioso"],
-    2: ["Prowess (Destreza Física)"],
+    2: ["Prowess (Vigor Físico)", "Empurrão Esmagador"],
     3: ["Impacto Brutal", "Esmagar Barricada"],
     4: ["Terremoto"],
-    5: ["Punho do Titã"],
-  },
-  Rapidez: {
-    1: ["Reflexos de Gato", "Fração de Segundo"],
-    2: ["Movimento Rápido"],
-    3: ["Passo de Ilusão"],
-    4: ["Aceleração Temporal"],
-    5: ["Fantasmas de Sangue"],
-  },
-  Dominação: {
-    1: ["Comando", "Mesmerismo"],
-    2: ["Amnésia", "Hipnose"],
-    3: ["Racionalização"],
-    4: ["Possuição Comercial"],
-    5: ["Decreto Final"],
+    5: ["Punho do Titã", "Onda de Choque"],
   },
   Presença: {
     1: ["Fascínio (Awe)", "Pavor (Daunt)"],
-    2: ["Olhar Fixador"],
-    3: ["Entrincheiramento"],
+    2: ["Olhar Fixador", "Voz Magistral"],
+    3: ["Entrincheiramento", "Magnetismo Irresistível"],
     4: ["Majestade"],
-    5: ["Encantamento em Massa"],
-  },
-  Auspícios: {
-    1: ["Sentidos Aguçados", "Premonição"],
-    2: ["Visão da Aura"],
-    3: ["Toque Psíquico"],
-    4: ["Telepatia"],
-    5: ["Projeção Psíquica"],
-  },
-  Ofuscação: {
-    1: ["Manto de Sombras", "Silêncio Mortal"],
-    2: ["Passar sem Deixar Rastro"],
-    3: ["Máscara dos Mil Faces"],
-    4: ["Desaparecimento"],
-    5: ["Ocultar o Grupo"],
-  },
-  Animalismo: {
-    1: ["Sussurros dos Animais", "Acalmar a Besta"],
-    2: ["Familiar Vampírico"],
-    3: ["Dominar a Besta"],
-    4: ["Comandar Pragas"],
-    5: ["Expulsão do Sangue"],
-  },
-  Feitiçaria: {
-    1: ["Boca de Sangue", "Gosto pelo Sangue"],
-    2: ["Escudo de Sangue"],
-    3: ["Toque Corrosivo"],
-    4: ["Caldeirão do Sangue"],
-    5: ["Destruição de Laço"],
+    5: ["Encantamento em Massa", "Convocação Primordial"],
   },
   Metamorfose: {
     1: ["Olhos do Predador", "Forma Bestial (Garras)"],
     2: ["Fusão com a Terra"],
-    3: ["Metamorfose Selvagem"],
+    3: ["Metamorfose Selvagem (Lobo/Morcego)"],
     4: ["Forma de Névoa"],
-    5: ["Lorde das Feras"],
+    5: ["Lorde das Feras", "Metamorfose Monstruosa"],
+  },
+  Ofuscação: {
+    1: ["Manto de Sombras", "Silêncio Mortal"],
+    2: ["Passar sem Deixar Rastro"],
+    3: ["Máscara dos Mil Faces", "Desaparecimento"],
+    4: ["Ocultar o Grupo"],
+    5: ["Mão Invencível", "Disfarce Absoluto"],
+  },
+  Dominação: {
+    1: ["Comando", "Mesmerismo"],
+    2: ["Amnésia", "Hipnose rápida"],
+    3: ["Racionalização", "Gravar Sugestão"],
+    4: ["Possuição Comercial"],
+    5: ["Decreto Final", "Reescrever Memória"],
+  },
+  "Feitiçaria de Sangue": {
+    1: ["Boca de Sangue", "Gosto pelo Sangue"],
+    2: ["Escudo de Sangue", "Extrato Venenoso"],
+    3: ["Toque Corrosivo", "Sangue Fervilhante"],
+    4: ["Caldeirão do Sangue"],
+    5: ["Destruição de Laço", "Roubo de Vitae"],
+  },
+  Oblívio: {
+    1: ["Manto de Sombras Abissais", "Testemunha dos Mortos"],
+    2: ["Projeção de Sombras"],
+    3: ["Toque da Podridão", "Invocar Aparição"],
+    4: ["Névoa Sombria"],
+    5: ["Portal das Sombras", "Avatar do Abismo"],
+  },
+  "Alquimia Sangue-Fraco": {
+    1: ["Fórmula de Calcinação 1"],
+    2: ["Fórmula de Destilação 2"],
+    3: ["Mito de Sangue 3"],
+    4: ["Elixir da Noite 4"],
+    5: ["Gênese Sangrenta 5"],
   },
 };
 
@@ -154,6 +185,46 @@ const defaultPlayer = {
   skills: {} as Record<string, number>,
   human_history: "", embrace_story: "", image_url: "",
 };
+
+// Componente Modular de Cálculo de Efeitos Passivos V5
+export function calculateV5PassiveEffects(
+  disciplines: PlayerDiscipline[],
+  vigor: number,
+  compostura: number,
+  perseveranca: number
+) {
+  let healthMaxBonus = 0;
+  let willpowerMaxBonus = 0;
+  const activePassives: string[] = [];
+
+  disciplines.forEach((d) => {
+    const normName = (d.nome || "").trim();
+    const powers = d.poderes || [];
+
+    // 1. Fortitude (Resiliência) -> +Nível de Fortitude em Vitalidade Máxima
+    if (normName.toLowerCase() === "fortitude") {
+      const hasResilience = powers.some(
+        (p) =>
+          p &&
+          (p.toLowerCase().includes("resiliência") ||
+            p.toLowerCase().includes("resiliencia"))
+      );
+      if (hasResilience) {
+        const bonus = d.nivel || 1;
+        healthMaxBonus += bonus;
+        activePassives.push(`Fortitude (Resiliência): +${bonus} Vitalidade`);
+      }
+    }
+  });
+
+  return {
+    health_max: (vigor || 1) + 3 + healthMaxBonus,
+    willpower_max: (compostura || 1) + (perseveranca || 1) + willpowerMaxBonus,
+    healthMaxBonus,
+    willpowerMaxBonus,
+    activePassives,
+  };
+}
 
 function DotRating({
   value,
@@ -213,7 +284,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       if (Array.isArray(player.disciplines)) {
         parsedDisciplines = player.disciplines.map((d: any) => ({
           id: d.id || crypto.randomUUID(),
-          nome: d.nome || d.name || "",
+          nome: d.nome || d.name || "Fortitude",
           nivel: d.nivel || d.level || 1,
           poderes: Array.isArray(d.poderes)
             ? d.poderes
@@ -225,7 +296,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
           if (Array.isArray(json)) {
             parsedDisciplines = json.map((d: any) => ({
               id: d.id || crypto.randomUUID(),
-              nome: d.nome || d.name || "",
+              nome: d.nome || d.name || "Fortitude",
               nivel: d.nivel || d.level || 1,
               poderes: Array.isArray(d.poderes) ? d.poderes : Array.from({ length: d.nivel || 1 }, () => ""),
             }));
@@ -233,7 +304,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
         } catch {
           parsedDisciplines = player.disciplines.split(",").map((s: string) => ({
             id: crypto.randomUUID(),
-            nome: s.trim(),
+            nome: "Fortitude",
             nivel: 1,
             poderes: [""],
           }));
@@ -292,23 +363,18 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
     }
   }, [player, open]);
 
-  // Automação Reativa de Vitalidade (Fortitude + Resiliência Exceção V5)
-  const fortitudeDisc = disciplines.find(
-    (d) => d.nome && d.nome.trim().toLowerCase().includes("fortitude")
+  // Automação Reativa de Efeitos Passivos V5
+  const passiveEffects = calculateV5PassiveEffects(
+    disciplines,
+    form.vigor || 1,
+    form.compostura || 1,
+    form.perseveranca || 1
   );
 
-  const hasResilience = fortitudeDisc?.poderes?.some(
-    (p) =>
-      p &&
-      (p.trim().toLowerCase().includes("resiliência") ||
-        p.trim().toLowerCase().includes("resiliencia"))
-  );
+  const calculatedHealthMax = passiveEffects.health_max;
+  const calculatedWillpowerMax = passiveEffects.willpower_max;
 
-  const fortitudeBonus = hasResilience ? fortitudeDisc?.nivel || 0 : 0;
-  const calculatedHealthMax = (form.vigor || 1) + 3 + fortitudeBonus;
-  const calculatedWillpowerMax = (form.compostura || 1) + (form.perseveranca || 1);
-
-  // Handlers de Disciplinas com Poderes Aninhados
+  // Handlers de Disciplinas
   const handleAddDiscipline = () => {
     setDisciplines((prev) => [
       ...prev,
@@ -318,7 +384,12 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
 
   const handleUpdateDisciplineName = (id: string, newNome: string) => {
     setDisciplines((prev) =>
-      prev.map((d) => (d.id === id ? { ...d, nome: newNome } : d))
+      prev.map((d) => {
+        if (d.id !== id) return d;
+        // Reseta poderes ao mudar o nome da disciplina para os poderes compatíveis
+        const newPoderes = Array.from({ length: d.nivel }, () => "");
+        return { ...d, nome: newNome, poderes: newPoderes };
+      })
     );
   };
 
@@ -394,7 +465,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       willpower_max: calculatedWillpowerMax,
       health_current: Math.max(0, calculatedHealthMax - (form.sup_dmg || 0) - (form.agr_dmg || 0)),
       willpower_current: Math.max(0, calculatedWillpowerMax - (form.fw_sup || 0) - (form.fw_agr || 0)),
-      disciplines, // Salvo em formato JSONB aninhado
+      disciplines,
       merits,
       flaws,
     };
@@ -573,12 +644,16 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                     <Heart className="w-3.5 h-3.5" /> Vitalidade (Máx: {calculatedHealthMax})
                   </Label>
                   <span className="text-[10px] font-mono text-muted-foreground">
-                    (Vigor {form.vigor || 1} + 3 {fortitudeBonus > 0 ? `+ ${fortitudeBonus} Fortitude` : ""})
+                    (Vigor {form.vigor || 1} + 3 {passiveEffects.healthMaxBonus > 0 ? `+ ${passiveEffects.healthMaxBonus} Fortitude` : ""})
                   </span>
                 </div>
-                {fortitudeBonus > 0 && (
-                  <div className="flex items-center gap-1 text-[10px] text-emerald-400 font-medium">
-                    <ShieldCheck className="w-3 h-3 text-emerald-400" /> +{fortitudeBonus} Vitalidade ativada por Fortitude (Resiliência)
+                {passiveEffects.activePassives.length > 0 && (
+                  <div className="space-y-1 pt-1">
+                    {passiveEffects.activePassives.map((p, idx) => (
+                      <div key={idx} className="flex items-center gap-1 text-[10px] text-emerald-400 font-medium">
+                        <ShieldCheck className="w-3 h-3 text-emerald-400" /> {p}
+                      </div>
+                    ))}
                   </div>
                 )}
                 <div className="grid grid-cols-2 gap-2">
@@ -644,11 +719,11 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
               </div>
             </div>
 
-            {/* Field Array: Disciplinas com Seleção Dinâmica de Poderes Aninhados por Nível */}
+            {/* Field Array: Disciplinas Oficiais V5 (Select de Disciplinas + Selects em Cascata de Poderes) */}
             <div className="border-t border-border/60 pt-4 space-y-3">
               <div className="flex items-center justify-between">
                 <Label className="text-sm font-semibold flex items-center gap-1.5 font-serif text-primary">
-                  <Sparkles className="w-4 h-4" /> Disciplinas & Poderes Vampíricos (JSONB)
+                  <Sparkles className="w-4 h-4" /> Disciplinas & Poderes Vampíricos (V5)
                 </Label>
                 <Button
                   type="button"
@@ -668,95 +743,94 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
               ) : (
                 <div className="space-y-3">
                   {disciplines.map((disc) => {
-                    const normDiscName = Object.keys(V5_DISCIPLINE_POWERS).find(
+                    const normDiscName = V5_OFFICIAL_DISCIPLINES.find(
                       (k) => k.toLowerCase() === (disc.nome || "").toLowerCase()
-                    );
-                    const officialPowersMap = normDiscName ? V5_DISCIPLINE_POWERS[normDiscName] : null;
+                    ) || disc.nome || "Fortitude";
+
+                    const officialPowersMap = V5_DISCIPLINE_POWERS[normDiscName] || {};
 
                     return (
                       <div key={disc.id} className="p-3 bg-surface-container-low border border-border/50 rounded-md space-y-3">
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 grid grid-cols-3 gap-2">
-                            <div className="col-span-2">
-                              <Input
-                                placeholder="Nome da Disciplina (ex: Fortitude)"
-                                value={disc.nome}
-                                onChange={(e) => handleUpdateDisciplineName(disc.id, e.target.value)}
-                                className="h-8 text-xs bg-background"
-                              />
-                            </div>
-                            <div>
-                              <Input
-                                type="number"
-                                min={1}
-                                max={5}
-                                placeholder="Nível (1-5)"
-                                value={disc.nivel}
-                                onChange={(e) => handleUpdateDisciplineNivel(disc.id, parseInt(e.target.value) || 1)}
-                                className="h-8 text-xs bg-background"
-                              />
-                            </div>
+                        <div className="flex items-center gap-3">
+                          {/* Select da Disciplina Oficial */}
+                          <div className="flex-1">
+                            <Label className="text-[10px] text-muted-foreground">Disciplina Oficial V5</Label>
+                            <Select
+                              value={normDiscName}
+                              onValueChange={(val) => handleUpdateDisciplineName(disc.id, val)}
+                            >
+                              <SelectTrigger className="h-8 text-xs bg-background font-semibold">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="max-h-48">
+                                {V5_OFFICIAL_DISCIPLINES.map((dName) => (
+                                  <SelectItem key={dName} value={dName} className="text-xs">
+                                    {dName}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
+
+                          {/* Seletor de Nível em Bolinhas (DotRating 1 a 5) */}
+                          <div>
+                            <Label className="text-[10px] text-muted-foreground block mb-1">Nível ({disc.nivel})</Label>
+                            <DotRating
+                              value={disc.nivel}
+                              min={1}
+                              max={5}
+                              onChange={(v) => handleUpdateDisciplineNivel(disc.id, v)}
+                            />
+                          </div>
+
                           <Button
                             type="button"
                             variant="ghost"
                             size="icon"
                             onClick={() => handleRemoveDiscipline(disc.id)}
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive self-end"
                             title="Remover Disciplina"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
 
-                        {/* Sub-lista de Poderes Aninhados pelo Nível */}
+                        {/* Selects em Cascata de Poderes Específicos por Nível */}
                         <div className="pl-3 border-l-2 border-primary/30 space-y-2 pt-1">
                           <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block">
-                            Poderes Selecionados ({disc.nivel} Poderes)
+                            Poderes Selecionados ({disc.nivel} Níveis)
                           </span>
                           {Array.from({ length: disc.nivel }, (_, levelIdx) => {
                             const lvl = levelIdx + 1;
                             const powerValue = (disc.poderes && disc.poderes[levelIdx]) || "";
-                            const suggestedPowers = officialPowersMap ? officialPowersMap[lvl] || [] : [];
+                            const availablePowersForLevel = officialPowersMap[lvl] || [];
 
                             return (
                               <div key={levelIdx} className="flex items-center gap-2">
                                 <span className="text-[10px] text-muted-foreground font-mono w-14">
                                   Nível {lvl}:
                                 </span>
-                                {suggestedPowers.length > 0 ? (
-                                  <div className="flex-1 flex gap-2">
-                                    <Input
-                                      placeholder={`Poder de Nível ${lvl}`}
-                                      value={powerValue}
-                                      onChange={(e) => handleUpdateDisciplinePower(disc.id, levelIdx, e.target.value)}
-                                      className="h-7 text-xs bg-background flex-1"
-                                    />
-                                    <select
-                                      value=""
-                                      onChange={(e) => {
-                                        if (e.target.value) {
-                                          handleUpdateDisciplinePower(disc.id, levelIdx, e.target.value);
-                                        }
-                                      }}
-                                      className="h-7 text-xs bg-background border border-border rounded px-1 text-muted-foreground"
-                                    >
-                                      <option value="">Sugestões V5...</option>
-                                      {suggestedPowers.map((sp) => (
-                                        <option key={sp} value={sp}>
-                                          {sp}
-                                        </option>
-                                      ))}
-                                    </select>
-                                  </div>
-                                ) : (
-                                  <Input
-                                    placeholder={`Poder de Nível ${lvl} (ex: Resiliência)`}
-                                    value={powerValue}
-                                    onChange={(e) => handleUpdateDisciplinePower(disc.id, levelIdx, e.target.value)}
-                                    className="h-7 text-xs bg-background flex-1"
-                                  />
-                                )}
+                                <Select
+                                  value={powerValue}
+                                  onValueChange={(v) => handleUpdateDisciplinePower(disc.id, levelIdx, v)}
+                                >
+                                  <SelectTrigger className="h-7 text-xs bg-background flex-1">
+                                    <SelectValue placeholder={`Selecionar Poder Nível ${lvl}...`} />
+                                  </SelectTrigger>
+                                  <SelectContent className="max-h-40">
+                                    {availablePowersForLevel.length > 0 ? (
+                                      availablePowersForLevel.map((pName) => (
+                                        <SelectItem key={pName} value={pName} className="text-xs">
+                                          {pName}
+                                        </SelectItem>
+                                      ))
+                                    ) : (
+                                      <SelectItem value="Poder Genérico" className="text-xs">
+                                        Poder de Nível {lvl}
+                                      </SelectItem>
+                                    )}
+                                  </SelectContent>
+                                </Select>
                               </div>
                             );
                           })}
