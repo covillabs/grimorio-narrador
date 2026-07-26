@@ -275,6 +275,16 @@ export function getV5BloodPotencyLimits(generation: number) {
   return { min: 0, max: 10 };
 }
 
+// Multiplicador Oficial de Disciplina V5 (Clã = 5, Caitiff/Sangue-Fraco = 6, Fora do Clã = 7)
+export function getV5DisciplineMultiplier(clanName: string, discName: string): number {
+  const normClan = (clanName || "").toLowerCase();
+  if (normClan === "caitiff" || normClan === "sangue-fraco") return 6;
+  const clanInfo = V5_CLANS_DATA[clanName];
+  const clanDiscSet = new Set((clanInfo?.disciplines || []).map((d) => d.toLowerCase()));
+  if (clanDiscSet.has((discName || "").toLowerCase())) return 5;
+  return 7;
+}
+
 const defaultPlayer = {
   character_name: "", player_name: "", clan: "Ventrue", sire: "", generation: 13,
   hunger: 0, humanity: 7, stains: 0, blood_potency: 1,
@@ -482,7 +492,28 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
     setForm((prev) => ({ ...prev, generation: gen, blood_potency: clampedBp }));
   };
 
-  // Handler de Atributos com Gasto Direto de XP
+  // Handler de Potência de Sangue com Gasto Direto de XP (Novo Nível x 10 XP)
+  const handleBloodPotencyChange = (newBP: number) => {
+    const oldBP = form.blood_potency || bpLimits.min;
+    const clamped = Math.max(bpLimits.min, Math.min(bpLimits.max, newBP));
+    if (clamped !== oldBP) {
+      let costDelta = 0;
+      if (clamped > oldBP) {
+        for (let lvl = oldBP + 1; lvl <= clamped; lvl++) costDelta += lvl * 10;
+      } else {
+        for (let lvl = clamped + 1; lvl <= oldBP; lvl++) costDelta -= lvl * 10;
+      }
+
+      setForm((prev) => ({
+        ...prev,
+        blood_potency: clamped,
+        xp_total: Math.max(0, (prev.xp_total || 0) - costDelta),
+        xp_spent: Math.max(0, (prev.xp_spent || 0) + costDelta),
+      }));
+    }
+  };
+
+  // Handler de Atributos com Gasto Direto de XP (Novo Nível x 5 XP)
   const setAttr = (field: string, newLevel: number) => {
     const oldLevel = Number(form[field as keyof typeof form]) || 1;
     if (newLevel !== oldLevel) {
@@ -502,7 +533,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
     }
   };
 
-  // Helper para Perícias + Especializações com Gasto Direto de XP
+  // Helper para Perícias + Especializações com Gasto Direto de XP (Novo Nível x 3 XP / Especialização = 3 XP)
   const getSkillData = (key: string) => {
     const raw = form.skills?.[key];
     if (typeof raw === "number") return { nivel: raw, especializacao: "" };
@@ -538,22 +569,33 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
 
   const setSkillSpec = (key: string, especializacao: string) => {
     const current = getSkillData(key);
+    const oldHasSpec = !!current.especializacao.trim();
+    const newHasSpec = !!especializacao.trim();
+
+    let costDelta = 0;
+    if (!oldHasSpec && newHasSpec) costDelta = 3;
+    else if (oldHasSpec && !newHasSpec) costDelta = -3;
+
     setForm((prev) => ({
       ...prev,
       skills: {
         ...(prev.skills || {}),
         [key]: { nivel: current.nivel, especializacao },
       },
+      ...(costDelta !== 0
+        ? {
+            xp_total: Math.max(0, (prev.xp_total || 0) - costDelta),
+            xp_spent: Math.max(0, (prev.xp_spent || 0) + costDelta),
+          }
+        : {}),
     }));
   };
 
-  // Handlers de Disciplinas com Gasto Direto de XP
+  // Handlers de Disciplinas com Gasto Direto de XP (Clã = Nível x 5 / Caitiff ou Sangue-Fraco = Nível x 6 / Fora = Nível x 7)
   const handleAddDiscipline = () => {
     const newDiscName = "Fortitude";
-    const clanInfo = V5_CLANS_DATA[form.clan];
-    const clanDiscSet = new Set((clanInfo?.disciplines || []).map((d) => d.toLowerCase()));
-    const isClan = clanDiscSet.has(newDiscName.toLowerCase());
-    const costDelta = isClan ? 5 : 7;
+    const multiplier = getV5DisciplineMultiplier(form.clan, newDiscName);
+    const costDelta = 1 * multiplier;
 
     setDisciplines((prev) => [
       ...prev,
@@ -584,10 +626,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
     const oldNivel = targetDisc.nivel;
 
     if (clamped !== oldNivel) {
-      const clanInfo = V5_CLANS_DATA[form.clan];
-      const clanDiscSet = new Set((clanInfo?.disciplines || []).map((d) => d.toLowerCase()));
-      const isClan = clanDiscSet.has((targetDisc.nome || "").toLowerCase());
-      const multiplier = isClan ? 5 : 7;
+      const multiplier = getV5DisciplineMultiplier(form.clan, targetDisc.nome);
 
       let costDelta = 0;
       if (clamped > oldNivel) {
@@ -625,15 +664,34 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
   };
 
   const handleRemoveDiscipline = (id: string) => {
+    const targetDisc = disciplines.find((d) => d.id === id);
+    if (targetDisc) {
+      const multiplier = getV5DisciplineMultiplier(form.clan, targetDisc.nome);
+      let refund = 0;
+      for (let lvl = 1; lvl <= targetDisc.nivel; lvl++) refund += lvl * multiplier;
+
+      setForm((prev) => ({
+        ...prev,
+        xp_total: (prev.xp_total || 0) + refund,
+        xp_spent: Math.max(0, (prev.xp_spent || 0) - refund),
+      }));
+    }
     setDisciplines((prev) => prev.filter((d) => d.id !== id));
   };
 
-  // Handlers Vantagens/Defeitos/Antecedentes com Gasto Direto de XP
+  // Handlers Vantagens/Defeitos/Antecedentes com Gasto Direto de XP (3 XP por ponto)
   const handleAddAdvantage = () => {
+    const costDelta = 1 * 3;
     setAdvantages((prev) => [
       ...prev,
       { id: crypto.randomUUID(), nome: "", tipo: "Vantagem", pontos: 1 },
     ]);
+
+    setForm((prev) => ({
+      ...prev,
+      xp_total: Math.max(0, (prev.xp_total || 0) - costDelta),
+      xp_spent: Math.max(0, (prev.xp_spent || 0) + costDelta),
+    }));
   };
 
   const handleUpdateAdvantage = (id: string, field: keyof PlayerAdvantage, value: any) => {
@@ -655,6 +713,15 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
   };
 
   const handleRemoveAdvantage = (id: string) => {
+    const target = advantages.find((a) => a.id === id);
+    if (target) {
+      const refund = (target.pontos || 1) * 3;
+      setForm((prev) => ({
+        ...prev,
+        xp_total: (prev.xp_total || 0) + refund,
+        xp_spent: Math.max(0, (prev.xp_spent || 0) - refund),
+      }));
+    }
     setAdvantages((prev) => prev.filter((a) => a.id !== id));
   };
 
@@ -791,10 +858,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                     value={form.blood_potency || bpLimits.min}
                     min={bpLimits.min}
                     max={10}
-                    onChange={(v) => {
-                      const clamped = Math.max(bpLimits.min, Math.min(bpLimits.max, v));
-                      set("blood_potency", clamped);
-                    }}
+                    onChange={handleBloodPotencyChange}
                   />
                 </div>
               </div>
@@ -829,11 +893,11 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                 </div>
               </div>
 
-              {/* Experiência (XP Total Saldo e XP Gasto Acumulado) */}
+              {/* Experiência (XP Total Saldo e XP Gasto Acumulado com Tabela V5) */}
               <div className="space-y-2 border-l border-border/40 pl-4">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                    <Layers className="w-3.5 h-3.5 text-primary" /> Gestão de XP
+                    <Layers className="w-3.5 h-3.5 text-primary" /> Gestão de XP (Tabela Oficial V5)
                   </span>
                   <span className="text-[10px] text-muted-foreground font-mono">
                     Gasto Direto Reativo
@@ -862,7 +926,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                   </div>
                 </div>
                 <p className="text-[10px] text-muted-foreground italic pt-0.5">
-                  Elevações na ficha reduzem do XP Total (Saldo) e acumulam no XP Gasto.
+                  Elevações na ficha (Atributos: Nível×5, Perícias: Nível×3, Disciplinas: Clã Nível×5 / Fora Nível×7 / Caitiff Nível×6, BP: Nível×10) abatem do Saldo e somam no Gasto.
                 </p>
               </div>
             </div>
