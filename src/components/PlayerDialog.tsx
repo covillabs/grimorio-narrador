@@ -669,7 +669,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
   const [disciplines, setDisciplines] = useState<PlayerDiscipline[]>([]);
   const [advantages, setAdvantages] = useState<PlayerAdvantage[]>([]);
   const [convictions, setConvictions] = useState<PlayerConviction[]>([]);
-  const [spcs, setSpcs] = useCloudStorage<any[]>("v5_spcs", []);
+  const [npcs, setNpcs] = useCloudStorage<any[]>("v5_npcs", []);
   const [relMap, setRelMap] = useCloudStorage<any[]>("v5_relationship_map", []);
 
   const isEditing = !!player;
@@ -1367,13 +1367,13 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
         touchstone_name: "",
         touchstone_relation: "",
         status: "active",
-        touchstone_type: (spcs || []).length > 0 ? "existing" : "new",
+        touchstone_type: (npcs || []).length > 0 ? "existing" : "new",
       },
     ]);
   };
 
   const handleSelectExistingNpcForTouchstone = (convictionId: string, npcId: string) => {
-    const targetNpc = (spcs || []).find((n) => n && n.id === npcId);
+    const targetNpc = (npcs || []).find((n) => n && n.id === npcId);
     if (!targetNpc) return;
 
     const npcName = targetNpc.name || targetNpc.nome || "NPC";
@@ -1431,27 +1431,32 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
     const newNpcId = crypto.randomUUID();
     const cleanName = name.trim();
     const cleanRelation = relation.trim() || "Pilar Mortal de Humanidade";
-    const cleanSeita = seita || "Mortal";
+    const cleanCategory = seita || "Mortal";
     const cleanClan = clan || "Mortal";
     const cleanTitle = title.trim() || "Pilar";
 
-    // 1. Injeção na Galeria Central de NPCs da Crônica (v5_spcs) com Estrutura Completa Simplificada
+    // 1. Injeção na Galeria Central de NPCs da Crônica (v5_npcs) com Estrutura Completa Simplificada
     const newNpc = {
       id: newNpcId,
       name: cleanName,
       nome: cleanName,
-      seita: cleanSeita,
+      category: cleanCategory, // Categoria fundamental para agrupamento na Galeria de NPCs (NpcsPage)
+      seita: cleanCategory,
       clan: cleanClan,
       title: cleanTitle,
+      role: cleanTitle,
       cargo: cleanTitle,
+      species_faction: `${cleanClan} / ${cleanCategory}`,
       concept: `${cleanTitle} - Pilar de Humanidade`,
       description: cleanRelation,
-      status: initialStatus || "active",
+      history: `Pilar de Humanidade do personagem ${form.character_name || player?.character_name || ""}. ${cleanRelation}`,
+      appearance: cleanRelation,
+      status: initialStatus === "destroyed" ? "Morte Final" : initialStatus || "Ativo",
       is_touchstone: true,
       player_id: form.id || player?.id,
       player_name: form.character_name || player?.character_name || "Vampiro",
     };
-    setSpcs((prev) => [...(prev || []), newNpc]);
+    setNpcs((prev) => [...(prev || []), newNpc]);
 
     // 2. Injeção na Teia de Intrigas / Mapa de Relacionamento (v5_relationship_map)
     const newRelNode = {
@@ -1475,7 +1480,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
           npc_id: newNpcId,
           touchstone_name: cleanName,
           touchstone_relation: cleanRelation,
-          touchstone_seita: cleanSeita,
+          touchstone_seita: cleanCategory,
           touchstone_clan: cleanClan,
           touchstone_title: cleanTitle,
           status: initialStatus,
@@ -1484,7 +1489,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       })
     );
 
-    toast.success(`NPC "${cleanName}" (${cleanClan}/${cleanSeita}) salvo na Galeria, na Teia de Intrigas e vinculado!`);
+    toast.success(`NPC "${cleanName}" (${cleanClan}/${cleanCategory}) salvo na Galeria de NPCs, na Teia de Intrigas e vinculado!`);
   };
 
   const handleUpdateConviction = (id: string, field: keyof PlayerConviction, value: any) => {
@@ -1502,8 +1507,8 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
         if (c.id !== id) return c;
         const updated = { ...c, [field]: value };
         if (field === "status" && c.npc_id) {
-          setSpcs((spcList) =>
-            (spcList || []).map((npc) => (npc && npc.id === c.npc_id ? { ...npc, status: value } : npc))
+          setNpcs((npcList) =>
+            (npcList || []).map((npc) => (npc && npc.id === c.npc_id ? { ...npc, status: value === "destroyed" ? "Morte Final" : value } : npc))
           );
           setRelMap((relList) =>
             (relList || []).map((r) => (r && r.target_id === c.npc_id ? { ...r, status: value } : r))
@@ -2654,12 +2659,12 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                                       <SelectValue placeholder="Vincular a NPC existente da crônica..." />
                                     </SelectTrigger>
                                     <SelectContent className="max-h-44">
-                                      {(spcs || []).length === 0 ? (
+                                      {(npcs || []).length === 0 ? (
                                         <SelectItem value="none" disabled className="text-xs">
                                           Nenhum NPC cadastrado na crônica
                                         </SelectItem>
                                       ) : (
-                                        (spcs || []).map((npc) => (
+                                        (npcs || []).map((npc) => (
                                           <SelectItem key={npc.id} value={npc.id} className="text-xs">
                                             👥 {npc.name || npc.nome} ({npc.concept || npc.description || "NPC"})
                                           </SelectItem>
