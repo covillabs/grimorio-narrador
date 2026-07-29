@@ -4,8 +4,10 @@ import { ReactFlow, Controls, Background, MiniMap, Connection, NodeChange, Node,
 import '@xyflow/react/dist/style.css';
 import { CoterieNode, VampireNode, TouchstoneNode, NpcNode } from '@/components/Teia/CharacterNode';
 import { ConnectionModal, ConnectionParams } from '@/components/Teia/ConnectionModal';
+import { NodeEditModal } from '@/components/Teia/NodeEditModal';
 import { Button } from '@/components/ui/button';
 import { useRelationshipMap } from '@/hooks/useRelationshipMap';
+import { useCloudStorage } from '@/hooks/useCloudStorage';
 import { toast } from 'sonner';
 
 const nodeTypes = {
@@ -36,6 +38,8 @@ const FILTERS: { key: FilterKey; label: string; icon: any; color: string }[] = [
 export default function TeiaPage() {
   const [mode, setMode] = useState<'coterie' | 'global'>('coterie');
   const { nodes, edges, setRelMap } = useRelationshipMap(mode);
+  const [npcs, setNpcs] = useCloudStorage<any[]>('v5_npcs', []);
+  const [players, setPlayers] = useCloudStorage<any[]>('v5_coterie', []);
 
   // ── FILTROS ──
   const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
@@ -46,6 +50,12 @@ export default function TeiaPage() {
   // ── DRAG-TO-CONNECT ──
   const [connectionModalOpen, setConnectionModalOpen] = useState(false);
   const [pendingConnection, setPendingConnection] = useState<ConnectionParams | null>(null);
+
+  // ── EDIÇÃO DE NÓS ──
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
+  const [editingNodeData, setEditingNodeData] = useState<any>(null);
+  const [editingNodeType, setEditingNodeType] = useState<string | null>(null);
 
   // ── POSIÇÕES MANUAIS (arrastar nós) ──
   const [posOverrides, setPosOverrides] = useState<Record<string, { x: number; y: number }>>({});
@@ -158,6 +168,73 @@ export default function TeiaPage() {
     setFocusedNodeId(null);
   }, []);
 
+  // ── DUPLO CLIQUE NO NÓ: Abre modal de edição ──
+  const onNodeDoubleClick = useCallback((_: any, node: Node) => {
+    setEditingNodeId(node.id);
+    setEditingNodeData(node.data);
+    setEditingNodeType(node.type || null);
+    setEditModalOpen(true);
+  }, []);
+
+  // ── DUPLO CLIQUE NA ARESTA: Deleta vínculo ──
+  const onEdgeDoubleClick = useCallback((_: any, edge: Edge) => {
+    if (edge.id.startsWith('edge_coterie_') || edge.id.startsWith('edge_ts_')) {
+      toast.error('Vínculos de Coterie e Pilar não podem ser removidos daqui.');
+      return;
+    }
+    setRelMap((prev: any[]) => (prev || []).filter((r) => `rel_${r.id}` !== edge.id && `rel_${r.source_id}_${r.target_id}` !== edge.id.replace('rel_', '')));
+    toast.success('Vínculo removido.');
+  }, [setRelMap]);
+
+  // ── SALVAR EDIÇÃO DE NÓ ──
+  const handleSaveNode = useCallback((nodeId: string, updates: Record<string, any>) => {
+    // Atualiza NPC na Galeria (v5_npcs)
+    setNpcs((prev: any[]) =>
+      (prev || []).map((npc) => {
+        if (npc && npc.id === nodeId) {
+          return {
+            ...npc,
+            name: updates.label || npc.name,
+            nome: updates.label || npc.nome,
+            role: updates.role || npc.role,
+            cargo: updates.role || npc.cargo,
+            category: updates.faction || npc.category,
+            seita: updates.faction || npc.seita,
+            status: updates.status || npc.status,
+            image_url: updates.image || npc.image_url,
+          };
+        }
+        return npc;
+      })
+    );
+
+    // Atualiza Jogador na Coterie (v5_coterie)
+    setPlayers((prev: any[]) =>
+      (prev || []).map((p) => {
+        if (p && p.id === nodeId) {
+          return {
+            ...p,
+            character_name: updates.label || p.character_name,
+            avatar_url: updates.image || p.avatar_url,
+            status: updates.status || p.status,
+          };
+        }
+        return p;
+      })
+    );
+
+    toast.success(`Nó "${updates.label}" atualizado.`);
+  }, [setNpcs, setPlayers]);
+
+  // ── DELETAR NÓ ──
+  const handleDeleteNode = useCallback((nodeId: string) => {
+    // Remove da Galeria de NPCs
+    setNpcs((prev: any[]) => (prev || []).filter((npc) => npc && npc.id !== nodeId));
+    // Remove vínculos associados
+    setRelMap((prev: any[]) => (prev || []).filter((r) => r.source_id !== nodeId && r.target_id !== nodeId));
+    toast.success('Nó e vínculos removidos.');
+  }, [setNpcs, setRelMap]);
+
   const onConnect = useCallback((connection: Connection) => {
     if (!connection.source || !connection.target || connection.source === connection.target) return;
     const sourceNode = nodes.find((n) => n.id === connection.source);
@@ -201,7 +278,7 @@ export default function TeiaPage() {
           <div>
             <h1 className="text-2xl font-serif font-bold text-foreground">Teia de Intrigas</h1>
             <p className="text-muted-foreground text-xs">
-              {focusedNodeId ? '🔍 Modo Foco — clique no canvas para limpar' : 'Arraste conexões entre nós • Clique para focar'}
+              {focusedNodeId ? '🔍 Modo Foco — clique no canvas para limpar' : 'Duplo clique para editar • Arraste para vincular'}
             </p>
           </div>
         </div>
@@ -258,6 +335,8 @@ export default function TeiaPage() {
           edges={displayEdges}
           onNodesChange={onNodesChange}
           onNodeClick={onNodeClick}
+          onNodeDoubleClick={onNodeDoubleClick}
+          onEdgeDoubleClick={onEdgeDoubleClick}
           onPaneClick={onPaneClick}
           onConnect={onConnect}
           nodeTypes={nodeTypes}
@@ -330,6 +409,17 @@ export default function TeiaPage() {
         onClose={() => { setConnectionModalOpen(false); setPendingConnection(null); }}
         params={pendingConnection}
         onConfirm={handleConfirmConnection}
+      />
+
+      {/* ── MODAL DE EDIÇÃO DE NÓ ── */}
+      <NodeEditModal
+        open={editModalOpen}
+        onClose={() => { setEditModalOpen(false); setEditingNodeId(null); setEditingNodeData(null); }}
+        nodeData={editingNodeData}
+        nodeId={editingNodeId}
+        nodeType={editingNodeType}
+        onSave={handleSaveNode}
+        onDelete={handleDeleteNode}
       />
     </div>
   );
