@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useCloudStorage } from "@/hooks/useCloudStorage";
 import { Node, Edge } from "@xyflow/react";
+import { RELATION_STYLE_MAP, type RelationType, type NodePositionMap } from "@/types/intrigas";
 
 // ═══════════════════════════════════════════════════════════
 // ZONAS GEOPOLÍTICAS DO DOMÍNIO V5
@@ -52,19 +53,18 @@ function satellitePosition(px: number, py: number, index: number, total: number)
   };
 }
 
-/** Estiliza aresta conforme tipo de vínculo V5 */
+/** Estiliza aresta conforme tipo de vínculo V5 (usa RELATION_STYLE_MAP) */
 function getEdgeStyle(type: string) {
-  switch (type) {
-    case "BloodBond": return { stroke: "#ef4444", animated: true, strokeWidth: 3, strokeDasharray: undefined };
-    case "Enemy":     return { stroke: "#f43f5e", animated: false, strokeWidth: 2, strokeDasharray: undefined };
-    case "Boon":
-    case "Sire":      return { stroke: "#eab308", animated: true, strokeWidth: 2, strokeDasharray: "4,4" };
-    case "Touchstone": return { stroke: "#3b82f6", animated: false, strokeWidth: 2, strokeDasharray: "6,4" };
-    default:          return { stroke: "#6b7280", animated: false, strokeWidth: 1.5, strokeDasharray: undefined };
-  }
+  const config = RELATION_STYLE_MAP[type as RelationType] || RELATION_STYLE_MAP.Custom;
+  return {
+    stroke: config.stroke,
+    animated: config.animated,
+    strokeWidth: config.strokeWidth,
+    strokeDasharray: config.strokeDasharray,
+  };
 }
 
-export function useRelationshipMap(mode: "coterie" | "global") {
+export function useRelationshipMap(mode: "coterie" | "global", posOverrides?: NodePositionMap) {
   const [players] = useCloudStorage<any[]>("v5_coterie", []);
   const [npcs] = useCloudStorage<any[]>("v5_npcs", []);
   const [relMap, setRelMap] = useCloudStorage<any[]>("v5_relationship_map", []);
@@ -116,7 +116,7 @@ export function useRelationshipMap(mode: "coterie" | "global") {
         target: playerId,
         label: p.clan || "Membro",
         style: { stroke: "#b91c1c", strokeWidth: 2 },
-        type: "smoothstep",
+        type: "relationshipEdge",
         data: { relationType: "Coterie" },
       });
 
@@ -147,9 +147,9 @@ export function useRelationshipMap(mode: "coterie" | "global") {
           source: playerId,
           target: tsId,
           label: c.conviction ? `Pilar: ${c.conviction}` : "Pilar",
-          ...getEdgeStyle("Touchstone"),
-          style: { ...getEdgeStyle("Touchstone") },
-          type: "smoothstep",
+          animated: getEdgeStyle("Touchstone").animated,
+          style: { stroke: getEdgeStyle("Touchstone").stroke, strokeWidth: getEdgeStyle("Touchstone").strokeWidth, strokeDasharray: getEdgeStyle("Touchstone").strokeDasharray },
+          type: "relationshipEdge",
           data: { relationType: "Touchstone" },
         });
       });
@@ -219,8 +219,8 @@ export function useRelationshipMap(mode: "coterie" | "global") {
           label: rel.label || relType,
           animated: style.animated,
           style: { stroke: style.stroke, strokeWidth: style.strokeWidth, strokeDasharray: style.strokeDasharray },
-          type: "smoothstep",
-          data: { relationType: relType },
+          type: "relationshipEdge",
+          data: { relationType: relType, description: rel.description || rel.notes || "" },
         });
       });
 
@@ -243,8 +243,8 @@ export function useRelationshipMap(mode: "coterie" | "global") {
           label: `Dívida: ${boon.description || boon.type}`,
           animated: true,
           style: { stroke: strokeColor, strokeWidth: 2, strokeDasharray: "4,4" },
-          type: "smoothstep",
-          data: { relationType: "Boon" },
+          type: "relationshipEdge",
+          data: { relationType: "Boon", description: boon.description || "" },
         });
       });
     }

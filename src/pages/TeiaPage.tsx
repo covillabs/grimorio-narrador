@@ -1,14 +1,17 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import { Network, Users, Link2, Eye, Crown, Flame, Heart, ScrollText, Layers } from 'lucide-react';
 import { ReactFlow, Controls, Background, MiniMap, Connection, NodeChange, Node, Edge } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { CoterieNode, VampireNode, TouchstoneNode, NpcNode } from '@/components/Teia/CharacterNode';
+import { RelationshipEdge } from '@/components/Teia/RelationshipEdge';
 import { ConnectionModal, ConnectionParams } from '@/components/Teia/ConnectionModal';
 import { NodeEditModal } from '@/components/Teia/NodeEditModal';
+import { TeiaDetailsDrawer } from '@/components/Teia/TeiaDetailsDrawer';
 import { Button } from '@/components/ui/button';
 import { useRelationshipMap } from '@/hooks/useRelationshipMap';
 import { useCloudStorage } from '@/hooks/useCloudStorage';
 import { toast } from 'sonner';
+import type { NodePositionMap } from '@/types/intrigas';
 
 const nodeTypes = {
   coterieNode: CoterieNode,
@@ -17,11 +20,12 @@ const nodeTypes = {
   npcNode: NpcNode,
 };
 
+const edgeTypes = {
+  relationshipEdge: RelationshipEdge,
+};
+
 const defaultEdgeOptions = {
-  labelBgPadding: [6, 3] as [number, number],
-  labelBgBorderRadius: 6,
-  labelStyle: { fill: '#e0e0e0', fontSize: 9, fontWeight: 600, fontFamily: 'serif' },
-  labelBgStyle: { fill: '#1a1a1a', fillOpacity: 0.85, stroke: '#333', strokeWidth: 0.5 },
+  type: 'relationshipEdge' as const,
 };
 
 type FilterKey = 'all' | 'camarilla' | 'anarch' | 'pilares' | 'boons' | 'coterie';
@@ -35,9 +39,13 @@ const FILTERS: { key: FilterKey; label: string; icon: any; color: string }[] = [
   { key: 'boons', label: 'Dívidas', icon: ScrollText, color: 'text-yellow-400' },
 ];
 
-export default function TeiaPage() {
-  const [mode, setMode] = useState<'coterie' | 'global'>('coterie');
-  const { nodes, edges, setRelMap } = useRelationshipMap(mode);
+export default function TeiaPage() {  const [mode, setMode] = useState<'coterie' | 'global'>('coterie');
+
+  // ── POSIÇÕES PERSISTIDAS (salvas via useCloudStorage) ──
+  const [posOverrides, setPosOverrides] = useCloudStorage<NodePositionMap>('v5_teia_positions', {});
+  const posDebounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  const { nodes, edges, setRelMap } = useRelationshipMap(mode, posOverrides);
   const [npcs, setNpcs] = useCloudStorage<any[]>('v5_npcs', []);
   const [players, setPlayers] = useCloudStorage<any[]>('v5_coterie', []);
 
@@ -57,8 +65,10 @@ export default function TeiaPage() {
   const [editingNodeData, setEditingNodeData] = useState<any>(null);
   const [editingNodeType, setEditingNodeType] = useState<string | null>(null);
 
-  // ── POSIÇÕES MANUAIS (arrastar nós) ──
-  const [posOverrides, setPosOverrides] = useState<Record<string, { x: number; y: number }>>({});
+  // ── DRAWER DE DETALHES ──
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedNode, setSelectedNode] = useState<Node | null>(null);
+  const [selectedEdge, setSelectedEdge] = useState<Edge | null>(null);
 
   // Calcula quais nós estão "ativos" (visíveis/em foco) vs "esmaecidos"
   const { displayNodes, displayEdges } = useMemo(() => {
@@ -153,19 +163,38 @@ export default function TeiaPage() {
 
   // ── HANDLERS ──
   const onNodesChange = useCallback((changes: NodeChange[]) => {
+    const newOverrides: Record<string, { x: number; y: number }> = {};
+    let hasPositionChange = false;
     changes.forEach((change) => {
       if (change.type === 'position' && change.position && change.id) {
-        setPosOverrides((prev) => ({ ...prev, [change.id]: change.position! }));
+        newOverrides[change.id] = change.position;
+        hasPositionChange = true;
       }
     });
-  }, []);
+    if (hasPositionChange) {
+      // Atualiza imediatamente no state local (via setPosOverrides do useCloudStorage)
+      // mas usa debounce pra não salvar a cada pixel de drag
+      setPosOverrides((prev: NodePositionMap) => ({ ...prev, ...newOverrides }));
+    }
+  }, [setPosOverrides]);
 
   const onNodeClick = useCallback((_: any, node: Node) => {
     setFocusedNodeId((prev) => (prev === node.id ? null : node.id));
+    // Abrir drawer de detalhes
+    setSelectedNode(node);
+    setSelectedEdge(null);
+    setDrawerOpen(true);
+  }, []);
+
+  const onEdgeClick = useCallback((_: any, edge: Edge) => {
+    setSelectedEdge(edge);
+    setSelectedNode(null);
+    setDrawerOpen(true);
   }, []);
 
   const onPaneClick = useCallback(() => {
     setFocusedNodeId(null);
+    // Não fechar o drawer ao clicar no canvas (UX melhor)
   }, []);
 
   // ── DUPLO CLIQUE NO NÓ: Abre modal de edição ──
@@ -184,6 +213,8 @@ export default function TeiaPage() {
     }
     setRelMap((prev: any[]) => (prev || []).filter((r) => `rel_${r.id}` !== edge.id && `rel_${r.source_id}_${r.target_id}` !== edge.id.replace('rel_', '')));
     toast.success('Vínculo removido.');
+    setDrawerOpen(false);
+    setSelectedEdge(null);
   }, [setRelMap]);
 
   // ── SALVAR EDIÇÃO DE NÓ ──
@@ -267,6 +298,44 @@ export default function TeiaPage() {
     setPendingConnection(null);
   }, [pendingConnection, setRelMap]);
 
+  // ── DRAWER: DELETAR ARESTA ──
+  const handleDrawerDeleteEdge = useCallback((edgeId: string) => {
+    if (edgeId.startsWith('edge_coterie_') || edgeId.startsWith('edge_ts_')) {
+      toast.error('Vínculos de sistema não podem ser removidos.');
+      return;
+    }
+    setRelMap((prev: any[]) => (prev || []).filter((r) => `rel_${r.id}` !== edgeId && `rel_${r.source_id}_${r.target_id}` !== edgeId.replace('rel_', '')));
+    toast.success('Vínculo removido.');
+  }, [setRelMap]);
+
+  // ── DRAWER: ATUALIZAR ARESTA ──
+  const handleDrawerUpdateEdge = useCallback((edgeId: string, updates: { label?: string; description?: string }) => {
+    setRelMap((prev: any[]) => (prev || []).map((r) => {
+      const relEdgeId = `rel_${r.id}`;
+      if (relEdgeId === edgeId) {
+        return {
+          ...r,
+          label: updates.label || r.label,
+          description: updates.description ?? r.description,
+          notes: updates.description ?? r.notes,
+        };
+      }
+      return r;
+    }));
+    toast.success('Vínculo atualizado.');
+  }, [setRelMap]);
+
+  // ── DRAWER: EDITAR NÓ (abre o modal existente) ──
+  const handleDrawerEditNode = useCallback((nodeId: string) => {
+    const node = nodes.find((n) => n.id === nodeId);
+    if (node) {
+      setEditingNodeId(node.id);
+      setEditingNodeData(node.data);
+      setEditingNodeType(node.type || null);
+      setEditModalOpen(true);
+    }
+  }, [nodes]);
+
   return (
     <div className="flex flex-col h-[calc(100vh-6rem)]">
       {/* ── HEADER ── */}
@@ -309,7 +378,7 @@ export default function TeiaPage() {
             <Button 
               variant={mode === 'coterie' ? 'default' : 'ghost'} 
               size="sm" 
-              onClick={() => { setMode('coterie'); setPosOverrides({}); setActiveFilter('all'); setFocusedNodeId(null); }}
+              onClick={() => { setMode('coterie'); setPosOverrides({} as NodePositionMap, true); setActiveFilter('all'); setFocusedNodeId(null); setDrawerOpen(false); }}
               className={`gap-1.5 text-xs ${mode === 'coterie' ? 'bg-primary text-white' : 'text-muted-foreground'}`}
             >
               <Users className="w-3.5 h-3.5" />
@@ -318,7 +387,7 @@ export default function TeiaPage() {
             <Button 
               variant={mode === 'global' ? 'default' : 'ghost'} 
               size="sm" 
-              onClick={() => { setMode('global'); setPosOverrides({}); setActiveFilter('all'); setFocusedNodeId(null); }}
+              onClick={() => { setMode('global'); setPosOverrides({} as NodePositionMap, true); setActiveFilter('all'); setFocusedNodeId(null); setDrawerOpen(false); }}
               className={`gap-1.5 text-xs ${mode === 'global' ? 'bg-primary text-white' : 'text-muted-foreground'}`}
             >
               <Network className="w-3.5 h-3.5" />
@@ -336,10 +405,12 @@ export default function TeiaPage() {
           onNodesChange={onNodesChange}
           onNodeClick={onNodeClick}
           onNodeDoubleClick={onNodeDoubleClick}
+          onEdgeClick={onEdgeClick}
           onEdgeDoubleClick={onEdgeDoubleClick}
           onPaneClick={onPaneClick}
           onConnect={onConnect}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           defaultEdgeOptions={defaultEdgeOptions}
           fitView
           fitViewOptions={{ padding: 0.15 }}
@@ -420,6 +491,19 @@ export default function TeiaPage() {
         nodeType={editingNodeType}
         onSave={handleSaveNode}
         onDelete={handleDeleteNode}
+      />
+
+      {/* ── DRAWER DE DETALHES ── */}
+      <TeiaDetailsDrawer
+        open={drawerOpen}
+        onClose={() => { setDrawerOpen(false); setSelectedNode(null); setSelectedEdge(null); }}
+        selectedNode={selectedNode}
+        selectedEdge={selectedEdge}
+        allEdges={displayEdges}
+        allNodes={displayNodes}
+        onDeleteEdge={handleDrawerDeleteEdge}
+        onUpdateEdge={handleDrawerUpdateEdge}
+        onEditNode={handleDrawerEditNode}
       />
     </div>
   );
