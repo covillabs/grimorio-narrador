@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { getPrefixedKey } from "@/components/ChronicleSwitcher";
+import { getPrefixedKey, isGuestMode } from "@/components/ChronicleSwitcher";
 
 export function useCloudStorage<T>(baseKey: string, initialValue: T): [T, (value: T | ((val: T) => T), immediate?: boolean) => void] {
   const { user } = useAuth();
@@ -24,8 +24,9 @@ export function useCloudStorage<T>(baseKey: string, initialValue: T): [T, (value
 
   // Efeito: Sincronização inicial da Nuvem (UMA VEZ após login)
   // Não sobrescreve se o usuário já interagiu nesta sessão.
+  // GUARD: Convidados NUNCA sincronizam com a nuvem.
   useEffect(() => {
-    if (!user || hasFetchedCloud.current) return;
+    if (!user || hasFetchedCloud.current || isGuestMode()) return;
     hasFetchedCloud.current = true;
 
     const fetchCloudData = async () => {
@@ -85,8 +86,8 @@ export function useCloudStorage<T>(baseKey: string, initialValue: T): [T, (value
       // Salva offline instantâneo
       window.localStorage.setItem(key, JSON.stringify(valueToStore));
 
-      // Se logado, envia pra nuvem
-      if (user) {
+      // Se logado com conta real (NÃO guest), envia pra nuvem
+      if (user && !isGuestMode()) {
         if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
         
         const saveToCloud = () => {

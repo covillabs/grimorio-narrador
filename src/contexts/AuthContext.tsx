@@ -21,8 +21,9 @@ interface AuthContextType {
   refreshProfile: () => Promise<void>;
 }
 
+// O id DEVE ser "guest" para coincidir com o namespace do ChronicleSwitcher
 const GUEST_USER: User = {
-  id: "guest-narrator-id",
+  id: "guest",
   app_metadata: { provider: "guest" },
   user_metadata: { username: "Narrador Convidado" },
   aud: "authenticated",
@@ -77,11 +78,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const loginAsGuest = () => {
-    setUser(GUEST_USER);
-    setProfile({ id: GUEST_USER.id, username: "Narrador Convidado", avatar_url: null });
+    // Setar o namespace ANTES de qualquer coisa para que o reload já use "guest"
+    localStorage.setItem("v5_active_user_id", "guest");
     localStorage.setItem("v5_guest_mode", "true");
-    setLoading(false);
     toast.success("Despertar bem sucedido (Modo Convidado).");
+    // Hard reload garante re-mount de TODOS os componentes com namespace limpo
+    window.location.replace("/");
   };
 
   useEffect(() => {
@@ -91,6 +93,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         const isGuest = localStorage.getItem("v5_guest_mode") === "true";
         if (isGuest) {
+          // Garantir que o namespace está setado para "guest"
+          localStorage.setItem("v5_active_user_id", "guest");
           if (mounted) {
             setUser(GUEST_USER);
             setProfile({ id: GUEST_USER.id, username: "Narrador Convidado", avatar_url: null });
@@ -106,6 +110,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (mounted) setUser(currentUser);
 
         if (currentUser && mounted) {
+          // Setar o namespace do userId para isolar dados no localStorage
+          localStorage.setItem("v5_active_user_id", currentUser.id);
           await fetchProfile(currentUser.id);
         }
       } catch (error) {
@@ -127,6 +133,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (mounted) setUser(currentUser);
 
       if (currentUser && mounted) {
+        // Manter namespace sincronizado ao trocar de sessão
+        localStorage.setItem("v5_active_user_id", currentUser.id);
         fetchProfile(currentUser.id);
       } else {
         if (mounted) setProfile(null);
@@ -173,6 +181,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         password: pass,
       });
       if (error) throw error;
+      // Setar namespace imediatamente após login bem-sucedido
+      if (data.user) {
+        localStorage.setItem("v5_active_user_id", data.user.id);
+      }
       return { error: null };
     } catch (error: any) {
       return { error };
@@ -195,17 +207,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = async () => {
     try {
-      setLoading(true);
+      // Limpar flags de sessão
       localStorage.removeItem("v5_guest_mode");
-      setUser(null);
-      setProfile(null);
+      localStorage.removeItem("v5_active_user_id");
+      
       const { error } = await supabase.auth.signOut();
       if (error && !error.message?.includes("session_not_found")) throw error;
+      
       toast.success("Desconectado com sucesso.");
+      // Hard redirect para garantir reset completo de toda a árvore React
+      window.location.replace("/login");
     } catch (error: any) {
       toast.error(error.message || "Erro ao desconectar");
-    } finally {
-      setLoading(false);
+      // Mesmo com erro, redirecionar para evitar estado inconsistente
+      window.location.replace("/login");
     }
   };
 

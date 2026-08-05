@@ -7,19 +7,43 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function getActiveChronicleId() {
-  return localStorage.getItem("v5_active_chronicle_id") || "default";
+// === Namespace de Isolamento por Usuário ===
+// Todas as chaves do localStorage são prefixadas por userId para impedir
+// vazamento de dados entre conta autenticada e modo Convidado.
+
+/** Retorna o userId ativo (ex: "abc-123" ou "guest") */
+export function getActiveUserId(): string {
+  return localStorage.getItem("v5_active_user_id") || "guest";
 }
 
-export function getPrefixedKey(baseKey: string) {
-  const prefix = getActiveChronicleId();
-  const isGlobalKey = baseKey.startsWith("v5_chronicles_list") || baseKey.startsWith("v5_active_chronicle_id");
-  return isGlobalKey ? baseKey : `${prefix}_${baseKey}`;
+/** Retorna o ID da crônica ativa para o userId atual */
+export function getActiveChronicleId(): string {
+  const userId = getActiveUserId();
+  return localStorage.getItem(`${userId}_v5_active_chronicle_id`) || "default";
 }
 
+/** Gera a chave final com namespace: {userId}_{chronicleId}_{baseKey} */
+export function getPrefixedKey(baseKey: string): string {
+  const userId = getActiveUserId();
+  const chronicleId = getActiveChronicleId();
+  // Chaves globais do sistema de crônica são por-user mas não por-crônica
+  const isChronicleMetaKey = baseKey === "v5_chronicles_list" || baseKey === "v5_active_chronicle_id";
+  if (isChronicleMetaKey) {
+    return `${userId}_${baseKey}`;
+  }
+  return `${userId}_${chronicleId}_${baseKey}`;
+}
+
+/** Retorna a lista de crônicas do userId atual */
 export function getChronicles() {
-  const stored = localStorage.getItem("v5_chronicles_list");
+  const userId = getActiveUserId();
+  const stored = localStorage.getItem(`${userId}_v5_chronicles_list`);
   return stored ? JSON.parse(stored) : [{ id: "default", name: "Crônica Principal" }];
+}
+
+/** Checa se o userId ativo é o modo Convidado */
+export function isGuestMode(): boolean {
+  return getActiveUserId() === "guest";
 }
 
 export function ChronicleSwitcher() {
@@ -32,16 +56,18 @@ export function ChronicleSwitcher() {
   const activeChronicle = chronicles.find((c: any) => c.id === activeId) || chronicles[0];
 
   const switchChronicle = (id: string) => {
-    localStorage.setItem("v5_active_chronicle_id", id);
+    const userId = getActiveUserId();
+    localStorage.setItem(`${userId}_v5_active_chronicle_id`, id);
     window.location.reload();
   };
 
   const createChronicle = () => {
     if (!newChronicleName.trim()) return;
+    const userId = getActiveUserId();
     const newId = "chr_" + Date.now();
     const updated = [...chronicles, { id: newId, name: newChronicleName }];
-    localStorage.setItem("v5_chronicles_list", JSON.stringify(updated));
-    localStorage.setItem("v5_active_chronicle_id", newId);
+    localStorage.setItem(`${userId}_v5_chronicles_list`, JSON.stringify(updated));
+    localStorage.setItem(`${userId}_v5_active_chronicle_id`, newId);
     window.location.reload();
   };
 
