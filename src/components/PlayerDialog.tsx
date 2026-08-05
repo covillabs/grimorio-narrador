@@ -10,7 +10,7 @@ import { HungerTracker } from "@/components/HungerTracker";
 import { HumanityTracker } from "@/components/HumanityTracker";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, Plus, Sparkles, Award, BookOpen, ShieldAlert, Heart, Zap, ShieldCheck, Flame, Layers, Skull, Crosshair, UserCheck, UserPlus } from "lucide-react";
+import { Trash2, Plus, Sparkles, Award, BookOpen, ShieldAlert, Heart, Zap, ShieldCheck, Flame, Layers, Skull, Crosshair, UserCheck, UserPlus, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -558,6 +558,89 @@ export function getV5BloodPotencyLimits(generation: number) {
   return { min: 0, max: 10 };
 }
 
+// ═══════════════════════════════════════════════════════════
+// ESTATUTO E IDADE DO VAMPIRO (SEA OF TIME V5)
+// Regras Oficiais do Livro Básico de Vampiro: A Máscara V5
+// ═══════════════════════════════════════════════════════════
+export interface V5AgeCategoryInfo {
+  id: string;
+  name: string;
+  subtitle: string;
+  description: string;
+  suggestedGenerationMin: number;
+  suggestedGenerationMax: number;
+  defaultGeneration: number;
+  bloodPotency: number;
+  humanity: number;
+  xpBonus: number;
+  meritBonusPoints: number;
+  flawBonusPoints: number;
+  additionalPerks: string[];
+}
+
+export const V5_AGE_CATEGORIES: Record<string, V5AgeCategoryInfo> = {
+  Fledgling: {
+    id: "Fledgling",
+    name: "Recém-Abraçado / Childer",
+    subtitle: "< 15 anos de Abraço",
+    description: "Abraçado recentemente. Baixa Potência de Sangue, sem pontos extras de experiência ou estatuto político elevado.",
+    suggestedGenerationMin: 12,
+    suggestedGenerationMax: 16,
+    defaultGeneration: 13,
+    bloodPotency: 0,
+    humanity: 7,
+    xpBonus: 0,
+    meritBonusPoints: 0,
+    flawBonusPoints: 0,
+    additionalPerks: ["3 Pts em Vantagens", "2 Pts em Defeitos"],
+  },
+  Neonate: {
+    id: "Neonate",
+    name: "Neonato (Neonate)",
+    subtitle: "15 a 80 anos de Abraço (1940 – recente)",
+    description: "Padrão de criação V5. Já sobreviveu aos primeiros anos da noite e conhece as regras da Máscara.",
+    suggestedGenerationMin: 12,
+    suggestedGenerationMax: 13,
+    defaultGeneration: 12,
+    bloodPotency: 1,
+    humanity: 7,
+    xpBonus: 15,
+    meritBonusPoints: 0,
+    flawBonusPoints: 0,
+    additionalPerks: ["+15 XP inicial livre", "3 Pts em Vantagens", "2 Pts em Defeitos"],
+  },
+  Ancilla: {
+    id: "Ancilla",
+    name: "Ancilla",
+    subtitle: "80 a 250 anos de Abraço (1780 – 1940)",
+    description: "Vampiro experiente com presença política no Domínio. Mais poderoso, porém sofre erosão de Humanidade.",
+    suggestedGenerationMin: 10,
+    suggestedGenerationMax: 11,
+    defaultGeneration: 10,
+    bloodPotency: 2,
+    humanity: 6,
+    xpBonus: 35,
+    meritBonusPoints: 2,
+    flawBonusPoints: 2,
+    additionalPerks: ["+35 XP inicial", "+2 Pts Vantagens extras", "+2 Pts Defeitos extras", "+1 Status", "+1 Recursos", "-1 Humanidade inicial"],
+  },
+  Elder: {
+    id: "Elder",
+    name: "Ancião (Elder)",
+    subtitle: "> 250 anos de Abraço (Antes de 1780)",
+    description: "Lorde das sombras com vasto sangue ancestral. Potência de Sangue elevada, mas Humanidade desgastada pelas eras.",
+    suggestedGenerationMin: 8,
+    suggestedGenerationMax: 9,
+    defaultGeneration: 9,
+    bloodPotency: 3,
+    humanity: 5,
+    xpBonus: 60,
+    meritBonusPoints: 3,
+    flawBonusPoints: 3,
+    additionalPerks: ["+60 XP inicial", "+3 Pts Vantagens extras", "+3 Pts Defeitos extras", "+2 Status", "-2 Humanidade inicial"],
+  },
+};
+
 // Multiplicador Oficial de Disciplina V5 (Clã = 5, Caitiff/Sangue-Fraco = 6, Fora do Clã = 7)
 export function getV5DisciplineMultiplier(clanName: string, discName: string): number {
   const normClan = (clanName || "").toLowerCase();
@@ -574,6 +657,7 @@ const defaultPlayer = {
   xp_total: 0, xp_spent: 0, clan_bane: "", predator_type: "", predator_specialty: "",
   skill_distribution_profile: "Balanced",
   enforce_attr_limits: true,
+  age_category: "Neonate",
   forca: 1, destreza: 1, vigor: 1,
   carisma: 1, manipulacao: 1, compostura: 1,
   inteligencia: 1, raciocinio: 1, perseveranca: 1,
@@ -652,11 +736,10 @@ function DotRating({
                 onChange(Math.max(min, dotVal));
               }
             }}
-            className={`${dotSize} rounded-full border border-border transition-all ${
-              isActive
-                ? "bg-blood shadow-[0_0_5px_hsl(var(--blood)/0.6)] border-blood"
-                : "bg-muted/40 hover:bg-muted"
-            }`}
+            className={`${dotSize} rounded-full border border-border transition-all ${isActive
+              ? "bg-blood shadow-[0_0_5px_hsl(var(--blood)/0.6)] border-blood"
+              : "bg-muted/40 hover:bg-muted"
+              }`}
           />
         );
       })}
@@ -726,6 +809,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       setForm({
         ...defaultPlayer,
         ...player,
+        age_category: player.age_category || "Neonate",
         clan: player.clan || "Ventrue",
         clan_bane: player.clan_bane || (V5_CLANS_DATA[player.clan]?.bane || V5_CLANS_DATA["Ventrue"].bane),
         skills: player.skills && typeof player.skills === "object" ? player.skills : {},
@@ -754,6 +838,33 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       setConvictions([]);
     }
   }, [player, open]);
+
+  // Handler de Troca de Estatuto / Faixa Etária (Sea of Time V5)
+  const handleAgeCategoryChange = (newCategory: string) => {
+    const info = V5_AGE_CATEGORIES[newCategory];
+    if (!info) return;
+
+    const oldCategoryKey = form.age_category || "Neonate";
+    const oldCategoryInfo = V5_AGE_CATEGORIES[oldCategoryKey] || V5_AGE_CATEGORIES.Neonate;
+
+    const xpDiff = info.xpBonus - oldCategoryInfo.xpBonus;
+    const newGen = info.defaultGeneration;
+    const bpLimits = getV5BloodPotencyLimits(newGen);
+    const newBp = Math.max(bpLimits.min, Math.min(bpLimits.max, info.bloodPotency));
+
+    setForm((prev) => ({
+      ...prev,
+      age_category: newCategory,
+      generation: newGen,
+      blood_potency: newBp,
+      humanity: info.humanity,
+      xp_total: Math.max(0, (prev.xp_total || 0) + xpDiff),
+    }));
+
+    toast.info(
+      `Estatuto V5 alterado para ${info.name}: Geração ${newGen}ª, Potência de Sangue ${newBp}, Humanidade ${info.humanity} (${info.xpBonus > 0 ? `+${info.xpBonus} XP bônus` : "Criação padrão"}).`
+    );
+  };
 
   // Handler de Seleção de Clã com Automação de Disciplinas e Bane
   const handleClanChange = (newClan: string) => {
@@ -1230,7 +1341,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
     setDisciplines((prev) => prev.filter((d) => d.id !== id));
   };
 
-  // Helper de Cálculo de Orçamento de Vantagens e Defeitos (V5: 7 Vantagens + 2 Defeitos)
+  // Helper de Cálculo de Orçamento de Vantagens e Defeitos (V5)
   const getAdvantagesBudgetSummary = () => {
     let freeMeritPointsSpent = 0;
     let flawPointsChosen = 0;
@@ -1245,13 +1356,18 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       }
     });
 
-    const flawBonusAllowed = Math.min(2, flawPointsChosen);
-    const totalMeritBudget = 7 + flawBonusAllowed;
+    const ageCatInfo = V5_AGE_CATEGORIES[form.age_category || "Neonate"] || V5_AGE_CATEGORIES.Neonate;
+    const baseMeritBonus = ageCatInfo.meritBonusPoints || 0;
+    const maxFlawBonus = 2 + (ageCatInfo.flawBonusPoints || 0);
+
+    const flawBonusAllowed = Math.min(maxFlawBonus, flawPointsChosen);
+    const totalMeritBudget = 7 + baseMeritBonus + flawBonusAllowed;
     const remainingMeritBudget = totalMeritBudget - freeMeritPointsSpent;
 
     return {
-      baseBudget: 7,
+      baseBudget: 7 + baseMeritBonus,
       flawPointsChosen,
+      maxFlawBonus,
       flawBonusAllowed,
       totalMeritBudget,
       freeMeritPointsSpent,
@@ -1601,11 +1717,10 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
     return (
       <div
         key={s.key}
-        className={`space-y-1.5 p-2 rounded border transition-colors ${
-          isMissingInnate
-            ? "bg-rose-950/20 border-rose-500/50"
-            : "bg-background/50 border-border/30"
-        }`}
+        className={`space-y-1.5 p-2 rounded border transition-colors ${isMissingInnate
+          ? "bg-rose-950/20 border-rose-500/50"
+          : "bg-background/50 border-border/30"
+          }`}
       >
         <div className="flex items-center justify-between text-xs">
           <span className="text-foreground font-medium flex items-center gap-1">
@@ -1756,12 +1871,121 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
               </div>
             )}
 
+            {/* Estatuto & Idade do Vampiro (Sea of Time V5) */}
+            <div className="bg-muted/10 p-3 rounded-lg border border-border/40 space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-bold text-blood flex items-center gap-1.5 font-serif">
+                  <Clock className="w-4 h-4 text-blood" /> Estatuto & Idade do Vampiro (Sea of Time V5)
+                </Label>
+                <span className="text-[10px] text-muted-foreground italic">Regras Oficiais de Criação V5</span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
+                <div>
+                  <Label className="text-xs font-semibold">Faixa Etária / Estatuto *</Label>
+                  <Select
+                    value={form.age_category || "Neonate"}
+                    onValueChange={handleAgeCategoryChange}
+                  >
+                    <SelectTrigger className="mt-1 bg-background font-semibold text-xs h-9 border-blood/30">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.values(V5_AGE_CATEGORIES).map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id} className="text-xs">
+                          <span className="font-bold">{cat.name}</span>{" "}
+                          <span className="text-[10px] text-muted-foreground">({cat.subtitle})</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Card Informativo Dinâmico da Categoria Selecionada */}
+                {(() => {
+                  const currentCat = V5_AGE_CATEGORIES[form.age_category || "Neonate"] || V5_AGE_CATEGORIES.Neonate;
+                  return (
+                    <div className="bg-background/80 p-2.5 rounded border border-border/50 text-xs space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-blood text-[11px]">{currentCat.name}</span>
+                        <Badge variant="outline" className="text-[9px] border-blood/40 text-blood font-mono font-bold">
+                          {currentCat.xpBonus > 0 ? `+${currentCat.xpBonus} XP Inicial` : "Criação Padrão"}
+                        </Badge>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground leading-tight">
+                        {currentCat.description}
+                      </p>
+                      <div className="flex flex-wrap gap-1 mt-1.5 pt-1 border-t border-border/30">
+                        <span className="text-[9px] bg-muted px-1.5 py-0.5 rounded font-mono font-semibold">
+                          Geração: {currentCat.suggestedGenerationMin}ª–{currentCat.suggestedGenerationMax}ª
+                        </span>
+                        <span className="text-[9px] bg-muted px-1.5 py-0.5 rounded font-mono font-semibold">
+                          PS Inicial: {currentCat.bloodPotency}
+                        </span>
+                        <span className="text-[9px] bg-muted px-1.5 py-0.5 rounded font-mono font-semibold">
+                          Humanidade: {currentCat.humanity}
+                        </span>
+                        {currentCat.additionalPerks.map((perk, idx) => (
+                          <span key={idx} className="text-[9px] bg-blood/10 text-blood border border-blood/20 px-1.5 py-0.5 rounded font-semibold">
+                            {perk}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+
             {/* Senhor, Geração e Potência de Sangue Reativa */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-muted/10 p-3 rounded-lg border border-border/40">
               <div>
-                <Label className="text-xs">Senhor (Sire)</Label>
-                <Input value={form.sire || ""} onChange={(e) => set("sire", e.target.value)} className="h-8 text-xs bg-background mt-1" />
+                <div className="flex items-center justify-between mb-1">
+                  <Label className="text-xs font-semibold">Senhor (Sire)</Label>
+                  <span className="text-[10px] text-muted-foreground italic">Galeria ou Digitação Livre</span>
+                </div>
+                <div className="relative">
+                  <Select
+                    value={form.sire || ""}
+                    onValueChange={(val) => {
+                      if (val !== "__custom__") {
+                        set("sire", val);
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="h-8 text-xs bg-background font-medium">
+                      <SelectValue placeholder="Selecione ou digite o Sire..." />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-48">
+                      <SelectItem value="Desconhecido / Desterrado" className="text-xs italic text-muted-foreground">
+                        -- Desconhecido / Desterrado --
+                      </SelectItem>
+                      {(npcs || []).length > 0 && (
+                        <div className="px-2 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider bg-muted/40">
+                          NPCs da Crônica
+                        </div>
+                      )}
+                      {(npcs || []).map((npc) => {
+                        const npcName = npc.name || npc.nome || "NPC";
+                        const npcClan = npc.clan || npc.species_faction || "Membro";
+                        return (
+                          <SelectItem key={npc.id || npcName} value={npcName} className="text-xs">
+                            🧛 {npcName} ({npcClan})
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {/* Input complementar para digitação livre caso prefira escrever o nome manualmente */}
+                <Input
+                  placeholder="Ou digite o nome do Sire..."
+                  value={form.sire || ""}
+                  onChange={(e) => set("sire", e.target.value)}
+                  className="h-7 text-xs bg-background mt-1.5"
+                />
               </div>
+
               <div>
                 <Label className="text-xs">Geração ({form.generation || 13}ª)</Label>
                 <Input
@@ -1770,9 +1994,10 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                   max={16}
                   value={form.generation || 13}
                   onChange={(e) => handleGenerationChange(parseInt(e.target.value) || 13)}
-                  className="h-8 text-xs bg-background mt-1"
+                  className="h-8 text-xs bg-background mt-1 font-mono font-bold"
                 />
               </div>
+
               <div>
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-semibold text-blood flex items-center gap-1">
@@ -1977,13 +2202,12 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                     return (
                       <div
                         key={lvl}
-                        className={`p-1.5 rounded text-center border text-xs ${
-                          isOver
-                            ? "bg-rose-950/30 border-rose-500/50 text-rose-400 font-bold"
-                            : isFull
+                        className={`p-1.5 rounded text-center border text-xs ${isOver
+                          ? "bg-rose-950/30 border-rose-500/50 text-rose-400 font-bold"
+                          : isFull
                             ? "bg-emerald-950/20 border-emerald-500/40 text-emerald-400 font-semibold"
                             : "bg-muted/30 border-border/30 text-muted-foreground"
-                        }`}
+                          }`}
                       >
                         <span className="text-[10px] block uppercase tracking-wider font-mono">
                           {limitInfo.label}
@@ -2244,7 +2468,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                           </Button>
                         </div>
 
-                        {/* Selects em Cascata de Poderes */}
+                        {/* Seleção Automática de Poderes por Nível */}
                         <div className="pl-3 border-l-2 border-primary/30 space-y-2 pt-1">
                           <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block">
                             Poderes Selecionados ({disc.nivel} Níveis)
@@ -2263,8 +2487,8 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                                   value={powerValue}
                                   onValueChange={(v) => handleUpdateDisciplinePower(disc.id, levelIdx, v)}
                                 >
-                                  <SelectTrigger className="h-7 text-xs bg-background flex-1">
-                                    <SelectValue placeholder={`Selecionar Poder Nível ${lvl}...`} />
+                                  <SelectTrigger className="h-7 text-xs bg-background flex-1 font-medium">
+                                    <SelectValue placeholder={`Selecione o poder de Nível ${lvl}...`} />
                                   </SelectTrigger>
                                   <SelectContent className="max-h-40">
                                     {availablePowersForLevel.length > 0 ? (
@@ -2275,7 +2499,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                                       ))
                                     ) : (
                                       <SelectItem value="Poder Genérico" className="text-xs">
-                                        Poder de Nível {lvl}
+                                        Poder Customizado de Nível {lvl}
                                       </SelectItem>
                                     )}
                                   </SelectContent>
@@ -2342,13 +2566,12 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                             return (
                               <div
                                 key={lvl}
-                                className={`p-1.5 rounded text-center border text-xs ${
-                                  isOver
-                                    ? "bg-rose-950/30 border-rose-500/50 text-rose-400 font-bold"
-                                    : isFull
+                                className={`p-1.5 rounded text-center border text-xs ${isOver
+                                  ? "bg-rose-950/30 border-rose-500/50 text-rose-400 font-bold"
+                                  : isFull
                                     ? "bg-emerald-950/20 border-emerald-500/40 text-emerald-400 font-semibold"
                                     : "bg-muted/30 border-border/30 text-muted-foreground"
-                                }`}
+                                  }`}
                               >
                                 <span className="text-[10px] block uppercase tracking-wider font-mono">Nível {lvl}</span>
                                 <span className="text-xs font-bold font-mono">
@@ -2440,8 +2663,8 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                       advBudget.remainingMeritBudget < 0
                         ? "text-rose-400 font-bold"
                         : advBudget.remainingMeritBudget === 0
-                        ? "text-emerald-400 font-bold"
-                        : "text-amber-400 font-bold"
+                          ? "text-emerald-400 font-bold"
+                          : "text-amber-400 font-bold"
                     }
                   >
                     {advBudget.remainingMeritBudget} Pts
@@ -2490,11 +2713,10 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                     .map((adv) => (
                       <div
                         key={adv.id}
-                        className={`flex flex-col sm:flex-row items-start sm:items-center gap-2 p-2 rounded-md border transition-colors ${
-                          adv.isHomebrew
-                            ? "bg-purple-950/20 border-purple-500/40"
-                            : "bg-surface-container-low border-border/40"
-                        }`}
+                        className={`flex flex-col sm:flex-row items-start sm:items-center gap-2 p-2 rounded-md border transition-colors ${adv.isHomebrew
+                          ? "bg-purple-950/20 border-purple-500/40"
+                          : "bg-surface-container-low border-border/40"
+                          }`}
                       >
                         <div className="flex items-center gap-2 flex-1 w-full">
                           <Select
@@ -2586,13 +2808,12 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                         {convictions.map((c) => (
                           <div
                             key={c.id}
-                            className={`p-3 rounded-md border space-y-2.5 transition-colors ${
-                              c.status === "destroyed"
-                                ? "bg-rose-950/20 border-rose-500/50"
-                                : c.status === "damaged"
+                            className={`p-3 rounded-md border space-y-2.5 transition-colors ${c.status === "destroyed"
+                              ? "bg-rose-950/20 border-rose-500/50"
+                              : c.status === "damaged"
                                 ? "bg-amber-950/20 border-amber-500/40"
                                 : "bg-surface-container-low border-border/50"
-                            }`}
+                              }`}
                           >
                             {/* Campo de Convicção Moral */}
                             <div>
@@ -2621,11 +2842,10 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                                         )
                                       )
                                     }
-                                    className={`px-2 py-0.5 rounded font-semibold transition-colors ${
-                                      c.touchstone_type !== "new"
-                                        ? "bg-primary text-primary-foreground font-bold"
-                                        : "bg-muted/40 text-muted-foreground hover:bg-muted"
-                                    }`}
+                                    className={`px-2 py-0.5 rounded font-semibold transition-colors ${c.touchstone_type !== "new"
+                                      ? "bg-primary text-primary-foreground font-bold"
+                                      : "bg-muted/40 text-muted-foreground hover:bg-muted"
+                                      }`}
                                   >
                                     Selecionar Existente
                                   </button>
@@ -2638,11 +2858,10 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                                         )
                                       )
                                     }
-                                    className={`px-2 py-0.5 rounded font-semibold transition-colors ${
-                                      c.touchstone_type === "new"
-                                        ? "bg-primary text-primary-foreground font-bold"
-                                        : "bg-muted/40 text-muted-foreground hover:bg-muted"
-                                    }`}
+                                    className={`px-2 py-0.5 rounded font-semibold transition-colors ${c.touchstone_type === "new"
+                                      ? "bg-primary text-primary-foreground font-bold"
+                                      : "bg-muted/40 text-muted-foreground hover:bg-muted"
+                                      }`}
                                   >
                                     Criar Novo NPC
                                   </button>
@@ -2919,11 +3138,10 @@ function SkillSpecCustomAdder({
             handleAdd();
           }
         }}
-        className={`h-6 text-[10px] bg-background flex-1 ${
-          isMissingInnate
-            ? "border-rose-500 text-rose-300 placeholder:text-rose-400/70 font-semibold"
-            : ""
-        }`}
+        className={`h-6 text-[10px] bg-background flex-1 ${isMissingInnate
+          ? "border-rose-500 text-rose-300 placeholder:text-rose-400/70 font-semibold"
+          : ""
+          }`}
       />
       <Button
         type="button"
