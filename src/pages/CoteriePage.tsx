@@ -4,11 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { calculateCharacterStats } from "@/utils/calculateCharacterStats";
 import { Plus, Crosshair, Sparkles, Zap, Users, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { HungerTracker } from "@/components/HungerTracker";
 import { HumanityTracker } from "@/components/HumanityTracker";
 import { PlayerDialog } from "@/components/PlayerDialog";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
 import { getPrefixedKey } from "@/components/ChronicleSwitcher";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
