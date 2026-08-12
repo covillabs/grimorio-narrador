@@ -1017,7 +1017,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       setForm((prev) => ({
         ...prev,
         blood_potency: clamped,
-        xp_total: Math.max(0, (prev.xp_total || 0) - costDelta),
+        ...(prev.enforce_attr_limits === false ? { xp_total: Math.max(0, (prev.xp_total || 0) - costDelta) } : {}),
       }));
     }
   };
@@ -1056,7 +1056,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       setForm((prev) => ({
         ...prev,
         [field]: newLevel,
-        xp_total: Math.max(0, (prev.xp_total || 0) - costDelta),
+        ...(prev.enforce_attr_limits === false ? { xp_total: Math.max(0, (prev.xp_total || 0) - costDelta) } : {}),
       }));
     }
   };
@@ -1097,7 +1097,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
           ...(prev.skills || {}),
           [key]: { nivel: newLevel, especializacao: current.especializacao },
         },
-        xp_total: Math.max(0, (prev.xp_total || 0) - costDelta),
+        ...(prev.enforce_attr_limits === false ? { xp_total: Math.max(0, (prev.xp_total || 0) - costDelta) } : {}),
       }));
     }
   };
@@ -1122,9 +1122,9 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
         ...(prev.skills || {}),
         [key]: { nivel: current.nivel, especializacao: updatedSpecs },
       },
-      xp_total: Math.max(0, (prev.xp_total || 0) - costDelta),
+      ...(prev.enforce_attr_limits === false ? { xp_total: Math.max(0, (prev.xp_total || 0) - costDelta) } : {}),
     }));
-    toast.success(`Especialização "${cleanSpec}" adicionada (+3 XP).`);
+    toast.success(`Especialização "${cleanSpec}" adicionada${form.enforce_attr_limits === false ? " (+3 XP)." : "."}`);
   };
 
   const removeSkillSpec = (key: string, specIdx: number) => {
@@ -1139,10 +1139,10 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
         ...(prev.skills || {}),
         [key]: { nivel: current.nivel, especializacao: updatedSpecs },
       },
-      xp_total: (prev.xp_total || 0) + refund,
+      ...(prev.enforce_attr_limits === false ? { xp_total: (prev.xp_total || 0) + refund } : {}),
     }));
     if (targetSpec) {
-      toast.info(`Especialização "${targetSpec}" removida (-3 XP reembolsados).`);
+      toast.info(`Especialização "${targetSpec}" removida${form.enforce_attr_limits === false ? " (-3 XP reembolsados)." : "."}`);
     }
   };
 
@@ -1326,10 +1326,12 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       let refund = 0;
       for (let lvl = 1; lvl <= targetDisc.nivel; lvl++) refund += lvl * multiplier;
 
-      setForm((prev) => ({
-        ...prev,
-        xp_total: (prev.xp_total || 0) + refund,
-      }));
+      if (form.enforce_attr_limits === false) {
+        setForm((prev) => ({
+          ...prev,
+          xp_total: (prev.xp_total || 0) + refund,
+        }));
+      }
     }
     setDisciplines((prev) => prev.filter((d) => d.id !== id));
   };
@@ -1441,10 +1443,12 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       }
 
       const costDelta = deltaPts * 3;
-      setForm((prev) => ({
-        ...prev,
-        xp_total: Math.max(0, (prev.xp_total || 0) - costDelta),
-      }));
+      if (form.enforce_attr_limits === false) {
+        setForm((prev) => ({
+          ...prev,
+          xp_total: Math.max(0, (prev.xp_total || 0) - costDelta),
+        }));
+      }
     }
 
     setAdvantages((prev) =>
@@ -1454,7 +1458,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
 
   const handleRemoveAdvantage = (id: string) => {
     const target = advantages.find((a) => a.id === id);
-    if (target && !target.isPredatorBonus) {
+    if (target && !target.isPredatorBonus && form.enforce_attr_limits === false) {
       const refund = (target.pontos || 1) * 3;
       setForm((prev) => ({
         ...prev,
@@ -2149,9 +2153,9 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                   />
                 </div>
                 <p className="text-[10px] text-muted-foreground italic pt-0.5">
-                  O XP Total é preenchido automaticamente ao selecionar o Estatuto/Idade do personagem.
-                  Elevações na ficha (Atributos: ×5, Perícias: ×3, Disciplinas: Clã ×5 / Fora ×7, BP: ×10) abatem deste saldo.
-                  O Narrador pode editar livremente para ajustar à crônica.
+                  O XP Total (Saldo) é definido com base na Idade/Estatuto do personagem.
+                  Na <strong>criação inicial V5</strong>, a distribuição de pontos é gratuita e não consome este saldo.
+                  Ao alternar para o <strong>Modo Livre / Evolução</strong>, alterações na ficha abatem deste saldo (Atributos: Nível×5, Perícias: Nível×3, Disciplinas: Clã Nível×5 / Fora Nível×7, BP: Nível×10).
                 </p>
               </div>
             </div>
