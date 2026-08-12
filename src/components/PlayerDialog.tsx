@@ -642,6 +642,20 @@ export const V5_AGE_CATEGORIES: Record<string, V5AgeCategoryInfo> = {
   },
 };
 
+// Cálculo Automático de Humanidade Inicial V5 (Idade/Estatuto + Modificador de Predador)
+export function calculateV5InitialHumanity(ageCategoryKey: string, predatorTypeKey: string): number {
+  const ageInfo = V5_AGE_CATEGORIES[ageCategoryKey] || V5_AGE_CATEGORIES.Neonate;
+  let humanity = ageInfo.humanity; // Base V5 por Idade: Fledgling=7, Neonate=7, Ancilla=6, Elder=5
+
+  if (predatorTypeKey === "Alleycat") {
+    humanity -= 1; // Gato de Rua (Alleycat) reduz 1 de Humanidade
+  } else if (predatorTypeKey === "Farmer") {
+    humanity += 1; // Fazendeiro (Farmer) aumenta 1 em Humanidade
+  }
+
+  return Math.max(1, Math.min(10, humanity));
+}
+
 // Multiplicador Oficial de Disciplina V5 (Clã = 5, Caitiff/Sangue-Fraco = 6, Fora do Clã = 7)
 export function getV5DisciplineMultiplier(clanName: string, discName: string): number {
   const normClan = (clanName || "").toLowerCase();
@@ -852,18 +866,19 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
     const newGen = info.defaultGeneration;
     const bpLimits = getV5BloodPotencyLimits(newGen);
     const newBp = Math.max(bpLimits.min, Math.min(bpLimits.max, info.bloodPotency));
+    const newHumanity = calculateV5InitialHumanity(newCategory, form.predator_type);
 
     setForm((prev) => ({
       ...prev,
       age_category: newCategory,
       generation: newGen,
       blood_potency: newBp,
-      humanity: info.humanity,
+      humanity: newHumanity,
       xp_total: Math.max(0, (prev.xp_total || 0) + xpDiff),
     }));
 
     toast.info(
-      `Estatuto V5 alterado para ${info.name}: Geração ${newGen}ª, Potência de Sangue ${newBp}, Humanidade ${info.humanity} (${info.xpBonus > 0 ? `+${info.xpBonus} XP bônus` : "Criação padrão"}).`
+      `Estatuto V5 alterado para ${info.name}: Geração ${newGen}ª, Potência de Sangue ${newBp}, Humanidade ${newHumanity} (${info.xpBonus > 0 ? `+${info.xpBonus} XP bônus` : "Criação padrão"}).`
     );
   };
 
@@ -890,13 +905,16 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
     }
   };
 
-  // Handler de Tipo de Predador com Automação de Vantagens/Defeitos Gratuitos V5
+  // Handler de Tipo de Predador com Automação de Vantagens/Defeitos Gratuitos e Humanidade V5
   const handlePredatorTypeChange = (pKey: string) => {
     const pInfo = V5_PREDATOR_TYPES[pKey];
+    const newHumanity = calculateV5InitialHumanity(form.age_category || "Neonate", pKey);
+
     setForm((prev) => ({
       ...prev,
       predator_type: pKey,
       predator_specialty: "",
+      humanity: newHumanity,
     }));
 
     if (pInfo) {
@@ -913,8 +931,9 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
         return [...nonPredatorAdvantages, ...predatorBonusItems];
       });
 
+      const humText = pKey === "Alleycat" ? " (-1 Humanidade)" : pKey === "Farmer" ? " (+1 Humanidade)" : "";
       toast.info(
-        `Tipo de Predador alterado para ${pInfo.label}. Vantagens/Defeitos gratuitos aplicados!`
+        `Tipo de Predador alterado para ${pInfo.label}.${humText} Humanidade calculada: ${newHumanity}.`
       );
     }
   };
