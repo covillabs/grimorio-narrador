@@ -1018,7 +1018,6 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
         ...prev,
         blood_potency: clamped,
         xp_total: Math.max(0, (prev.xp_total || 0) - costDelta),
-        xp_spent: Math.max(0, (prev.xp_spent || 0) + costDelta),
       }));
     }
   };
@@ -1058,7 +1057,6 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
         ...prev,
         [field]: newLevel,
         xp_total: Math.max(0, (prev.xp_total || 0) - costDelta),
-        xp_spent: Math.max(0, (prev.xp_spent || 0) + costDelta),
       }));
     }
   };
@@ -1100,7 +1098,6 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
           [key]: { nivel: newLevel, especializacao: current.especializacao },
         },
         xp_total: Math.max(0, (prev.xp_total || 0) - costDelta),
-        xp_spent: Math.max(0, (prev.xp_spent || 0) + costDelta),
       }));
     }
   };
@@ -1126,7 +1123,6 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
         [key]: { nivel: current.nivel, especializacao: updatedSpecs },
       },
       xp_total: Math.max(0, (prev.xp_total || 0) - costDelta),
-      xp_spent: Math.max(0, (prev.xp_spent || 0) + costDelta),
     }));
     toast.success(`Especialização "${cleanSpec}" adicionada (+3 XP).`);
   };
@@ -1144,7 +1140,6 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
         [key]: { nivel: current.nivel, especializacao: updatedSpecs },
       },
       xp_total: (prev.xp_total || 0) + refund,
-      xp_spent: Math.max(0, (prev.xp_spent || 0) - refund),
     }));
     if (targetSpec) {
       toast.info(`Especialização "${targetSpec}" removida (-3 XP reembolsados).`);
@@ -1217,7 +1212,6 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       setForm((prev) => ({
         ...prev,
         xp_total: Math.max(0, (prev.xp_total || 0) - costDelta),
-        xp_spent: Math.max(0, (prev.xp_spent || 0) + costDelta),
       }));
     }
   };
@@ -1309,7 +1303,6 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
         setForm((prev) => ({
           ...prev,
           xp_total: Math.max(0, (prev.xp_total || 0) - costDelta),
-          xp_spent: Math.max(0, (prev.xp_spent || 0) + costDelta),
         }));
       }
     }
@@ -1336,7 +1329,6 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       setForm((prev) => ({
         ...prev,
         xp_total: (prev.xp_total || 0) + refund,
-        xp_spent: Math.max(0, (prev.xp_spent || 0) - refund),
       }));
     }
     setDisciplines((prev) => prev.filter((d) => d.id !== id));
@@ -1452,7 +1444,6 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       setForm((prev) => ({
         ...prev,
         xp_total: Math.max(0, (prev.xp_total || 0) - costDelta),
-        xp_spent: Math.max(0, (prev.xp_spent || 0) + costDelta),
       }));
     }
 
@@ -1468,7 +1459,6 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       setForm((prev) => ({
         ...prev,
         xp_total: (prev.xp_total || 0) + refund,
-        xp_spent: Math.max(0, (prev.xp_spent || 0) - refund),
       }));
     }
     setAdvantages((prev) => prev.filter((a) => a.id !== id));
@@ -2131,40 +2121,37 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
                 </div>
               </div>
 
-              {/* Experiência (XP Total Saldo e XP Gasto Acumulado com Tabela V5) */}
+              {/* Experiência — XP Total (editável pelo Narrador) */}
               <div className="space-y-2 border-l border-border/40 pl-4">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                    <Layers className="w-3.5 h-3.5 text-primary" /> Gestão de XP (Tabela Oficial V5)
+                    <Layers className="w-3.5 h-3.5 text-primary" /> Gestão de XP (V5)
                   </span>
-                  <span className="text-[10px] text-muted-foreground font-mono">
-                    Gasto Direto Reativo
-                  </span>
+                  {(() => {
+                    const ageCat = V5_AGE_CATEGORIES[form.age_category || "Neonate"] || V5_AGE_CATEGORIES.Neonate;
+                    return ageCat.xpBonus > 0 ? (
+                      <Badge variant="outline" className="text-[9px] border-emerald-500/40 text-emerald-400 font-mono font-bold">
+                        +{ageCat.xpBonus} XP ({ageCat.name.split(" ")[0]})
+                      </Badge>
+                    ) : (
+                      <span className="text-[9px] text-muted-foreground/60 font-mono">Criação Padrão</span>
+                    );
+                  })()}
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-[10px] font-bold text-emerald-400">XP Total (Saldo) *</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={form.xp_total || 0}
-                      onChange={(e) => set("xp_total", parseInt(e.target.value) || 0)}
-                      className="h-8 text-xs bg-emerald-950/20 border border-emerald-500/40 text-emerald-400 font-bold font-mono"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-[10px] font-bold text-rose-400">XP Gasto (Acumulado) *</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={form.xp_spent || 0}
-                      onChange={(e) => set("xp_spent", parseInt(e.target.value) || 0)}
-                      className="h-8 text-xs bg-muted/30 border border-border text-rose-400 font-bold font-mono"
-                    />
-                  </div>
+                <div>
+                  <Label className="text-[10px] font-bold text-emerald-400">XP Total Disponível *</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={form.xp_total || 0}
+                    onChange={(e) => set("xp_total", parseInt(e.target.value) || 0)}
+                    className="h-8 text-sm bg-emerald-950/20 border border-emerald-500/40 text-emerald-400 font-bold font-mono mt-1"
+                  />
                 </div>
                 <p className="text-[10px] text-muted-foreground italic pt-0.5">
-                  Elevações na ficha (Atributos: Nível×5, Perícias: Nível×3, Disciplinas: Clã Nível×5 / Fora Nível×7 / Caitiff Nível×6, BP: Nível×10) abatem do Saldo e somam no Gasto.
+                  O XP Total é preenchido automaticamente ao selecionar o Estatuto/Idade do personagem.
+                  Elevações na ficha (Atributos: ×5, Perícias: ×3, Disciplinas: Clã ×5 / Fora ×7, BP: ×10) abatem deste saldo.
+                  O Narrador pode editar livremente para ajustar à crônica.
                 </p>
               </div>
             </div>
