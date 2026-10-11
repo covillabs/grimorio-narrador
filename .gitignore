@@ -33,3 +33,4 @@ __pycache__/
 .env.local
 .env.*.local
 
+COMO_GERAR_PRINTS_PORTFOLIO.md

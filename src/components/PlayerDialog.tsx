@@ -315,7 +315,7 @@ export const V5_PREDATOR_TYPES: Record<string, V5PredatorTypeInfo> = {
   },
   Sandman: {
     name: "Sandman",
-    label: "João Pestana (Sandman)",
+    label: "Sandman",
     specialtyOptions: [
       { skill: "furtividade", skillLabel: "Furtividade", name: "Invasão Noturna" },
       { skill: "ladroagem", skillLabel: "Ladroagem", name: "Arrombamento de Fechaduras" },
