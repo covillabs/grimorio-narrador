@@ -32,6 +32,7 @@ export function PlayerInviteModal({ player, isOpen, onClose, onUpdatePlayer }: P
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isPersisted, setIsPersisted] = useState(false);
   const [copiedToken, setCopiedToken] = useState(false);
   const [copiedFull, setCopiedFull] = useState(false);
   const [linkedUserName, setLinkedUserName] = useState<string | null>(null);
@@ -39,8 +40,10 @@ export function PlayerInviteModal({ player, isOpen, onClose, onUpdatePlayer }: P
 
   useEffect(() => {
     if (player && isOpen) {
-      setToken(player.invite_token || generateRandomToken());
+      const initialToken = player.invite_token || generateRandomToken();
+      setToken(initialToken);
       setPassword(player.invite_password || "");
+      setIsPersisted(Boolean(player.invite_token));
       setCopiedToken(false);
       setCopiedFull(false);
 
@@ -70,45 +73,50 @@ export function PlayerInviteModal({ player, isOpen, onClose, onUpdatePlayer }: P
   const chronicleName = activeChronicle?.name || "Grimório da Noite";
 
   const handleGenerateNewToken = () => {
-    setToken(generateRandomToken());
-    toast.info("Novo código gerado. Lembre-se de salvar para ativar!");
+    const newToken = generateRandomToken();
+    setToken(newToken);
+    setIsPersisted(false);
+    toast.info("Novo código gerado. Salve ou copie para ativá-lo no banco!");
   };
 
-  const handleSaveInvite = async () => {
-    if (!token.trim()) {
+  const persistInvite = async (tokenToSave?: string, passwordToSave?: string): Promise<string | null> => {
+    const rawToken = tokenToSave !== undefined ? tokenToSave : token;
+    const rawPass = passwordToSave !== undefined ? passwordToSave : password;
+
+    if (!rawToken.trim()) {
       toast.error("O código de convite não pode ficar vazio.");
-      return;
+      return null;
     }
 
-    const cleanToken = token.trim().toUpperCase();
-    const cleanPassword = password.trim() || null;
+    const cleanToken = rawToken.trim().toUpperCase();
+    const cleanPassword = rawPass.trim() || null;
 
     try {
       setIsSaving(true);
 
-      // Garante que a ficha está salva/atualizada em public.players
-      const { error } = await supabase.from("players").upsert(
-        {
-          id: player.id,
-          character_name: charName,
-          clan: player.clan || null,
-          sire: player.sire || null,
-          generation: player.generation || 13,
-          hunger: player.hunger ?? 0,
-          humanity: player.humanity ?? 7,
-          health_max: player.health_max ?? 7,
-          health_current: player.health_current ?? 7,
-          willpower_max: player.willpower_max ?? 5,
-          willpower_current: player.willpower_current ?? 5,
-          player_id: player.player_id || null,
-          chronicle_id: activeChronicleId && activeChronicleId !== "default" ? activeChronicleId : null,
-          invite_token: cleanToken,
-          invite_password: cleanPassword,
-          image_url: player.image_url || null,
-          disciplines: typeof player.disciplines === "string" ? player.disciplines : JSON.stringify(player.disciplines || ""),
-        },
-        { onConflict: "id" }
-      );
+      const targetChronicleId =
+        activeChronicleId && activeChronicleId !== "default"
+          ? activeChronicleId
+          : null;
+
+      const { data, error } = await supabase.rpc("save_player_invite", {
+        p_character_id: player.id,
+        p_character_name: charName,
+        p_clan: player.clan || null,
+        p_sire: player.sire || null,
+        p_generation: player.generation || 13,
+        p_hunger: player.hunger ?? 0,
+        p_humanity: player.humanity ?? 7,
+        p_health_max: player.health_max ?? 7,
+        p_health_current: player.health_current ?? 7,
+        p_willpower_max: player.willpower_max ?? 5,
+        p_willpower_current: player.willpower_current ?? 5,
+        p_chronicle_id: targetChronicleId,
+        p_invite_token: cleanToken,
+        p_invite_password: cleanPassword,
+        p_image_url: player.image_url || null,
+        p_disciplines: typeof player.disciplines === "string" ? player.disciplines : JSON.stringify(player.disciplines || ""),
+      });
 
       if (error) throw error;
 
@@ -116,37 +124,64 @@ export function PlayerInviteModal({ player, isOpen, onClose, onUpdatePlayer }: P
         ...player,
         invite_token: cleanToken,
         invite_password: cleanPassword,
+        chronicle_id: data?.chronicle_id || targetChronicleId,
       };
 
       onUpdatePlayer(updated);
-      toast.success("Convite ativado com sucesso!");
+      setIsPersisted(true);
+      return cleanToken;
     } catch (err: any) {
+      console.error("Erro ao salvar convite:", err);
       toast.error(err.message || "Erro ao salvar convite no banco.");
+      return null;
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleCopyToken = () => {
-    navigator.clipboard.writeText(token.trim().toUpperCase());
+  const handleSaveInvite = async () => {
+    const saved = await persistInvite();
+    if (saved) {
+      toast.success("Convite ativado e sincronizado com o banco de dados!");
+    }
+  };
+
+  const handleCopyToken = async () => {
+    let activeToken = token.trim().toUpperCase();
+    // Se o código ainda não foi persistido ou foi alterado, salva no banco antes de copiar
+    if (!isPersisted || activeToken !== player.invite_token) {
+      const saved = await persistInvite(activeToken, password);
+      if (!saved) return;
+      activeToken = saved;
+    }
+
+    navigator.clipboard.writeText(activeToken);
     setCopiedToken(true);
-    toast.success("Código de convite copiado!");
+    toast.success(`Código ${activeToken} copiado e ativo no banco!`);
     setTimeout(() => setCopiedToken(false), 2000);
   };
 
-  const handleCopyFullInvite = () => {
+  const handleCopyFullInvite = async () => {
+    let activeToken = token.trim().toUpperCase();
+    // Se o código ainda não foi persistido ou foi alterado, salva no banco antes de copiar
+    if (!isPersisted || activeToken !== player.invite_token) {
+      const saved = await persistInvite(activeToken, password);
+      if (!saved) return;
+      activeToken = saved;
+    }
+
     const inviteMessage = `🧛 *Convite para o Grimório: Vampiro a Máscara V5*
 🏰 Crônica: ${chronicleName}
 👤 Personagem: ${charName} ${player.clan ? `(${player.clan})` : ""}
 
-🔑 Código de Convite (Token): ${token.trim().toUpperCase()}
+🔑 Código de Convite (Token): ${activeToken}
 ${password ? `🔒 Senha da Ficha: ${password}` : "🔒 Senha da Ficha: (sem senha)"}
 
 👉 Acesse o Grimório, vá até o Saguão (Lobby) na opção "Sou um Jogador" e insira este código para assumir a ficha!`;
 
     navigator.clipboard.writeText(inviteMessage);
     setCopiedFull(true);
-    toast.success("Mensagem completa de convite copiada!");
+    toast.success("Mensagem completa copiada e convite ativo no banco!");
     setTimeout(() => setCopiedFull(false), 2500);
   };
 
@@ -157,10 +192,9 @@ ${password ? `🔒 Senha da Ficha: ${password}` : "🔒 Senha da Ficha: (sem sen
 
     try {
       setIsUnlinking(true);
-      const { error } = await supabase
-        .from("players")
-        .update({ player_id: null })
-        .eq("id", player.id);
+      const { error } = await supabase.rpc("unlink_player_invite", {
+        p_character_id: player.id,
+      });
 
       if (error) throw error;
 
@@ -179,16 +213,25 @@ ${password ? `🔒 Senha da Ficha: ${password}` : "🔒 Senha da Ficha: (sem sen
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px] border-red-950/70 bg-[#09090c] text-zinc-100 shadow-[0_0_30px_rgba(139,0,0,0.25)]">
         <DialogHeader>
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
             <Badge variant="outline" className="border-red-900/60 bg-red-950/40 text-red-400 font-mono text-[10px]">
               Acesso do Jogador
             </Badge>
+            {isPersisted ? (
+              <Badge variant="outline" className="border-emerald-800 bg-emerald-950/40 text-emerald-400 font-mono text-[10px] flex items-center gap-1">
+                <Check className="w-3 h-3 text-emerald-400" /> Ativo no Banco
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="border-amber-800 bg-amber-950/40 text-amber-400 font-mono text-[10px]">
+                Código Não Salvo
+              </Badge>
+            )}
             {player.player_id ? (
               <Badge variant="outline" className="border-emerald-800 bg-emerald-950/30 text-emerald-400 font-mono text-[10px] flex items-center gap-1">
                 <UserCheck className="w-3 h-3" /> Vinculado
               </Badge>
             ) : (
-              <Badge variant="outline" className="border-amber-800 bg-amber-950/30 text-amber-400 font-mono text-[10px]">
+              <Badge variant="outline" className="border-zinc-800 bg-zinc-950/30 text-zinc-400 font-mono text-[10px]">
                 Aguardando Resgate
               </Badge>
             )}
@@ -240,7 +283,10 @@ ${password ? `🔒 Senha da Ficha: ${password}` : "🔒 Senha da Ficha: (sem sen
               <Input
                 id="inv-token"
                 value={token}
-                onChange={(e) => setToken(e.target.value.toUpperCase())}
+                onChange={(e) => {
+                  setToken(e.target.value.toUpperCase());
+                  setIsPersisted(false);
+                }}
                 placeholder="Ex: NOD-7F9A2B"
                 className="bg-zinc-950/80 border-zinc-800 font-mono text-sm tracking-wider uppercase text-red-300 font-bold"
               />
@@ -267,7 +313,10 @@ ${password ? `🔒 Senha da Ficha: ${password}` : "🔒 Senha da Ficha: (sem sen
                 id="inv-pass"
                 type={showPassword ? "text" : "password"}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setIsPersisted(false);
+                }}
                 placeholder="Deixe em branco para permitir resgate apenas com o token"
                 className="bg-zinc-950/80 border-zinc-800 text-sm pr-10"
               />
@@ -300,9 +349,13 @@ ${password ? `🔒 Senha da Ficha: ${password}` : "🔒 Senha da Ficha: (sem sen
             type="button"
             onClick={handleSaveInvite}
             disabled={isSaving}
-            className="bg-red-900 hover:bg-red-800 text-white font-serif tracking-wider text-xs shadow-[0_0_12px_rgba(185,28,28,0.3)] ml-auto"
+            className={`font-serif tracking-wider text-xs shadow-[0_0_12px_rgba(185,28,28,0.3)] ml-auto ${
+              isPersisted
+                ? "bg-zinc-800 hover:bg-zinc-700 text-emerald-400 border border-emerald-900/50"
+                : "bg-red-900 hover:bg-red-800 text-white"
+            }`}
           >
-            {isSaving ? "Salvando..." : "Salvar & Ativar Convite"}
+            {isSaving ? "Salvando..." : isPersisted ? "✓ Convite Ativo & Salvo" : "Salvar & Ativar Convite"}
           </Button>
         </DialogFooter>
       </DialogContent>

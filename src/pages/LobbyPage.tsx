@@ -93,9 +93,12 @@ export default function LobbyPage() {
 
     try {
       setIsClaimingInvite(true);
+      const cleanToken = inviteToken.trim().toUpperCase();
+      const cleanPassword = invitePassword.trim() || null;
+
       const { data, error } = await supabase.rpc("claim_player_invite", {
-        p_invite_token: inviteToken.trim(),
-        p_invite_password: invitePassword.trim() || null,
+        p_invite_token: cleanToken,
+        p_invite_password: cleanPassword,
       });
 
       if (error) throw error;
