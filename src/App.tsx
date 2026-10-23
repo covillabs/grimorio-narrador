@@ -1,12 +1,19 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Layout } from "@/components/Layout";
+import { PlayerLayout } from "@/components/PlayerLayout";
+
+// Páginas de Autenticação
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
+import NotFound from "@/pages/NotFound";
+
+// Páginas do Narrador
 import HomePage from "@/pages/HomePage";
 import CoteriePage from "@/pages/CoteriePage";
 import NpcsPage from "@/pages/NpcsPage";
@@ -20,9 +27,19 @@ import EscudoPage from "@/pages/EscudoPage";
 import BoonsPage from "@/pages/BoonsPage";
 import CombatePage from "@/pages/CombatePage";
 import OraclePage from "@/pages/OraclePage";
-import NotFound from "@/pages/NotFound";
+
+// Página Inicial do Jogador
+import PlayerDashboardPage from "@/pages/PlayerDashboardPage";
 
 const queryClient = new QueryClient();
+
+// Componente de Chaveamento Inteligente na Raiz "/"
+function RoleBasedHome() {
+  const { isPlayer, loading } = useAuth();
+  if (loading) return null;
+  if (isPlayer) return <Navigate to="/player" replace />;
+  return <HomePage />;
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -32,23 +49,40 @@ const App = () => (
       <AuthProvider>
         <BrowserRouter>
           <Routes>
+            {/* 1. Rotas Públicas */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
-            <Route element={<Layout />}>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/coterie" element={<CoteriePage />} />
-            <Route path="/npcs" element={<NpcsPage />} />
-            <Route path="/teia" element={<TeiaPage />} />
-            <Route path="/arsenal" element={<ArsenalPage />} />
-            <Route path="/atlas" element={<AtlasPage />} />
-            <Route path="/ocultismo" element={<OcultismoPage />} />
-            <Route path="/quests" element={<QuestsPage />} />
-            <Route path="/diario" element={<DiarioPage />} />
-            <Route path="/boons" element={<BoonsPage />} />
-            <Route path="/combate" element={<CombatePage />} />
-            <Route path="/escudo" element={<EscudoPage />} />
-            <Route path="/oracle" element={<OraclePage />} />
-          </Route>
+
+            {/* 2. Rotas do Narrador (Role: 'narrator') */}
+            <Route element={<ProtectedRoute allowedRoles={["narrator"]} />}>
+              <Route element={<Layout />}>
+                <Route path="/" element={<RoleBasedHome />} />
+                <Route path="/coterie" element={<CoteriePage />} />
+                <Route path="/npcs" element={<NpcsPage />} />
+                <Route path="/teia" element={<TeiaPage />} />
+                <Route path="/arsenal" element={<ArsenalPage />} />
+                <Route path="/atlas" element={<AtlasPage />} />
+                <Route path="/ocultismo" element={<OcultismoPage />} />
+                <Route path="/quests" element={<QuestsPage />} />
+                <Route path="/diario" element={<DiarioPage />} />
+                <Route path="/boons" element={<BoonsPage />} />
+                <Route path="/combate" element={<CombatePage />} />
+                <Route path="/escudo" element={<EscudoPage />} />
+                <Route path="/oracle" element={<OraclePage />} />
+              </Route>
+            </Route>
+
+            {/* 3. Rotas do Jogador (Role: 'player') */}
+            <Route path="/player" element={<ProtectedRoute allowedRoles={["player"]} />}>
+              <Route element={<PlayerLayout />}>
+                <Route index element={<PlayerDashboardPage />} />
+                <Route path="coterie" element={<PlayerDashboardPage tab="coterie" />} />
+                <Route path="codex" element={<PlayerDashboardPage tab="codex" />} />
+                <Route path="boons" element={<PlayerDashboardPage tab="boons" />} />
+              </Route>
+            </Route>
+
+            {/* Fallback 404 */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

@@ -7,11 +7,14 @@ export interface UserProfile {
   id: string;
   username: string | null;
   avatar_url: string | null;
+  role?: "narrator" | "player";
 }
 
 interface AuthContextType {
   user: User | null;
   profile: UserProfile | null;
+  isNarrator: boolean;
+  isPlayer: boolean;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   signInWithEmail: (email: string, pass: string) => Promise<{ error: any }>;
@@ -37,6 +40,8 @@ const GUEST_USER: User = {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   profile: null,
+  isNarrator: false,
+  isPlayer: false,
   loading: true,
   signInWithGoogle: async () => {},
   signInWithEmail: async () => ({ error: null }),
@@ -51,10 +56,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const isNarrator = profile?.role === "narrator" || user?.id === GUEST_USER.id;
+  const isPlayer = profile?.role === "player";
+
   const fetchProfile = async (userId: string) => {
     try {
       if (userId === GUEST_USER.id) {
-        setProfile({ id: GUEST_USER.id, username: "Narrador Convidado", avatar_url: null });
+        setProfile({ id: GUEST_USER.id, username: "Narrador Convidado", avatar_url: null, role: "narrator" });
         return;
       }
 
@@ -229,6 +237,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       value={{
         user,
         profile,
+        isNarrator,
+        isPlayer,
         loading,
         signInWithGoogle,
         signInWithEmail,

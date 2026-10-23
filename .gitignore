@@ -34,3 +34,6 @@ __pycache__/
 .env.*.local
 
 COMO_GERAR_PRINTS_PORTFOLIO.md
+
+# Supabase
+supabase/.temp/
