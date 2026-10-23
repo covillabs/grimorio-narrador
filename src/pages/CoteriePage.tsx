@@ -2,12 +2,13 @@ import { useState, useEffect } from "react";
 import { useCloudStorage } from "@/hooks/useCloudStorage";
 import { supabase } from "@/integrations/supabase/client";
 import { calculateCharacterStats } from "@/utils/calculateCharacterStats";
-import { Plus, Crosshair, Sparkles, Zap, Users, Heart } from "lucide-react";
+import { Plus, Crosshair, Sparkles, Zap, Users, Heart, Ticket, UserCheck, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { HungerTracker } from "@/components/HungerTracker";
 import { HumanityTracker } from "@/components/HumanityTracker";
 import { PlayerDialog } from "@/components/PlayerDialog";
+import { PlayerInviteModal } from "@/components/PlayerInviteModal";
 import { toast } from "sonner";
 import { getPrefixedKey } from "@/components/ChronicleSwitcher";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -121,6 +122,8 @@ const CLAN_DISCIPLINES: Record<string, { name: string; desc: string }[]> = {
 export default function CoteriePage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<any>(null);
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [invitingPlayer, setInvitingPlayer] = useState<any>(null);
   const [arsenal, setArsenal] = useState<any[]>([]);
 
   const [players, setPlayers] = useCloudStorage<any[]>("v5_coterie", []);
@@ -277,6 +280,39 @@ export default function CoteriePage() {
                     </div>
                     <div className="p-4 space-y-3">
                       <div>
+                        {/* Status de Convite & Acesso do Jogador */}
+                        <div className="flex items-center justify-between mb-2" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {player.player_id ? (
+                              <Badge variant="outline" className="text-[10px] bg-emerald-950/40 border-emerald-800/60 text-emerald-400 font-mono flex items-center gap-1 py-0 px-1.5">
+                                <UserCheck className="w-2.5 h-2.5" /> Vinculado
+                              </Badge>
+                            ) : player.invite_token ? (
+                              <Badge variant="outline" className="text-[10px] bg-amber-950/40 border-amber-800/60 text-amber-400 font-mono py-0 px-1.5">
+                                Convite: {player.invite_token}
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-[10px] bg-zinc-900 border-zinc-800 text-zinc-400 font-mono py-0 px-1.5">
+                                Sem Convite
+                              </Badge>
+                            )}
+                          </div>
+
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-6 text-[10px] font-mono px-2 border-red-900/50 bg-red-950/20 text-red-300 hover:bg-red-950/50 hover:text-red-200 gap-1"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setInvitingPlayer(player);
+                              setInviteModalOpen(true);
+                            }}
+                            title="Gerar / Ver Convite do Jogador"
+                          >
+                            <Ticket className="w-3 h-3 text-red-400" /> Convite
+                          </Button>
+                        </div>
+
                         <h3 className="font-serif font-semibold text-lg">{charName}</h3>
                         <p className="text-sm text-muted-foreground mb-2">
                           {[clanName, player.player_name && `(${player.player_name})`].filter(Boolean).join(" ")}
@@ -457,6 +493,16 @@ export default function CoteriePage() {
           player={editingPlayer}
           onSave={savePlayer}
           onDelete={(id) => deletePlayer.mutate(id)}
+        />
+
+        <PlayerInviteModal
+          isOpen={inviteModalOpen}
+          onClose={() => setInviteModalOpen(false)}
+          player={invitingPlayer}
+          onUpdatePlayer={(updated) => {
+            savePlayer(updated);
+            setInvitingPlayer(updated);
+          }}
         />
       </div>
     </ErrorBoundary>
