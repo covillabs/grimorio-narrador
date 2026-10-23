@@ -7,7 +7,7 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ allowedRoles, children }: ProtectedRouteProps) {
-  const { user, profile, isNarrator, isPlayer, loading } = useAuth();
+  const { user, hasChronicle, activeChronicle, isNarrator, isPlayer, loading } = useAuth();
   const location = useLocation();
 
   // 1. Tela de Carregamento Graciosa
@@ -29,13 +29,18 @@ export function ProtectedRoute({ allowedRoles, children }: ProtectedRouteProps) 
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // 3. Validação de Papel (Role)
+  // 3. Validação de Papel (Role) e Crônica Ativa
   if (allowedRoles && allowedRoles.length > 0) {
-    const currentRole = profile?.role || (isNarrator ? "narrator" : "player");
+    // Se o usuário não tem nenhuma crônica ativa e não é convidado, vai para o saguão
+    if (!hasChronicle && user.app_metadata?.provider !== "guest") {
+      return <Navigate to="/lobby" replace />;
+    }
+
+    const currentRole = activeChronicle?.role || (isNarrator ? "narrator" : "player");
     const hasRole = allowedRoles.includes(currentRole as "narrator" | "player");
 
     if (!hasRole) {
-      // Redireciona para o ecossistema correto do papel do usuário
+      // Redireciona para o ecossistema correto do papel do usuário na crônica
       if (isNarrator) {
         return <Navigate to="/" replace />;
       }

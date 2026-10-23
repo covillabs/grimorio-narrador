@@ -8,9 +8,10 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Layout } from "@/components/Layout";
 import { PlayerLayout } from "@/components/PlayerLayout";
 
-// Páginas de Autenticação
+// Páginas de Autenticação & Onboarding
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
+import LobbyPage from "@/pages/LobbyPage";
 import NotFound from "@/pages/NotFound";
 
 // Páginas do Narrador
@@ -35,9 +36,15 @@ const queryClient = new QueryClient();
 
 // Componente de Chaveamento Inteligente na Raiz "/"
 function RoleBasedHome() {
-  const { isPlayer, loading } = useAuth();
+  const { user, hasChronicle, isPlayer, loading } = useAuth();
   if (loading) return null;
+  // Se não tem crônica ativa e não é convidado, vai para o saguão (Lobby)
+  if (!hasChronicle && user?.app_metadata?.provider !== "guest") {
+    return <Navigate to="/lobby" replace />;
+  }
+  // Se for jogador na crônica ativa, vai para a visão do jogador
   if (isPlayer) return <Navigate to="/player" replace />;
+  // Se for narrador na crônica ativa, exibe HomePage
   return <HomePage />;
 }
 
@@ -53,7 +60,17 @@ const App = () => (
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
 
-            {/* 2. Rotas do Narrador (Role: 'narrator') */}
+            {/* 2. Saguão / Onboarding (Requer apenas login) */}
+            <Route
+              path="/lobby"
+              element={
+                <ProtectedRoute>
+                  <LobbyPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* 3. Rotas do Narrador (Role: 'narrator' na crônica ativa) */}
             <Route element={<ProtectedRoute allowedRoles={["narrator"]} />}>
               <Route element={<Layout />}>
                 <Route path="/" element={<RoleBasedHome />} />
@@ -72,7 +89,7 @@ const App = () => (
               </Route>
             </Route>
 
-            {/* 3. Rotas do Jogador (Role: 'player') */}
+            {/* 4. Rotas do Jogador (Role: 'player' na crônica ativa) */}
             <Route path="/player" element={<ProtectedRoute allowedRoles={["player"]} />}>
               <Route element={<PlayerLayout />}>
                 <Route index element={<PlayerDashboardPage />} />

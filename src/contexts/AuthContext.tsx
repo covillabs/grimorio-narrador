@@ -10,9 +10,20 @@ export interface UserProfile {
   role?: "narrator" | "player";
 }
 
+export interface UserChronicle {
+  chronicle_id: string;
+  role: "narrator" | "player";
+  name: string;
+  description?: string | null;
+}
+
 interface AuthContextType {
   user: User | null;
   profile: UserProfile | null;
+  activeChronicleId: string | null;
+  activeChronicle: UserChronicle | null;
+  chronicles: UserChronicle[];
+  hasChronicle: boolean;
   isNarrator: boolean;
   isPlayer: boolean;
   loading: boolean;
@@ -22,6 +33,8 @@ interface AuthContextType {
   loginAsGuest: () => void;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  refreshChronicles: () => Promise<void>;
+  setActiveChronicleId: (id: string | null) => void;
 }
 
 // O id DEVE ser "guest" para coincidir com o namespace do ChronicleSwitcher
@@ -37,9 +50,20 @@ const GUEST_USER: User = {
   updated_at: new Date().toISOString(),
 } as User;
 
+const GUEST_CHRONICLE: UserChronicle = {
+  chronicle_id: "default",
+  role: "narrator",
+  name: "Crônica do Convidado",
+  description: "Ambiente local isolado do Narrador",
+};
+
 const AuthContext = createContext<AuthContextType>({
   user: null,
   profile: null,
+  activeChronicleId: null,
+  activeChronicle: null,
+  chronicles: [],
+  hasChronicle: false,
   isNarrator: false,
   isPlayer: false,
   loading: true,
@@ -49,15 +73,18 @@ const AuthContext = createContext<AuthContextType>({
   loginAsGuest: () => {},
   signOut: async () => {},
   refreshProfile: async () => {},
+  refreshChronicles: async () => {},
+  setActiveChronicleId: () => {},
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [chronicles, setChronicles] = useState<UserChronicle[]>([]);
+  const [activeChronicleId, setActiveChronicleIdState] = useState<string | null>(() => {
+    return localStorage.getItem("v5_active_chronicle_id");
+  });
   const [loading, setLoading] = useState(true);
-
-  const isNarrator = profile?.role === "narrator" || user?.id === GUEST_USER.id;
-  const isPlayer = profile?.role === "player";
 
   const fetchProfile = async (userId: string) => {
     try {
@@ -79,18 +106,80 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const refreshProfile = async () => {
-    if (user) {
-      await fetchProfile(user.id);
+  const fetchChronicles = async (userId: string) => {
+    try {
+      if (userId === GUEST_USER.id) {
+        setChronicles([GUEST_CHRONICLE]);
+        setActiveChronicleIdState("default");
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("chronicle_members")
+        .select("chronicle_id, role, chronicles(id, name, description)")
+        .eq("user_id", userId);
+
+      if (error) throw error;
+
+      const list: UserChronicle[] = (data || []).map((item: any) => ({
+        chronicle_id: item.chronicle_id,
+        role: item.role as "narrator" | "player",
+        name: item.chronicles?.name || "Crônica sem título",
+        description: item.chronicles?.description,
+      }));
+
+      setChronicles(list);
+
+      // Sincroniza crônica ativa
+      const savedId = localStorage.getItem("v5_active_chronicle_id");
+      const found = list.find((c) => c.chronicle_id === savedId);
+      if (found) {
+        setActiveChronicleIdState(found.chronicle_id);
+      } else if (list.length > 0) {
+        setActiveChronicleIdState(list[0].chronicle_id);
+        localStorage.setItem("v5_active_chronicle_id", list[0].chronicle_id);
+      } else {
+        setActiveChronicleIdState(null);
+        localStorage.removeItem("v5_active_chronicle_id");
+      }
+    } catch (err) {
+      console.error("Erro ao carregar crônicas:", err);
     }
   };
 
+  const refreshProfile = async () => {
+    if (user) await fetchProfile(user.id);
+  };
+
+  const refreshChronicles = async () => {
+    if (user) await fetchChronicles(user.id);
+  };
+
+  const setActiveChronicleId = (id: string | null) => {
+    if (id) {
+      localStorage.setItem("v5_active_chronicle_id", id);
+    } else {
+      localStorage.removeItem("v5_active_chronicle_id");
+    }
+    setActiveChronicleIdState(id);
+  };
+
+  const activeChronicle = chronicles.find((c) => c.chronicle_id === activeChronicleId) || null;
+  const hasChronicle = activeChronicle !== null;
+
+  const isNarrator = user?.id === GUEST_USER.id
+    ? true
+    : activeChronicle?.role === "narrator" || (chronicles.length === 0 && profile?.role === "narrator");
+
+  const isPlayer = user?.id === GUEST_USER.id
+    ? false
+    : activeChronicle?.role === "player" || (chronicles.length === 0 && profile?.role === "player");
+
   const loginAsGuest = () => {
-    // Setar o namespace ANTES de qualquer coisa para que o reload já use "guest"
     localStorage.setItem("v5_active_user_id", "guest");
     localStorage.setItem("v5_guest_mode", "true");
+    localStorage.setItem("v5_active_chronicle_id", "default");
     toast.success("Despertar bem sucedido (Modo Convidado).");
-    // Hard reload garante re-mount de TODOS os componentes com namespace limpo
     window.location.replace("/");
   };
 
@@ -99,28 +188,43 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const initialize = async () => {
       try {
-        const isGuest = localStorage.getItem("v5_guest_mode") === "true";
-        if (isGuest) {
-          // Garantir que o namespace está setado para "guest"
-          localStorage.setItem("v5_active_user_id", "guest");
-          if (mounted) {
-            setUser(GUEST_USER);
-            setProfile({ id: GUEST_USER.id, username: "Narrador Convidado", avatar_url: null });
-            setLoading(false);
-          }
-          return;
+        // CORREÇÃO DO BUG: Se a URL contiver parâmetros de confirmação/auth, limpa guest mode
+        const hasAuthParams =
+          window.location.hash.includes("access_token") ||
+          window.location.search.includes("code=") ||
+          window.location.search.includes("token_hash=");
+
+        if (hasAuthParams) {
+          localStorage.removeItem("v5_guest_mode");
         }
 
+        // Verifica primeiro se há sessão real no Supabase
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) throw error;
 
         const currentUser = session?.user ?? null;
-        if (mounted) setUser(currentUser);
 
-        if (currentUser && mounted) {
-          // Setar o namespace do userId para isolar dados no localStorage
-          localStorage.setItem("v5_active_user_id", currentUser.id);
-          await fetchProfile(currentUser.id);
+        if (currentUser) {
+          localStorage.removeItem("v5_guest_mode");
+          if (mounted) {
+            setUser(currentUser);
+            localStorage.setItem("v5_active_user_id", currentUser.id);
+            await Promise.all([
+              fetchProfile(currentUser.id),
+              fetchChronicles(currentUser.id),
+            ]);
+          }
+          return;
+        }
+
+        // Se não tem usuário real, verifica modo convidado
+        const isGuest = localStorage.getItem("v5_guest_mode") === "true";
+        if (isGuest && mounted) {
+          localStorage.setItem("v5_active_user_id", "guest");
+          setUser(GUEST_USER);
+          setProfile({ id: GUEST_USER.id, username: "Narrador Convidado", avatar_url: null, role: "narrator" });
+          setChronicles([GUEST_CHRONICLE]);
+          setActiveChronicleIdState("default");
         }
       } catch (error) {
         console.error("Erro ao inicializar sessão:", error);
@@ -141,11 +245,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (mounted) setUser(currentUser);
 
       if (currentUser && mounted) {
-        // Manter namespace sincronizado ao trocar de sessão
         localStorage.setItem("v5_active_user_id", currentUser.id);
-        fetchProfile(currentUser.id);
+        await Promise.all([
+          fetchProfile(currentUser.id),
+          fetchChronicles(currentUser.id),
+        ]);
       } else {
-        if (mounted) setProfile(null);
+        if (mounted) {
+          setProfile(null);
+          setChronicles([]);
+          setActiveChronicleIdState(null);
+        }
       }
 
       if (mounted && loading) {
@@ -189,7 +299,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         password: pass,
       });
       if (error) throw error;
-      // Setar namespace imediatamente após login bem-sucedido
       if (data.user) {
         localStorage.setItem("v5_active_user_id", data.user.id);
       }
@@ -205,6 +314,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const { data, error } = await supabase.auth.signUp({
         email,
         password: pass,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+        },
       });
       if (error) throw error;
       return { error: null };
@@ -215,19 +327,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = async () => {
     try {
-      // Limpar flags de sessão
       localStorage.removeItem("v5_guest_mode");
       localStorage.removeItem("v5_active_user_id");
-      
+      localStorage.removeItem("v5_active_chronicle_id");
+
       const { error } = await supabase.auth.signOut();
       if (error && !error.message?.includes("session_not_found")) throw error;
-      
+
       toast.success("Desconectado com sucesso.");
-      // Hard redirect para garantir reset completo de toda a árvore React
       window.location.replace("/login");
     } catch (error: any) {
       toast.error(error.message || "Erro ao desconectar");
-      // Mesmo com erro, redirecionar para evitar estado inconsistente
       window.location.replace("/login");
     }
   };
@@ -237,6 +347,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       value={{
         user,
         profile,
+        activeChronicleId,
+        activeChronicle,
+        chronicles,
+        hasChronicle,
         isNarrator,
         isPlayer,
         loading,
@@ -246,6 +360,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         loginAsGuest,
         signOut,
         refreshProfile,
+        refreshChronicles,
+        setActiveChronicleId,
       }}
     >
       {children}
