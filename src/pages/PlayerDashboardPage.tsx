@@ -7,10 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 interface PlayerDashboardPageProps {
-  tab?: "sheet" | "coterie" | "codex" | "boons";
+  tab?: "codex" | "boons";
 }
 
-export default function PlayerDashboardPage({ tab = "sheet" }: PlayerDashboardPageProps) {
+export default function PlayerDashboardPage({ tab = "codex" }: PlayerDashboardPageProps) {
   const { user, profile } = useAuth();
   const [character, setCharacter] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);

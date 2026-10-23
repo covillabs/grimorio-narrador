@@ -268,8 +268,14 @@ export type Database = {
       players: {
         Row: {
           character_name: string
+          chronicle_id: string | null
           clan: string | null
           created_at: string
+          invite_password: string | null
+          invite_token: string | null
+          is_locked: boolean
+          player_id: string | null
+          sheet_data: Json
           disciplines: string | null
           embrace_story: string | null
           flaws: string | null
@@ -290,8 +296,14 @@ export type Database = {
         }
         Insert: {
           character_name: string
+          chronicle_id?: string | null
           clan?: string | null
           created_at?: string
+          invite_password?: string | null
+          invite_token?: string | null
+          is_locked?: boolean
+          player_id?: string | null
+          sheet_data?: Json
           disciplines?: string | null
           embrace_story?: string | null
           flaws?: string | null
@@ -312,8 +324,14 @@ export type Database = {
         }
         Update: {
           character_name?: string
+          chronicle_id?: string | null
           clan?: string | null
           created_at?: string
+          invite_password?: string | null
+          invite_token?: string | null
+          is_locked?: boolean
+          player_id?: string | null
+          sheet_data?: Json
           disciplines?: string | null
           embrace_story?: string | null
           flaws?: string | null

@@ -92,8 +92,8 @@ const App = () => (
             {/* 4. Rotas do Jogador (Role: 'player' na crônica ativa) */}
             <Route path="/player" element={<ProtectedRoute allowedRoles={["player"]} />}>
               <Route element={<PlayerLayout />}>
-                <Route index element={<PlayerDashboardPage />} />
-                <Route path="coterie" element={<PlayerDashboardPage tab="coterie" />} />
+                <Route index element={<CoteriePage />} />
+                <Route path="coterie" element={<CoteriePage />} />
                 <Route path="codex" element={<PlayerDashboardPage tab="codex" />} />
                 <Route path="boons" element={<PlayerDashboardPage tab="boons" />} />
               </Route>

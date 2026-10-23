@@ -11,7 +11,7 @@ import { HumanityTracker } from "@/components/HumanityTracker";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Plus, Sparkles, Award, BookOpen, ShieldAlert, Heart, Zap, ShieldCheck, Flame, Layers, Skull, Crosshair, UserCheck, UserPlus, Clock } from "lucide-react";
+import { Trash2, Plus, Sparkles, Award, BookOpen, ShieldAlert, Heart, Zap, ShieldCheck, Flame, Layers, Skull, Crosshair, UserCheck, UserPlus, Clock, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { generateUUID } from "@/lib/uuid";
@@ -763,7 +763,16 @@ function DotRating({
   );
 }
 
-export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: PlayerDialogProps) {
+export interface PlayerDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  player?: any;
+  onDelete?: (id: string) => void;
+  onSave: (player: any) => void;
+  isReadOnly?: boolean;
+}
+
+export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave, isReadOnly = false }: PlayerDialogProps) {
   const [form, setForm] = useState(defaultPlayer);
   const [disciplines, setDisciplines] = useState<PlayerDiscipline[]>([]);
   const [advantages, setAdvantages] = useState<PlayerAdvantage[]>([]);
@@ -1698,6 +1707,10 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isReadOnly) {
+      toast.error("Esta ficha está trancada pelo Narrador. Alterações não são permitidas.");
+      return;
+    }
     if (!form.character_name || !form.character_name.trim()) {
       toast.error("Nome do personagem é obrigatório.");
       return;
@@ -1819,6 +1832,14 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
         </DialogHeader>
         <ScrollArea className="max-h-[72vh] pr-4 pt-2">
           <form onSubmit={handleSubmit} className="space-y-6 pt-1 pb-4">
+            {isReadOnly && (
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-950/40 border border-amber-800/60 text-amber-300 text-xs">
+                <Lock className="w-4 h-4 text-amber-400 shrink-0" />
+                <span>
+                  <strong>Ficha Trancada pelo Narrador:</strong> Esta ficha está protegida contra alterações. Você pode visualizar todos os atributos, disciplinas e detalhes, mas edições estão temporariamente desabilitadas.
+                </span>
+              </div>
+            )}
             {/* Topo: Imagem + Nome + Jogador + Clã Oficial V5 */}
             <div className="flex flex-col sm:flex-row gap-4 items-start bg-muted/10 p-3 rounded-lg border border-border/40">
               <ImageUpload
@@ -3101,14 +3122,22 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
             </div>
 
             <div className="flex justify-between pt-4">
-              {isEditing && onDelete ? (
+              {isEditing && onDelete && !isReadOnly ? (
                 <Button type="button" variant="destructive" size="sm" onClick={() => { onDelete(player.id); onOpenChange(false); }}>
                   <Trash2 className="w-4 h-4 mr-1" /> Excluir
                 </Button>
               ) : <div />}
               <div className="flex gap-2">
-                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                <Button type="submit">Salvar</Button>
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                  {isReadOnly ? "Fechar" : "Cancelar"}
+                </Button>
+                {!isReadOnly ? (
+                  <Button type="submit">Salvar</Button>
+                ) : (
+                  <Button type="button" disabled variant="secondary" className="gap-1.5 opacity-70 cursor-not-allowed border border-amber-800/40 bg-amber-950/20 text-amber-300">
+                    <Lock className="w-3.5 h-3.5 text-amber-400" /> Ficha Trancada
+                  </Button>
+                )}
               </div>
             </div>
           </form>

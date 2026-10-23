@@ -1,8 +1,22 @@
-import { useState, useEffect } from "react";
-import { useCloudStorage } from "@/hooks/useCloudStorage";
+import { useState, useEffect, useCallback } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { calculateCharacterStats } from "@/utils/calculateCharacterStats";
-import { Plus, Crosshair, Sparkles, Zap, Users, Heart, Ticket, UserCheck, Share2 } from "lucide-react";
+import {
+  Plus,
+  Crosshair,
+  Sparkles,
+  Zap,
+  Users,
+  Heart,
+  Ticket,
+  UserCheck,
+  Shield,
+  Lock,
+  Unlock,
+  Radio,
+  AlertCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { HungerTracker } from "@/components/HungerTracker";
@@ -10,7 +24,7 @@ import { HumanityTracker } from "@/components/HumanityTracker";
 import { PlayerDialog } from "@/components/PlayerDialog";
 import { PlayerInviteModal } from "@/components/PlayerInviteModal";
 import { toast } from "sonner";
-import { getPrefixedKey } from "@/components/ChronicleSwitcher";
+import { getPrefixedKey, isGuestMode } from "@/components/ChronicleSwitcher";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Componente para exibir valores com modificadores visuais no formato +X (verde) / -X (vermelho)
@@ -119,15 +133,49 @@ const CLAN_DISCIPLINES: Record<string, { name: string; desc: string }[]> = {
   ],
 };
 
+function normalizePlayerData(row: any): any {
+  if (!row || typeof row !== "object") return row;
+  const sheet = row.sheet_data && typeof row.sheet_data === "object" ? row.sheet_data : {};
+  return {
+    ...sheet,
+    ...row,
+    // Garantir integridade de escalares
+    id: row.id || sheet.id,
+    character_name: row.character_name || sheet.character_name || "Sem Nome",
+    clan: row.clan || sheet.clan || "Sem Clã",
+    hunger: Number.isFinite(row.hunger) ? row.hunger : Number.isFinite(sheet.hunger) ? sheet.hunger : 0,
+    humanity: Number.isFinite(row.humanity) ? row.humanity : Number.isFinite(sheet.humanity) ? sheet.humanity : 7,
+    health_max: Number.isFinite(row.health_max) ? row.health_max : sheet.health_max || 7,
+    health_current: Number.isFinite(row.health_current) ? row.health_current : sheet.health_current || 7,
+    willpower_max: Number.isFinite(row.willpower_max) ? row.willpower_max : sheet.willpower_max || 5,
+    willpower_current: Number.isFinite(row.willpower_current) ? row.willpower_current : sheet.willpower_current || 5,
+    is_locked: Boolean(row.is_locked ?? sheet.is_locked ?? false),
+  };
+}
+
 export default function CoteriePage() {
+  const { user, isNarrator, isPlayer, activeChronicleId } = useAuth();
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<any>(null);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [invitingPlayer, setInvitingPlayer] = useState<any>(null);
   const [arsenal, setArsenal] = useState<any[]>([]);
+  const [players, setPlayers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [realtimeActive, setRealtimeActive] = useState(false);
 
-  const [players, setPlayers] = useCloudStorage<any[]>("v5_coterie", []);
+  // Espelha no localStorage para manter retrocompatibilidade com Combate, DiceRoller e outros widgets
+  const mirrorToLocalStorage = useCallback((updatedList: any[]) => {
+    try {
+      const storageKey = getPrefixedKey("v5_coterie");
+      window.localStorage.setItem(storageKey, JSON.stringify(updatedList));
+    } catch (e) {
+      console.warn("Erro ao espelhar coterie no localStorage:", e);
+    }
+  }, []);
 
+  // 1. Carrega Arsenal Físico do LocalStorage
   useEffect(() => {
     try {
       const savedArsenal = localStorage.getItem(getPrefixedKey("v5_arsenal"));
@@ -140,97 +188,421 @@ export default function CoteriePage() {
     }
   }, []);
 
-  const updateTracker = {
-    mutate: ({ id, field, value }: { id: string; field: string; value: number }) => {
-      setPlayers((prev) =>
-        (prev || []).map((p) => (p && p.id === id ? { ...p, [field]: value } : p))
-      );
-    },
-  };
+  // 2. Busca de Personagens do Banco Supabase (ou Local no Modo Convidado)
+  const fetchPlayers = useCallback(async () => {
+    if (isGuestMode() || !user) {
+      try {
+        const local = localStorage.getItem(getPrefixedKey("v5_coterie"));
+        if (local) {
+          const parsed = JSON.parse(local);
+          if (Array.isArray(parsed)) setPlayers(parsed.map(normalizePlayerData));
+        }
+      } catch (e) {
+        console.error("Erro ao carregar coterie guest:", e);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
 
-  // Função para Atualização Rápida de Fome no Supabase (Quick Update)
-  const handleQuickHungerUpdate = async (playerId: string, newHunger: number) => {
+    try {
+      setLoading(true);
+      let query = supabase.from("players").select("*").order("created_at", { ascending: true });
+
+      // Se houver crônica ativa selecionada, filtra por ela
+      if (activeChronicleId && activeChronicleId !== "default") {
+        query = query.eq("chronicle_id", activeChronicleId);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      const normalized = (data || []).map(normalizePlayerData);
+      setPlayers(normalized);
+      mirrorToLocalStorage(normalized);
+    } catch (err: any) {
+      console.error("Erro ao carregar personagens da Coterie:", err);
+      toast.error("Falha ao carregar fichas da crônica.");
+    } finally {
+      setLoading(false);
+    }
+  }, [user, activeChronicleId, mirrorToLocalStorage]);
+
+  // 3. Efeito Principal de Carga e Subscription Realtime
+  useEffect(() => {
+    fetchPlayers();
+
+    if (isGuestMode() || !user) {
+      return;
+    }
+
+    // Configuração do Canal Realtime do Supabase
+    const channelId = `coterie-realtime-${activeChronicleId || "global"}-${Date.now()}`;
+    const channel = supabase
+      .channel(channelId)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "players",
+        },
+        (payload) => {
+          setRealtimeActive(true);
+
+          if (payload.eventType === "INSERT") {
+            const newRow = payload.new as any;
+            if (activeChronicleId && activeChronicleId !== "default" && newRow.chronicle_id !== activeChronicleId) {
+              return;
+            }
+            const normalized = normalizePlayerData(newRow);
+            setPlayers((prev) => {
+              if (prev.some((p) => p.id === normalized.id)) return prev;
+              const next = [...prev, normalized];
+              mirrorToLocalStorage(next);
+              return next;
+            });
+            toast.info(`Novo personagem adicionado à Coterie: ${normalized.character_name}`);
+          } else if (payload.eventType === "UPDATE") {
+            const updatedRow = payload.new as any;
+            const normalized = normalizePlayerData(updatedRow);
+            setPlayers((prev) => {
+              const next = prev.map((p) => (p.id === normalized.id ? { ...p, ...normalized } : p));
+              mirrorToLocalStorage(next);
+              return next;
+            });
+          } else if (payload.eventType === "DELETE") {
+            const oldRow = payload.old as any;
+            if (oldRow?.id) {
+              setPlayers((prev) => {
+                const next = prev.filter((p) => p.id !== oldRow.id);
+                mirrorToLocalStorage(next);
+                return next;
+              });
+            }
+          }
+        }
+      )
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          setRealtimeActive(true);
+        } else if (status === "CLOSED" || status === "CHANNEL_ERROR") {
+          setRealtimeActive(false);
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchPlayers, activeChronicleId, user, mirrorToLocalStorage]);
+
+  // 4. Trava do Narrador (Lock / Unlock da ficha)
+  const handleToggleLock = async (player: any) => {
+    if (!isNarrator) {
+      toast.error("Apenas o Narrador pode travar ou destravar fichas.");
+      return;
+    }
+
+    const newLocked = !player.is_locked;
+
+    // Atualização otimista
     setPlayers((prev) =>
-      (prev || []).map((p) => (p && p.id === playerId ? { ...p, hunger: newHunger } : p))
+      prev.map((p) => (p.id === player.id ? { ...p, is_locked: newLocked } : p))
     );
+
+    if (isGuestMode() || !user) {
+      toast.success(newLocked ? "Ficha trancada (Modo Local)." : "Ficha destrancada (Modo Local).");
+      return;
+    }
 
     try {
       const { error } = await supabase
         .from("players")
-        .update({ hunger: newHunger })
-        .eq("id", playerId);
+        .update({ is_locked: newLocked })
+        .eq("id", player.id);
 
-      if (error) {
-        console.error("Erro ao atualizar Fome no Supabase:", error);
-      } else {
-        toast.success(`Fome alterada para ${newHunger}.`);
-      }
-    } catch (e) {
-      console.error(e);
+      if (error) throw error;
+
+      toast.success(
+        newLocked
+          ? `Ficha de ${player.character_name} trancada para o jogador.`
+          : `Ficha de ${player.character_name} destrancada para edições.`
+      );
+    } catch (err: any) {
+      console.error("Erro ao alterar trava da ficha:", err);
+      toast.error(err.message || "Erro ao atualizar trava no banco.");
+      fetchPlayers(); // Reverte em caso de falha
     }
   };
 
-  const savePlayer = (playerData: any) => {
-    if (!playerData) return;
-    setPlayers((prev) => {
-      const safePrev = Array.isArray(prev) ? prev : [];
-      const exists = safePrev.find((p) => p && p.id === playerData.id);
-      if (exists) {
-        return safePrev.map((p) => (p && p.id === playerData.id ? playerData : p));
-      }
-      return [...safePrev, playerData];
-    });
-    toast.success("Coterie atualizada na nuvem.");
-  };
-
-  const deletePlayer = {
-    mutate: (id: string) => {
-      setPlayers((prev) => (prev || []).filter((p) => p && p.id !== id));
-      toast.success("Personagem removido.");
-      setDialogOpen(false);
-    },
-  };
-
-  const rollRouse = (playerId: string, currentHunger: number = 0) => {
-    if (currentHunger >= 5) {
-      toast.error("Frenesi absoluto. Um vampiro Fome 5 deve devorar, ou cairá em letargia.");
+  // 5. Atualização Rápida de Fome (Quick Hunger)
+  const handleQuickHungerUpdate = async (player: any, newHunger: number) => {
+    if (isPlayer && player.is_locked) {
+      toast.error("Sua ficha está trancada pelo Narrador. Alterações de Fome bloqueadas.");
       return;
     }
+
+    const safeHunger = Math.max(0, Math.min(5, newHunger));
+
+    // Atualização otimista
+    setPlayers((prev) =>
+      prev.map((p) => (p.id === player.id ? { ...p, hunger: safeHunger } : p))
+    );
+
+    if (isGuestMode() || !user) {
+      toast.success(`Fome alterada para ${safeHunger}.`);
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("players")
+        .update({ hunger: safeHunger, updated_at: new Date().toISOString() })
+        .eq("id", player.id);
+
+      if (error) throw error;
+      toast.success(`Fome alterada para ${safeHunger}.`);
+    } catch (e: any) {
+      console.error("Erro ao atualizar Fome no Supabase:", e);
+      toast.error("Erro ao atualizar Fome no banco.");
+      fetchPlayers();
+    }
+  };
+
+  // 6. Atualização Rápida de Humanidade
+  const handleQuickHumanityUpdate = async (player: any, newHumanity: number) => {
+    if (isPlayer && player.is_locked) {
+      toast.error("Sua ficha está trancada pelo Narrador. Alterações bloqueadas.");
+      return;
+    }
+
+    const safeHumanity = Math.max(0, Math.min(10, newHumanity));
+
+    setPlayers((prev) =>
+      prev.map((p) => (p.id === player.id ? { ...p, humanity: safeHumanity } : p))
+    );
+
+    if (isGuestMode() || !user) return;
+
+    try {
+      const { error } = await supabase
+        .from("players")
+        .update({ humanity: safeHumanity, updated_at: new Date().toISOString() })
+        .eq("id", player.id);
+
+      if (error) throw error;
+      toast.success(`Humanidade ajustada para ${safeHumanity}.`);
+    } catch (e: any) {
+      console.error("Erro ao atualizar Humanidade:", e);
+      fetchPlayers();
+    }
+  };
+
+  // 7. Rouse Check (Despertar do Sangue)
+  const rollRouse = (player: any) => {
+    if (isPlayer && player.is_locked) {
+      toast.error("Sua ficha está trancada pelo Narrador. O Despertar não pode ser acionado.");
+      return;
+    }
+
+    const currentHunger = Number(player.hunger) || 0;
+    if (currentHunger >= 5) {
+      toast.error("Frenesi absoluto! Com Fome 5, o Sangue exige alimento ou causará Letargia.");
+      return;
+    }
+
     const result = Math.floor(Math.random() * 10) + 1;
     if (result <= 5) {
-      handleQuickHungerUpdate(playerId, currentHunger + 1);
-      toast.error(`Falha! Tirou ${result} no Despertar. Fome aumentou.`);
+      handleQuickHungerUpdate(player, currentHunger + 1);
+      toast.error(`Falha no Despertar (Dado: ${result}). A Besta se agita e a Fome subiu para ${currentHunger + 1}!`);
     } else {
-      toast.success(`Êxito! Tirou ${result}. O Sangue se manteve domado.`);
+      toast.success(`Sucesso no Despertar (Dado: ${result})! O Sangue permaneceu calmo.`);
     }
+  };
+
+  // 8. Salvar Personagem Completo (via Modal)
+  const savePlayer = async (playerData: any) => {
+    if (!playerData) return;
+
+    const normalized = normalizePlayerData(playerData);
+
+    // Atualização otimista local
+    setPlayers((prev) => {
+      const safePrev = Array.isArray(prev) ? prev : [];
+      const exists = safePrev.find((p) => p && p.id === normalized.id);
+      const next = exists
+        ? safePrev.map((p) => (p && p.id === normalized.id ? normalized : p))
+        : [...safePrev, normalized];
+      mirrorToLocalStorage(next);
+      return next;
+    });
+
+    if (isGuestMode() || !user) {
+      toast.success("Personagem salvo no armazenamento local.");
+      return;
+    }
+
+    try {
+      const dbPayload: any = {
+        id: normalized.id,
+        character_name: (normalized.character_name || "").trim(),
+        player_name: normalized.player_name || null,
+        clan: normalized.clan || null,
+        sire: normalized.sire || null,
+        generation: Number(normalized.generation) || 13,
+        hunger: Number(normalized.hunger) || 0,
+        humanity: Number(normalized.humanity) || 7,
+        health_max: Number(normalized.health_max) || 7,
+        health_current: Number(normalized.health_current) || 7,
+        willpower_max: Number(normalized.willpower_max) || 5,
+        willpower_current: Number(normalized.willpower_current) || 5,
+        human_history: normalized.human_history || null,
+        embrace_story: normalized.embrace_story || null,
+        image_url: normalized.image_url || null,
+        disciplines:
+          typeof normalized.disciplines === "string"
+            ? normalized.disciplines
+            : JSON.stringify(normalized.disciplines || []),
+        sheet_data: playerData,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (activeChronicleId && activeChronicleId !== "default") {
+        dbPayload.chronicle_id = activeChronicleId;
+      }
+
+      // Se for jogador criando a ficha própria, vincula o user.id
+      if (isPlayer) {
+        dbPayload.player_id = user.id;
+        dbPayload.is_locked = false;
+      }
+
+      const { error } = await supabase.from("players").upsert(dbPayload);
+
+      if (error) throw error;
+      toast.success("Ficha sincronizada no Supabase.");
+    } catch (err: any) {
+      console.error("Erro ao salvar personagem no Supabase:", err);
+      toast.error(err.message || "Erro ao salvar ficha no banco.");
+      fetchPlayers();
+    }
+  };
+
+  // 9. Exclusão de Personagem
+  const deletePlayer = async (id: string) => {
+    setPlayers((prev) => {
+      const next = (prev || []).filter((p) => p && p.id !== id);
+      mirrorToLocalStorage(next);
+      return next;
+    });
+
+    if (!isGuestMode() && user) {
+      try {
+        const { error } = await supabase.from("players").delete().eq("id", id);
+        if (error) throw error;
+        toast.success("Personagem removido da crônica.");
+      } catch (err: any) {
+        console.error("Erro ao excluir personagem:", err);
+        toast.error("Erro ao remover personagem do banco.");
+        fetchPlayers();
+      }
+    } else {
+      toast.success("Personagem removido localmente.");
+    }
+
+    setDialogOpen(false);
   };
 
   const validPlayers = (players || []).filter((p) => p && typeof p === "object");
 
   return (
     <ErrorBoundary fallbackTitle="Erro ao carregar a página da Coterie">
-      <div>
-        <div className="flex items-center justify-between mb-6 border-b border-border/50 pb-6">
+      <div className="space-y-6">
+        {/* Cabeçalho Unificado com Identificação Dinâmica de Papel */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/50 pb-6">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
-              <Users className="w-6 h-6 text-primary" />
+            <div className="p-3 bg-red-950/40 rounded-lg border border-red-900/50 shadow-[0_0_15px_rgba(185,28,28,0.2)]">
+              {isPlayer ? (
+                <Shield className="w-6 h-6 text-red-400" />
+              ) : (
+                <Users className="w-6 h-6 text-red-400" />
+              )}
             </div>
             <div>
-              <h1 className="text-3xl font-serif font-bold text-foreground">A Coterie</h1>
-              <p className="text-muted-foreground mt-1 text-sm">Gerenciar Fome, Humanidade e fichas dos Jogadores</p>
+              <div className="flex items-center gap-2 mb-1">
+                <Badge
+                  variant="outline"
+                  className="text-[10px] font-mono border-red-900/60 bg-red-950/40 text-red-400"
+                >
+                  {isPlayer ? "Visão do Membro" : "Visão do Narrador"}
+                </Badge>
+                {realtimeActive && (
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] font-mono border-emerald-900/60 bg-emerald-950/30 text-emerald-400 flex items-center gap-1"
+                  >
+                    <Radio className="w-2.5 h-2.5 animate-pulse text-emerald-400" />
+                    Tempo Real Ativo
+                  </Badge>
+                )}
+              </div>
+              <h1 className="text-2xl md:text-3xl font-serif font-bold text-foreground">
+                {isPlayer ? "Santuário do Membro" : "A Coterie"}
+              </h1>
+              <p className="text-muted-foreground mt-0.5 text-xs sm:text-sm">
+                {isPlayer
+                  ? "Sua ficha oficial V5 com sincronia mágica e regras da Máscara"
+                  : "Gerenciar Fome, Humanidade, Trava do Narrador e fichas dos Jogadores"}
+              </p>
             </div>
           </div>
-          <Button onClick={() => { setEditingPlayer(null); setDialogOpen(true); }} className="gap-2">
-            <Plus className="w-4 h-4" /> Novo Personagem
-          </Button>
+
+          <div className="flex items-center gap-2">
+            {/* O Narrador sempre pode criar personagens. O Jogador pode criar se ainda não possuir nenhum */}
+            {(isNarrator || (isPlayer && validPlayers.length === 0)) && (
+              <Button
+                onClick={() => {
+                  setEditingPlayer(null);
+                  setDialogOpen(true);
+                }}
+                className="gap-2 bg-red-900 hover:bg-red-800 text-white font-serif tracking-wide shadow-[0_0_15px_rgba(185,28,28,0.3)]"
+              >
+                <Plus className="w-4 h-4" /> Novo Personagem
+              </Button>
+            )}
+          </div>
         </div>
 
-        {validPlayers.length === 0 ? (
-          <div className="text-center py-20 text-muted-foreground">
-            <p className="text-lg font-serif">Nenhum personagem na Coterie</p>
-            <p className="text-sm mt-2">Adicione seu primeiro personagem para começar.</p>
+        {/* Estado Vazio para Jogador sem Personagem */}
+        {validPlayers.length === 0 && !loading && (
+          <div className="text-center py-16 px-4 bg-card/40 border border-dashed border-border/60 rounded-xl max-w-xl mx-auto space-y-4">
+            <div className="w-14 h-14 rounded-full bg-red-950/40 border border-red-900/50 flex items-center justify-center mx-auto text-red-400 shadow-[0_0_20px_rgba(185,28,28,0.25)]">
+              {isPlayer ? <Shield className="w-7 h-7" /> : <Users className="w-7 h-7" />}
+            </div>
+            <div>
+              <h3 className="text-lg font-serif font-bold text-foreground">
+                {isPlayer ? "Nenhum personagem vinculado ao seu usuário" : "Nenhum personagem na Coterie"}
+              </h3>
+              <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
+                {isPlayer
+                  ? "Você ainda não possui uma ficha nesta crônica. Crie seu primeiro personagem agora ou solicite um código de convite ao seu Narrador para resgatar sua ficha no Saguão."
+                  : "Adicione os personagens dos seus jogadores ou resgate fichas via código de convite."}
+              </p>
+            </div>
+            <Button
+              onClick={() => {
+                setEditingPlayer(null);
+                setDialogOpen(true);
+              }}
+              className="gap-2 bg-red-900 hover:bg-red-800 text-white font-serif tracking-wide shadow-[0_0_15px_rgba(185,28,28,0.3)]"
+            >
+              <Plus className="w-4 h-4" /> Criar Meu Personagem
+            </Button>
           </div>
-        ) : (
+        )}
+
+        {/* Grid de Personagens */}
+        {validPlayers.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {validPlayers.map((player) => {
               const charName = (player.character_name || player.name || "Sem Nome").trim();
@@ -256,14 +628,23 @@ export default function CoteriePage() {
               const safeWillCurr = Number.isFinite(player.willpower_current) ? player.willpower_current : 5;
               const safeWillMax = Number.isFinite(player.willpower_max) ? player.willpower_max : 5;
               const clanName = player.clan || "Sem Clã";
+              const isLocked = Boolean(player.is_locked);
 
               return (
                 <ErrorBoundary key={player.id || Math.random()} fallbackTitle={`Erro no card de ${charName}`}>
                   <div
-                    className="bg-card border border-border rounded-lg hover:border-primary/40 transition-colors cursor-pointer group/card relative"
-                    onClick={() => { setEditingPlayer(player); setDialogOpen(true); }}
+                    className={`bg-card border rounded-lg transition-all cursor-pointer group/card relative overflow-hidden ${
+                      isLocked
+                        ? "border-amber-900/50 hover:border-amber-700/60 shadow-[0_0_15px_rgba(217,119,6,0.08)]"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                    onClick={() => {
+                      setEditingPlayer(player);
+                      setDialogOpen(true);
+                    }}
                   >
-                    <div className="aspect-[4/3] bg-muted overflow-hidden rounded-t-lg">
+                    {/* Imagem do Personagem */}
+                    <div className="aspect-[4/3] bg-muted overflow-hidden relative">
                       {player.image_url ? (
                         <img
                           src={player.image_url}
@@ -271,67 +652,144 @@ export default function CoteriePage() {
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                        <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-zinc-950">
                           <span className="font-serif text-4xl opacity-30">
                             {charName.charAt(0) || "?"}
                           </span>
                         </div>
                       )}
+
+                      {/* Badge Flutuante de Trava da Ficha */}
+                      {isLocked && (
+                        <div className="absolute top-2 right-2 z-10">
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] font-mono bg-black/85 border-amber-600/80 text-amber-300 flex items-center gap-1 shadow-md py-0.5 px-2"
+                          >
+                            <Lock className="w-3 h-3 text-amber-400" />
+                            <span>Edição Trancada</span>
+                          </Badge>
+                        </div>
+                      )}
                     </div>
+
                     <div className="p-4 space-y-3">
                       <div>
-                        {/* Status de Convite & Acesso do Jogador */}
-                        <div className="flex items-center justify-between mb-2" onClick={(e) => e.stopPropagation()}>
+                        {/* Linha Superior de Ações: Status, Convite e Trava do Narrador */}
+                        <div
+                          className="flex items-center justify-between mb-2 gap-2 flex-wrap"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <div className="flex items-center gap-1.5 flex-wrap">
                             {player.player_id ? (
-                              <Badge variant="outline" className="text-[10px] bg-emerald-950/40 border-emerald-800/60 text-emerald-400 font-mono flex items-center gap-1 py-0 px-1.5">
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] bg-emerald-950/40 border-emerald-800/60 text-emerald-400 font-mono flex items-center gap-1 py-0 px-1.5"
+                              >
                                 <UserCheck className="w-2.5 h-2.5" /> Vinculado
                               </Badge>
                             ) : player.invite_token ? (
-                              <Badge variant="outline" className="text-[10px] bg-amber-950/40 border-amber-800/60 text-amber-400 font-mono py-0 px-1.5">
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] bg-amber-950/40 border-amber-800/60 text-amber-400 font-mono py-0 px-1.5"
+                              >
                                 Convite: {player.invite_token}
                               </Badge>
                             ) : (
-                              <Badge variant="outline" className="text-[10px] bg-zinc-900 border-zinc-800 text-zinc-400 font-mono py-0 px-1.5">
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] bg-zinc-900 border-zinc-800 text-zinc-400 font-mono py-0 px-1.5"
+                              >
                                 Sem Convite
                               </Badge>
                             )}
                           </div>
 
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-6 text-[10px] font-mono px-2 border-red-900/50 bg-red-950/20 text-red-300 hover:bg-red-950/50 hover:text-red-200 gap-1"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setInvitingPlayer(player);
-                              setInviteModalOpen(true);
-                            }}
-                            title="Gerar / Ver Convite do Jogador"
-                          >
-                            <Ticket className="w-3 h-3 text-red-400" /> Convite
-                          </Button>
+                          <div className="flex items-center gap-1.5">
+                            {/* BOTÃO DA TRAVA DO NARRADOR */}
+                            {isNarrator && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className={`h-6 text-[10px] font-mono px-2 gap-1 transition-colors ${
+                                  isLocked
+                                    ? "border-amber-800/60 bg-amber-950/30 text-amber-300 hover:bg-amber-900/40 hover:text-amber-200"
+                                    : "border-zinc-800 bg-zinc-900/80 text-zinc-400 hover:text-zinc-200"
+                                }`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleToggleLock(player);
+                                }}
+                                title={
+                                  isLocked
+                                    ? "Destravar ficha (Permitir edições do jogador)"
+                                    : "Travar ficha (Bloquear edições do jogador)"
+                                }
+                              >
+                                {isLocked ? (
+                                  <>
+                                    <Lock className="w-3 h-3 text-amber-400" /> Trancada
+                                  </>
+                                ) : (
+                                  <>
+                                    <Unlock className="w-3 h-3 text-zinc-400" /> Aberta
+                                  </>
+                                )}
+                              </Button>
+                            )}
+
+                            {/* Botão de Convite (Visível apenas para o Narrador) */}
+                            {isNarrator && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-6 text-[10px] font-mono px-2 border-red-900/50 bg-red-950/20 text-red-300 hover:bg-red-950/50 hover:text-red-200 gap-1"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setInvitingPlayer(player);
+                                  setInviteModalOpen(true);
+                                }}
+                                title="Gerar / Ver Convite do Jogador"
+                              >
+                                <Ticket className="w-3 h-3 text-red-400" /> Convite
+                              </Button>
+                            )}
+                          </div>
                         </div>
 
-                        <h3 className="font-serif font-semibold text-lg">{charName}</h3>
+                        <h3 className="font-serif font-semibold text-lg text-foreground flex items-center justify-between">
+                          <span>{charName}</span>
+                        </h3>
                         <p className="text-sm text-muted-foreground mb-2">
                           {[clanName, player.player_name && `(${player.player_name})`].filter(Boolean).join(" ")}
                         </p>
                       </div>
 
                       {/* Trackers de Fome e Humanidade com Quick Update */}
-                      <div className="flex items-center justify-between" onClick={(e) => e.stopPropagation()}>
+                      <div
+                        className={`flex items-center justify-between p-2 rounded-lg bg-surface-container-low/40 border border-border/30 ${
+                          isPlayer && isLocked ? "opacity-75" : ""
+                        }`}
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <div>
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-xs text-primary font-medium tracking-wider uppercase">Fome</span>
                             <Button
                               size="icon"
                               variant="outline"
-                              className="h-4 w-4 bg-transparent border-blood/50 text-blood hover:bg-blood hover:text-white rounded-full flex items-center justify-center p-0"
-                              title="Rouse Check (Despertar)"
+                              disabled={isPlayer && isLocked}
+                              className={`h-4 w-4 bg-transparent border-blood/50 text-blood hover:bg-blood hover:text-white rounded-full flex items-center justify-center p-0 ${
+                                isPlayer && isLocked ? "cursor-not-allowed opacity-50" : ""
+                              }`}
+                              title={
+                                isPlayer && isLocked
+                                  ? "Ficha trancada pelo Narrador"
+                                  : "Rouse Check (Despertar)"
+                              }
                               onClick={(e) => {
                                 e.stopPropagation();
-                                rollRouse(player.id, safeHunger);
+                                rollRouse(player);
                               }}
                             >
                               <Zap className="w-2 h-2" />
@@ -340,22 +798,30 @@ export default function CoteriePage() {
                           <HungerTracker
                             value={safeHunger}
                             size="sm"
-                            onChange={(v) => handleQuickHungerUpdate(player.id, v)}
+                            onChange={
+                              isPlayer && isLocked
+                                ? undefined
+                                : (v) => handleQuickHungerUpdate(player, v)
+                            }
                           />
                         </div>
                         <div>
-                          <span className="text-xs text-gold font-medium tracking-wider uppercase block mb-1">
+                          <span className="text-xs text-gold font-medium tracking-wider uppercase block mb-1 text-right">
                             Humanidade
                           </span>
                           <HumanityTracker
                             value={safeHumanity}
                             size="sm"
-                            onChange={(v) => updateTracker.mutate({ id: player.id, field: "humanity", value: v })}
+                            onChange={
+                              isPlayer && isLocked
+                                ? undefined
+                                : (v) => handleQuickHumanityUpdate(player, v)
+                            }
                           />
                         </div>
                       </div>
 
-                      {/* Métricas Vitais Discretas com Formato +X (Verde) / -X (Vermelho) */}
+                      {/* Métricas Vitais: Vitalidade e Força de Vontade */}
                       <div className="pt-2 border-t border-border/30 space-y-1">
                         <div className="flex items-center justify-between text-[10px] text-muted-foreground font-mono">
                           <div className="flex items-center gap-1">
@@ -401,7 +867,7 @@ export default function CoteriePage() {
                         )}
                       </div>
 
-                      {/* Seção de Disciplinas (Tags JSONB com Nome e Nível) */}
+                      {/* Seção de Disciplinas */}
                       <div className="pt-2 border-t border-border/40 space-y-1.5">
                         <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground flex items-center gap-1">
                           <Zap className="w-3 h-3 text-primary" /> Disciplinas
@@ -442,7 +908,7 @@ export default function CoteriePage() {
                         </div>
                       </div>
 
-                      {/* Inventário do Jogador com Detalhamento Rápido das Regras */}
+                      {/* Inventário Físico */}
                       <div className="pt-2 border-t border-border/40 mt-3">
                         <h4 className="text-[10px] uppercase font-bold text-muted-foreground mb-2 flex items-center gap-1">
                           <Sparkles className="w-3 h-3" /> Inventário Físico
@@ -487,14 +953,17 @@ export default function CoteriePage() {
           </div>
         )}
 
+        {/* Modal de Edição Completa da Ficha V5 */}
         <PlayerDialog
           open={dialogOpen}
           onOpenChange={setDialogOpen}
           player={editingPlayer}
           onSave={savePlayer}
-          onDelete={(id) => deletePlayer.mutate(id)}
+          onDelete={isNarrator ? (id) => deletePlayer(id) : undefined}
+          isReadOnly={isPlayer && Boolean(editingPlayer?.is_locked)}
         />
 
+        {/* Modal de Convite para o Narrador */}
         <PlayerInviteModal
           isOpen={inviteModalOpen}
           onClose={() => setInviteModalOpen(false)}
