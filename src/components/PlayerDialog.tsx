@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Trash2, Plus, Sparkles, Award, BookOpen, ShieldAlert, Heart, Zap, ShieldCheck, Flame, Layers, Skull, Crosshair, UserCheck, UserPlus, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { generateUUID } from "@/lib/uuid";
 
 export interface PlayerDiscipline {
   id: string;
@@ -778,7 +779,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       let parsedDisciplines: PlayerDiscipline[] = [];
       if (Array.isArray(player.disciplines)) {
         parsedDisciplines = player.disciplines.map((d: any) => ({
-          id: d.id || crypto.randomUUID(),
+          id: d.id || generateUUID(),
           nome: d.nome || d.name || "Fortitude",
           nivel: d.nivel || d.level || 1,
           poderes: Array.isArray(d.poderes)
@@ -795,12 +796,12 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       } else {
         if (Array.isArray(player.merits)) {
           player.merits.forEach((m: any) => {
-            parsedAdvantages.push({ id: m.id || crypto.randomUUID(), nome: m.nome, tipo: "Vantagem", pontos: m.pontos || 1 });
+            parsedAdvantages.push({ id: m.id || generateUUID(), nome: m.nome, tipo: "Vantagem", pontos: m.pontos || 1 });
           });
         }
         if (Array.isArray(player.flaws)) {
           player.flaws.forEach((f: any) => {
-            parsedAdvantages.push({ id: f.id || crypto.randomUUID(), nome: f.nome, tipo: "Defeito", pontos: f.pontos || 1 });
+            parsedAdvantages.push({ id: f.id || generateUUID(), nome: f.nome, tipo: "Defeito", pontos: f.pontos || 1 });
           });
         }
       }
@@ -810,7 +811,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       let parsedConvictions: PlayerConviction[] = [];
       if (Array.isArray(player.convictions)) {
         parsedConvictions = player.convictions.map((c: any) => ({
-          id: c.id || crypto.randomUUID(),
+          id: c.id || generateUUID(),
           conviction: c.conviction || c.conviccao || "",
           touchstone_name: c.touchstone_name || c.pilar_nome || "",
           touchstone_relation: c.touchstone_relation || c.pilar_relacao || "",
@@ -840,7 +841,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       if (clanInfo) {
         setDisciplines(
           clanInfo.disciplines.map((dName) => ({
-            id: crypto.randomUUID(),
+            id: generateUUID(),
             nome: dName,
             nivel: 1,
             poderes: [""],
@@ -895,7 +896,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
 
     if (clanInfo && clanInfo.disciplines.length > 0) {
       const autoDisciplines: PlayerDiscipline[] = clanInfo.disciplines.map((dName) => ({
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         nome: dName,
         nivel: 1,
         poderes: [""],
@@ -922,7 +923,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       setAdvantages((prev) => {
         const nonPredatorAdvantages = prev.filter((a) => !a.isPredatorBonus);
         const predatorBonusItems: PlayerAdvantage[] = (pInfo.meritsAndFlaws || []).map((mf) => ({
-          id: crypto.randomUUID(),
+          id: generateUUID(),
           nome: mf.nome,
           tipo: mf.tipo,
           pontos: mf.pontos,
@@ -1224,7 +1225,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
 
     setDisciplines((prev) => [
       ...prev,
-      { id: crypto.randomUUID(), nome: newDiscName, nivel: 1, poderes: [""] },
+      { id: generateUUID(), nome: newDiscName, nivel: 1, poderes: [""] },
     ]);
 
     if (form.enforce_attr_limits === false) {
@@ -1395,7 +1396,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
     let newItem: PlayerAdvantage;
     if (catalogItemName === "custom") {
       newItem = {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         nome: "Vantagem Personalizada (Homebrew)",
         tipo: "Vantagem",
         pontos: 1,
@@ -1405,7 +1406,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       const item = V5_MERITS_CATALOG.find((m) => m.nome === catalogItemName);
       if (!item) return;
       newItem = {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         nome: item.nome,
         tipo: item.tipo,
         pontos: item.pontosDefault,
@@ -1492,7 +1493,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
     setConvictions((prev) => [
       ...prev,
       {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         conviction: "",
         touchstone_name: "",
         touchstone_relation: "",
@@ -1516,7 +1517,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
 
     if (!existingRel) {
       const newRelNode = {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         source_id: form.id || player?.id || "player_active",
         source_name: form.character_name || player?.character_name || "Vampiro",
         target_id: npcId,
@@ -1558,7 +1559,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
       return;
     }
 
-    const newNpcId = crypto.randomUUID();
+    const newNpcId = generateUUID();
     const cleanName = name.trim();
     const cleanRelation = relation.trim() || "Pilar Mortal de Humanidade";
     const cleanCategory = seita || "Mortal";
@@ -1590,7 +1591,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
 
     // 2. Injeção na Teia de Intrigas / Mapa de Relacionamento (v5_relationship_map)
     const newRelNode = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       source_id: form.id || player?.id || "player_active",
       source_name: form.character_name || player?.character_name || "Vampiro",
       target_id: newNpcId,
@@ -1705,7 +1706,7 @@ export function PlayerDialog({ open, onOpenChange, player, onDelete, onSave }: P
     const playerData = {
       ...form,
       character_name: form.character_name.trim(),
-      id: isEditing ? player.id : crypto.randomUUID(),
+      id: isEditing ? player.id : generateUUID(),
       health_max: calculatedHealthMax,
       willpower_max: calculatedWillpowerMax,
       health_current: Math.max(0, calculatedHealthMax - (form.sup_dmg || 0) - (form.agr_dmg || 0)),

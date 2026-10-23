@@ -1,8 +1,9 @@
 import { supabase } from "@/integrations/supabase/client";
+import { generateUUID } from "./uuid";
 
 export async function uploadImage(file: File, folder: string): Promise<string | null> {
   const ext = file.name.split('.').pop();
-  const fileName = `${folder}/${crypto.randomUUID()}.${ext}`;
+  const fileName = `${folder}/${generateUUID()}.${ext}`;
   
   const { error } = await supabase.storage
     .from('grimorio-media')

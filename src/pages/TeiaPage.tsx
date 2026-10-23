@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { useRelationshipMap } from '@/hooks/useRelationshipMap';
 import { useCloudStorage } from '@/hooks/useCloudStorage';
 import { toast } from 'sonner';
+import { generateUUID } from '@/lib/uuid';
 import type { NodePositionMap } from '@/types/intrigas';
 
 const nodeTypes = {
@@ -284,7 +285,7 @@ export default function TeiaPage() {  const [mode, setMode] = useState<'coterie'
   const handleConfirmConnection = useCallback((relationType: string, label: string) => {
     if (!pendingConnection) return;
     const newRel = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       source_id: pendingConnection.sourceId,
       source_name: pendingConnection.sourceName,
       target_id: pendingConnection.targetId,

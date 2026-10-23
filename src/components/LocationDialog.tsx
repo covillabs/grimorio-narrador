@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ImageUpload } from "@/components/ImageUpload";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { generateUUID } from "@/lib/uuid";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 const TYPES = ["Santuário", "Zona de Guerra", "Elysium", "Refúgio", "Território"];
@@ -53,7 +54,7 @@ export function LocationDialog({ open, onOpenChange, location, onDelete, onSave 
 
     const payload = { 
       ...form, 
-      id: isEditing ? location.id : "loc_" + crypto.randomUUID(),
+      id: isEditing ? location.id : "loc_" + generateUUID(),
       controller_npc_id: form.controller_npc_id || null 
     };
     onSave(payload);

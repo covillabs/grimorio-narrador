@@ -10,6 +10,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { NpcDialog } from "@/components/NpcDialog";
 import { toast } from "sonner";
 import { getPrefixedKey } from "@/components/ChronicleSwitcher";
+import { generateUUID } from "@/lib/uuid";
 
 export default function NpcsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -297,7 +298,7 @@ export default function NpcsPage() {
             setNpcs((prev) => prev.map((n) => n.id === editingNpc.id ? { ...npcData, id: editingNpc.id } : n));
             toast.success("NPC atualizado.");
           } else {
-            const newNpc = { ...npcData, id: crypto.randomUUID() };
+            const newNpc = { ...npcData, id: generateUUID() };
             setNpcs((prev) => [newNpc, ...prev]);
             toast.success("NPC criado.");
           }

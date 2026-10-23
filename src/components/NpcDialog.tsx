@@ -11,6 +11,7 @@ import { ImageUpload } from "@/components/ImageUpload";
 import { Trash2, Plus, Sparkles, Award } from "lucide-react";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { generateUUID } from "@/lib/uuid";
 
 export interface NpcSpecialty {
   id: string;
@@ -89,9 +90,9 @@ export function NpcDialog({ open, onOpenChange, npc, onDelete, onSave }: NpcDial
           parsedSpecialties = npc.specialties.split(",").map((s: string) => {
             const match = s.match(/(.*?)\((.*?)\)/);
             if (match) {
-              return { id: crypto.randomUUID(), pericia: match[1].trim(), foco: match[2].trim() };
+              return { id: generateUUID(), pericia: match[1].trim(), foco: match[2].trim() };
             }
-            return { id: crypto.randomUUID(), pericia: s.trim(), foco: "" };
+            return { id: generateUUID(), pericia: s.trim(), foco: "" };
           });
         }
       }
@@ -108,7 +109,7 @@ export function NpcDialog({ open, onOpenChange, npc, onDelete, onSave }: NpcDial
           else throw new Error();
         } catch {
           parsedDisciplines = [{
-            id: crypto.randomUUID(),
+            id: generateUUID(),
             name: "Disciplinas",
             level: 1,
             powers: npc.disciplines
@@ -129,7 +130,7 @@ export function NpcDialog({ open, onOpenChange, npc, onDelete, onSave }: NpcDial
   const handleAddSpecialty = () => {
     setSpecialties((prev) => [
       ...prev,
-      { id: crypto.randomUUID(), pericia: "", foco: "" }
+      { id: generateUUID(), pericia: "", foco: "" }
     ]);
   };
 
@@ -147,7 +148,7 @@ export function NpcDialog({ open, onOpenChange, npc, onDelete, onSave }: NpcDial
   const handleAddDiscipline = () => {
     setDisciplines((prev) => [
       ...prev,
-      { id: crypto.randomUUID(), name: "", level: 1, powers: "" }
+      { id: generateUUID(), name: "", level: 1, powers: "" }
     ]);
   };
 

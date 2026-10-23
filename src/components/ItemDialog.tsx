@@ -9,6 +9,7 @@ import { ImageUpload } from "@/components/ImageUpload";
 import { Trash2, Plus, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { generateUUID } from "@/lib/uuid";
 
 const CATEGORIES = ["Arma", "Ferramenta de Investigação", "Artefato Místico", "Documento"];
 const RULE_TYPES = ["PASSIVO", "REATIVO", "GATILHO", "AÇÃO", "BÔNUS"] as const;
@@ -119,7 +120,7 @@ export function ItemDialog({ open, onOpenChange, item, onDelete, players, npcs, 
           else throw new Error();
         } catch {
           parsedRules = [{
-            id: crypto.randomUUID(),
+            id: generateUUID(),
             type: "PASSIVO",
             title: "Efeito Mecânico",
             description: item.rules_bonus
@@ -138,7 +139,7 @@ export function ItemDialog({ open, onOpenChange, item, onDelete, players, npcs, 
     setRules((prev) => [
       ...prev,
       {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         type: "PASSIVO",
         title: "",
         description: "",
@@ -167,7 +168,7 @@ export function ItemDialog({ open, onOpenChange, item, onDelete, players, npcs, 
           modifiers: [
             ...currentMods,
             {
-              id: crypto.randomUUID(),
+              id: generateUUID(),
               target: "Combate",
               value: 1,
               isConditional: false,
@@ -231,7 +232,7 @@ export function ItemDialog({ open, onOpenChange, item, onDelete, players, npcs, 
 
     const payload = {
       ...form,
-      id: isEditing ? item.id : "it_" + crypto.randomUUID(),
+      id: isEditing ? item.id : "it_" + generateUUID(),
       rules_bonus: rules,
       owner: ownerName,
       owner_type: form.owner_type || null,
